@@ -127,7 +127,7 @@ def main():
 
     # Load Ball Image
     try:
-        ball_img = pygame.image.load("Ball.png").convert_alpha()
+        ball_img = pygame.image.load("Img/Ball.png").convert_alpha()
     except:
         ball_img = None
         print("Warning: Ball.png not found, falling back to primitive circles.")
