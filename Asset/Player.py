@@ -5,22 +5,22 @@ from collections import deque
 
 
 class Player:
-    def __init__(self, x, y, radius = 10, color = (255, 255, 255),
-                        max_velocity = 300, max_acceleration = 1500):
-        self.pos2D = pygame.Vector2(x, y)
-        self.vel2D = pygame.Vector2(0, 0)
-        self.acc2D = pygame.Vector2(0, 0)
+    def __init__(self, position : pygame.Vector2 = pygame.Vector2(0,0), radius : int = 10, color : tuple = (255, 255, 255),
+                        max_velocity : float = 300, max_acceleration : float = 3000):
+        self.pos2D : pygame.Vector2 = pygame.Vector2(position)
+        self.vel2D : pygame.Vector2 = pygame.Vector2(0, 0)
+        self.acc2D : pygame.Vector2 = pygame.Vector2(0, 0)
 
-        self.max_velocity = max_velocity
-        self.max_acceleration = max_acceleration
+        self.max_velocity : float = max_velocity
+        self.max_acceleration : float = max_acceleration
 
-        self.radius = radius
-        self.color = color
-        self.mass = radius*radius
+        self.radius : int = radius
+        self.color : tuple = color
+        self.mass : float = radius*radius
 
         # This is for the player to record its trajectory
-        self.history_position = deque(maxlen=50)
-        self.total_frame_passed = 0
+        self.history_position : deque = deque(maxlen=50)
+        self.total_frame_passed : int = 0
 
     def get_velocity(self):
         '''
