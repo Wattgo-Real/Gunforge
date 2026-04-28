@@ -3,6 +3,10 @@ import sys
 import numpy as np
 np.random.seed(42)
 
+import Asset.Function as GF
+import Asset.TestScreen1 as TS1
+import Asset.TestScreen2 as TS2
+
 from Asset.Player import Player
 
 class Game():
@@ -47,25 +51,38 @@ class Game():
         # Record time passed since of start the game.
         self.now_time : float = 0
 
+        self.test_screen = 0
+
     def Start(self):
         # Control variable for the main loop
         running = True
 
         while running:    
+            button1 = pygame.Rect(200, 120, 200, 60)
+            button2 = pygame.Rect(200, 220, 200, 60)
+        
             # Handle events (e.g., window close)
-            for event in pygame.event.get():
+            events = pygame.event.get()
+            for event in events:
                 if event.type == pygame.QUIT:
                     running = False
 
-            # --- 1. Draw background. ---
-            # Draw the background.
-            self.DrawBackground()
+            if self.test_screen == 0:
+                GF.draw_button(self.screen, button1, "Test screen 1",  font=self.font)
+                GF.draw_button(self.screen, button2, "Test screen 2",  font=self.font)
+                for event in events:
+                    if event.type == pygame.MOUSEBUTTONDOWN:
+                        if button1.collidepoint(event.pos):
+                            self.test_screen = 1
+                        if button2.collidepoint(event.pos):
+                            self.test_screen = 1
+            elif self.test_screen == 1:
+                TS1.test_screen1(self, events)
+            elif self.test_screen == 2:
+                TS2.test_screen2(self, events)
 
-            # --- 2. Draw player. ---
-            self.DrawPlayer()
 
-            # --- 3. Handles keyboard input (Player Movement). ---
-            self.KeyBoardDetectionAndSetCamera()
+
 
             # Update the display (render everything to the screen)
             pygame.display.flip()
@@ -85,6 +102,13 @@ class Game():
         """
         pos = pos + self.screen_center - self.camera_position
         return pygame.Vector2(pos.x, self.screen_height - pos.y)
+
+    def to_world(self, pos):
+        """
+        Convert screen coordinates to world coordinates.
+        """
+        pos = pygame.Vector2(pos[0], self.screen_height - pos[1])
+        return pos - self.screen_center + self.camera_position
     
     def DrawBackground(self):
         """
@@ -100,10 +124,16 @@ class Game():
         for i in range(len(grid_points)):
             self.screen.blit(self.background, self.to_screen(1000 * grid_points[i]) - pygame.Vector2(0, 1000))
 
-    def DrawPlayer(self):
+    def DrawLayer1(self):
         """
-        Draw player
+        Draw Layer 1.
         """
+        # --- 1. Draw bullet. ---
+        for weapon in self.player.weapon_list:
+            for bullet in weapon.bullets:
+                pygame.draw.circle(self.screen, (255, 255, 255), self.to_screen(bullet.pos2D), 2)
+
+        # --- 2. Draw player. ---
         # Draw Trajectory Trail
         if len(self.player.history_position) > 1:
             points = [self.to_screen(p) for p in self.player.history_position]
@@ -117,15 +147,20 @@ class Game():
         # Add a little "glow" or detail
         pygame.draw.circle(self.screen, (255, 255, 255), self.to_screen(self.player.pos2D), self.player.radius, 2)
 
-  
-    def KeyBoardDetectionAndSetCamera(self):
+    def PlayerUpdate(self):
         """
         If self.KeyBoardControl is True, the target position can be controlled by arrow keys, and the camera will follow the target. \n
         If self.KeyBoardControl is False, the camera will follow the Main Agent.
         """
         # Get current keyboard state (continuous input)
         keys = pygame.key.get_pressed()
+
+        # Get current mouse state
+        mouse_buttons = pygame.mouse.get_pressed()
         
+        # Update weapon
+        self.player.UpdateWeapon(self.delta_time, fire = mouse_buttons[0])
+
         # Update position based on arrow key input
         acc_dir = pygame.Vector2(0, 0)
         if keys[pygame.K_LEFT] or keys[pygame.K_a]:
