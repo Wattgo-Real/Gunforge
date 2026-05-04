@@ -52,6 +52,7 @@ class Game():
         self.now_time : float = 0
 
         self.test_screen = 0
+        self.selected_slot_info = None
 
     def Start(self):
         # Control variable for the main loop
@@ -73,6 +74,7 @@ class Game():
                 for event in events:
                     if event.type == pygame.MOUSEBUTTONDOWN:
                         if button1.collidepoint(event.pos):
+                            self.gun_info = False
                             self.test_screen = 1
                         if button2.collidepoint(event.pos):
                             self.test_screen = 1
@@ -130,6 +132,8 @@ class Game():
         """
         # --- 1. Draw bullet. ---
         for weapon in self.player.weapon_list:
+            if weapon is None:
+                continue
             for bullet in weapon.bullets:
                 pygame.draw.circle(self.screen, (255, 255, 255), self.to_screen(bullet.pos2D), 2)
 

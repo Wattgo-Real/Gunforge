@@ -2,7 +2,7 @@
 import pygame
 
 from collections import deque
-from Asset.Weapons import Gun
+from Asset.Weapons import Gun, Card
 
 class Player:
     def __init__(self, position : pygame.Vector2 = pygame.Vector2(0,0), radius : int = 10, color : tuple = (255, 255, 255),
@@ -19,10 +19,23 @@ class Player:
         self.mass : float = radius*radius
 
         # The direction the player is facing, it should always be normalized
-        self.face_direction : pygame.Vector2 = pygame.Vector2(1, 0) 
+        self.face_direction : pygame.Vector2 = pygame.Vector2(1, 0)
+        self.inventory : list[Card | None] = [None for i in range(40)]
 
         # weapon
-        self.weapon_list : list[Gun] = [Gun()]
+        basic_info = {
+            "cooldown" : 0.4,
+            "reload" : 2,
+            "scatter_angel" : 5,
+            "capacity" : 20,
+            "card_list" : [Card(type = 1, attribute_modifier_type = 0), Card(type = 1, attribute_modifier_type = 1), 
+                            Card(type = 1, attribute_modifier_type = 2), Card(type = 1, attribute_modifier_type = 3), 
+                            Card(type = 1, attribute_modifier_type = 4), Card(type = 1, attribute_modifier_type = 5), 
+                            Card(type = 1, attribute_modifier_type = 6), Card(type = 1, attribute_modifier_type = 7), 
+                            Card(type = 0, bullet_type = 0), Card(type = 0, bullet_type = 1), Card(type = 0, bullet_type = 2)],
+        }
+
+        self.weapon_list : list[Gun | None] = [Gun(basic_info), None, None, None]
         self.weapon_index : int = 0
 
         # This is for the player to record its trajectory
@@ -151,6 +164,9 @@ class Player:
         '''
 
         for i, weapon in enumerate(self.weapon_list):
+            if weapon is None:
+                continue
+
             if i == self.weapon_index:
                 if fire:
                     weapon.fire(self.face_direction, self.pos2D)
@@ -158,3 +174,63 @@ class Player:
                 pass
             weapon.update(delta_time)
 
+class Enemy:
+    def __init__(self, position: pygame.Vector2, radius: int = 30, color: tuple = (255, 50, 50), hp: int = 1000):
+        self.pos2D = pygame.Vector2(position)
+        self.radius = radius
+        self.color = color
+        self.hp = hp
+        self.max_hp = hp
+        self.damage_numbers = [] # List of DamageNumber objects
+
+    def take_damage(self, damage):
+        self.hp -= damage
+        # Create a new damage number effect
+        self.damage_numbers.append(DamageNumber(damage, self.pos2D.copy()))
+
+    def update(self, delta_time):
+        for dn in self.damage_numbers[:]:
+            dn.update(delta_time)
+            if dn.timer <= 0:
+                self.damage_numbers.remove(dn)
+
+    def draw(self, screen, game):
+        # Draw enemy body
+        screen_pos = game.to_screen(self.pos2D)
+        pygame.draw.circle(screen, self.color, screen_pos, self.radius)
+        pygame.draw.circle(screen, (255, 255, 255), screen_pos, self.radius, 2)
+        
+        # Draw health bar (optional but useful)
+        bar_w = 60
+        bar_h = 6
+        pygame.draw.rect(screen, (50, 50, 50), (screen_pos.x - bar_w//2, screen_pos.y - self.radius - 15, bar_w, bar_h))
+        hp_ratio = max(0, self.hp / self.max_hp)
+        pygame.draw.rect(screen, (100, 255, 100), (screen_pos.x - bar_w//2, screen_pos.y - self.radius - 15, int(bar_w * hp_ratio), bar_h))
+
+        # Draw damage numbers
+        for dn in self.damage_numbers:
+            dn.draw(screen, game)
+
+class DamageNumber:
+    def __init__(self, damage, position):
+        self.damage = damage
+        self.pos2D = position + pygame.Vector2(pygame.math.Vector2(0, 20).rotate(pygame.math.Vector2(0, 0).angle_to(pygame.math.Vector2(1,0)) + (pygame.time.get_ticks() % 360))) # Randomize slightly
+        # Actually just a simple random offset
+        import random
+        self.pos2D += pygame.Vector2(random.uniform(-10, 10), random.uniform(-10, 10))
+        self.velocity = pygame.Vector2(0, 50) # Float upwards
+        self.timer = 1.0 # Stay for 1 second
+        self.alpha = 255
+
+    def update(self, delta_time):
+        self.pos2D.y += self.velocity.y * delta_time
+        self.timer -= delta_time
+        self.alpha = int(255 * (self.timer / 1.0))
+
+    def draw(self, screen, game):
+        font = game.HUD_font
+        text_surf = font.render(str(int(self.damage)), True, (255, 255, 100))
+        # Handle alpha if needed (requires temporary surface)
+        text_surf.set_alpha(self.alpha)
+        screen_pos = game.to_screen(self.pos2D)
+        screen.blit(text_surf, (screen_pos.x - text_surf.get_width()//2, screen_pos.y))
