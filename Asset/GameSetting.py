@@ -192,6 +192,88 @@ UI_CONFIG = {
     "inv_bottom_padding": 20,
     "gun_box_padding_x": 50,
     "gun_box_padding_y": 50,
-    "gun_box_spacing_y": 270, 
+    "gun_box_spacing_y": 270,
+}
+
+ENEMY_CONFIG = {
+    0 : {
+        "name" : "Chaser",
+        "radius" : 18,
+        "color" : (220, 80, 80),
+        "max_hp" : 30,
+        "speed" : 110,
+        "damage" : 10,
+        "attack_cooldown" : 0.8,
+        "xp_drop" : 1,
+        "ai" : "chase",
+    },
+    1 : {
+        "name" : "Runner",
+        "radius" : 12,
+        "color" : (220, 220, 80),
+        "max_hp" : 15,
+        "speed" : 170,
+        "damage" : 6,
+        "attack_cooldown" : 0.5,
+        "xp_drop" : 1,
+        "ai" : "runner",
+    },
+    2 : {
+        "name" : "Tank",
+        "radius" : 30,
+        "color" : (140, 60, 200),
+        "max_hp" : 200,
+        "speed" : 60,
+        "damage" : 25,
+        "attack_cooldown" : 1.2,
+        "xp_drop" : 4,
+        "ai" : "chase",
+    },
+    3 : {
+        "name" : "Shooter",
+        "radius" : 16,
+        "color" : (80, 200, 200),
+        "max_hp" : 35,
+        "speed" : 90,
+        "damage" : 8,
+        "attack_cooldown" : 1.5,
+        "xp_drop" : 2,
+        "ai" : "shooter",
+        "ranged" : True,
+        "preferred_distance" : 350,
+        "bullet_speed" : 260,
+    },
+}
+
+BOSS_CONFIG = {
+    "name" : "Boss",
+    "radius" : 60,
+    "color" : (255, 50, 50),
+    "max_hp" : 5000,
+    "speed" : 80,
+    "damage" : 40,
+    "attack_cooldown" : 2.0,
+    "xp_drop" : 50,
+    "ai" : "boss",
+    "ranged" : True,
+    "bullet_speed" : 220,
+}
+
+GAME_CONFIG = {
+    "boss_spawn_time" : 300.0,    # seconds before boss appears (5 minutes)
+    "spawn_base_interval" : 1.5,
+    "spawn_min_interval" : 0.25,
+    "altar_charge_time" : 3.0,
+    "altar_buff_amount" : {
+        "hp" : 25,
+        "damage" : 0.15,
+        "speed" : 30,
+    },
+    "xp_pickup_radius" : 22,
+    "xp_attract_radius" : 130,
+    "player_max_hp" : 100,
+    "player_invincible_time" : 0.5,
+    "xp_per_level_base" : 10,
+    "card_slot_levels" : [10, 20, 30, 40, 50],
 }
 

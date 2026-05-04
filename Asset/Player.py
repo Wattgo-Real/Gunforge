@@ -2,6 +2,7 @@
 import pygame
 
 from collections import deque
+from Asset.GameSetting import GAME_CONFIG
 from Asset.Weapons import Gun, Card
 
 class Player:
@@ -28,10 +29,10 @@ class Player:
             "reload" : 2,
             "scatter_angel" : 5,
             "capacity" : 20,
-            "card_list" : [Card(type = 1, attribute_modifier_type = 0), Card(type = 1, attribute_modifier_type = 1), 
-                            Card(type = 1, attribute_modifier_type = 2), Card(type = 1, attribute_modifier_type = 3), 
-                            Card(type = 1, attribute_modifier_type = 4), Card(type = 1, attribute_modifier_type = 5), 
-                            Card(type = 1, attribute_modifier_type = 6), Card(type = 1, attribute_modifier_type = 7), 
+            "card_list" : [Card(type = 1, attribute_modifier_type = 0), Card(type = 1, attribute_modifier_type = 1),
+                            Card(type = 1, attribute_modifier_type = 2), Card(type = 1, attribute_modifier_type = 3),
+                            Card(type = 1, attribute_modifier_type = 4), Card(type = 1, attribute_modifier_type = 5),
+                            Card(type = 1, attribute_modifier_type = 6), Card(type = 1, attribute_modifier_type = 7),
                             Card(type = 0, bullet_type = 0), Card(type = 0, bullet_type = 1), Card(type = 0, bullet_type = 2)],
         }
 
@@ -41,6 +42,25 @@ class Player:
         # This is for the player to record its trajectory
         self.history_position : deque = deque(maxlen=50)
         self.total_frame_passed : int = 0
+
+        # Combat / progression stats
+        self.max_hp : float = GAME_CONFIG["player_max_hp"]
+        self.hp : float = self.max_hp
+        self.invincible_timer : float = 0.0
+        self.alive : bool = True
+
+        self.xp : int = 0
+        self.level : int = 1
+        self.xp_to_next : int = GAME_CONFIG["xp_per_level_base"]
+
+        # Run-time stat modifiers (granted by altars)
+        self.damage_multiplier : float = 1.0
+        self.bonus_speed : float = 0.0
+
+        # Stat tracking (for end-of-run summary)
+        self.kills : int = 0
+        self.damage_dealt : float = 0.0
+        self.points : int = 0
 
     def get_velocity(self):
         '''
@@ -174,63 +194,62 @@ class Player:
                 pass
             weapon.update(delta_time)
 
-class Enemy:
-    def __init__(self, position: pygame.Vector2, radius: int = 30, color: tuple = (255, 50, 50), hp: int = 1000):
-        self.pos2D = pygame.Vector2(position)
-        self.radius = radius
-        self.color = color
-        self.hp = hp
-        self.max_hp = hp
-        self.damage_numbers = [] # List of DamageNumber objects
-
-    def take_damage(self, damage):
+    def take_damage(self, damage : float):
+        if self.invincible_timer > 0 or not self.alive:
+            return False
         self.hp -= damage
-        # Create a new damage number effect
-        self.damage_numbers.append(DamageNumber(damage, self.pos2D.copy()))
+        self.invincible_timer = GAME_CONFIG["player_invincible_time"]
+        if self.hp <= 0:
+            self.hp = 0
+            self.alive = False
+        return True
 
-    def update(self, delta_time):
-        for dn in self.damage_numbers[:]:
-            dn.update(delta_time)
-            if dn.timer <= 0:
-                self.damage_numbers.remove(dn)
+    def heal(self, amount : float):
+        self.hp = min(self.max_hp, self.hp + amount)
 
-    def draw(self, screen, game):
-        # Draw enemy body
-        screen_pos = game.to_screen(self.pos2D)
-        pygame.draw.circle(screen, self.color, screen_pos, self.radius)
-        pygame.draw.circle(screen, (255, 255, 255), screen_pos, self.radius, 2)
-        
-        # Draw health bar (optional but useful)
-        bar_w = 60
-        bar_h = 6
-        pygame.draw.rect(screen, (50, 50, 50), (screen_pos.x - bar_w//2, screen_pos.y - self.radius - 15, bar_w, bar_h))
-        hp_ratio = max(0, self.hp / self.max_hp)
-        pygame.draw.rect(screen, (100, 255, 100), (screen_pos.x - bar_w//2, screen_pos.y - self.radius - 15, int(bar_w * hp_ratio), bar_h))
+    def update_timers(self, delta_time : float):
+        if self.invincible_timer > 0:
+            self.invincible_timer = max(0.0, self.invincible_timer - delta_time)
 
-        # Draw damage numbers
-        for dn in self.damage_numbers:
-            dn.draw(screen, game)
+    def gain_xp(self, value : int):
+        self.xp += value
+        leveled = False
+        while self.xp >= self.xp_to_next:
+            self.xp -= self.xp_to_next
+            self.level += 1
+            self.xp_to_next = int(GAME_CONFIG["xp_per_level_base"] * (self.level ** 1.4))
+            leveled = True
+        return leveled
 
-class DamageNumber:
-    def __init__(self, damage, position):
-        self.damage = damage
-        self.pos2D = position + pygame.Vector2(pygame.math.Vector2(0, 20).rotate(pygame.math.Vector2(0, 0).angle_to(pygame.math.Vector2(1,0)) + (pygame.time.get_ticks() % 360))) # Randomize slightly
-        # Actually just a simple random offset
-        import random
-        self.pos2D += pygame.Vector2(random.uniform(-10, 10), random.uniform(-10, 10))
-        self.velocity = pygame.Vector2(0, 50) # Float upwards
-        self.timer = 1.0 # Stay for 1 second
-        self.alpha = 255
+    def apply_altar_buff(self, buff_type : str):
+        amounts = GAME_CONFIG["altar_buff_amount"]
+        if buff_type == "hp":
+            self.max_hp += amounts["hp"]
+            self.hp += amounts["hp"]
+        elif buff_type == "damage":
+            self.damage_multiplier += amounts["damage"]
+        elif buff_type == "speed":
+            self.bonus_speed += amounts["speed"]
+            self.max_velocity += amounts["speed"]
 
-    def update(self, delta_time):
-        self.pos2D.y += self.velocity.y * delta_time
-        self.timer -= delta_time
-        self.alpha = int(255 * (self.timer / 1.0))
+    def add_kill(self, damage_overflow : float = 0.0):
+        self.kills += 1
+        self.points += 1
 
-    def draw(self, screen, game):
-        font = game.HUD_font
-        text_surf = font.render(str(int(self.damage)), True, (255, 255, 100))
-        # Handle alpha if needed (requires temporary surface)
-        text_surf.set_alpha(self.alpha)
-        screen_pos = game.to_screen(self.pos2D)
-        screen.blit(text_surf, (screen_pos.x - text_surf.get_width()//2, screen_pos.y))
+    def add_damage_dealt(self, dmg : float):
+        self.damage_dealt += dmg
+
+    def reset_run(self, position : pygame.Vector2 = pygame.Vector2(0, 0)):
+        self.pos2D = pygame.Vector2(position)
+        self.vel2D = pygame.Vector2(0, 0)
+        self.acc2D = pygame.Vector2(0, 0)
+        self.hp = self.max_hp
+        self.invincible_timer = 0.0
+        self.alive = True
+        self.xp = 0
+        self.level = 1
+        self.xp_to_next = GAME_CONFIG["xp_per_level_base"]
+        self.kills = 0
+        self.damage_dealt = 0.0
+        self.points = 0
+        self.history_position.clear()

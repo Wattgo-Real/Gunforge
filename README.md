@@ -7,3 +7,6 @@
 - 場景中有新增一個測試的敵人，用於測試槍械子彈的傷害。
 - GameSetting.py 中新增 UI_CONFIG、COLOR_CONFIG 還有一些子彈的屬性、能力、資訊，方便統一設定遊戲的數值。
 
+## 2026/05/05
+
+Simple Ui add and value Setting `GameSetting.py、Start.py TestScreen1.py TestScreen2.py`, and bastic Enemies and Boss designed `Enemies.py`

@@ -53,15 +53,55 @@ class Game():
 
         self.test_screen = 0
         self.selected_slot_info = None
+        self.gun_info = False
+
+        # Persistent meta-progression
+        self.best_record = {"kills": 0, "time": 0.0, "damage": 0, "level": 1, "points": 0}
+        self.total_points = 0
+        self.run_summary = None
+
+    def _draw_main_menu(self, events):
+        self.screen.fill((20, 20, 30))
+
+        title_font = pygame.font.SysFont(["consolas", "monaco", "monospace"], 96, bold=True)
+        title_surf = title_font.render("GUNFORGE", True, (255, 220, 120))
+        self.screen.blit(title_surf, ((self.screen_width - title_surf.get_width()) // 2, 140))
+
+        sub_surf = self.font.render("Vampire-Survivors-style with stackable gun cards", True, (200, 200, 220))
+        self.screen.blit(sub_surf, ((self.screen_width - sub_surf.get_width()) // 2, 240))
+
+        cx = self.screen_width // 2
+        play_btn = pygame.Rect(cx - 150, 360, 300, 70)
+        quit_btn = pygame.Rect(cx - 150, 460, 300, 70)
+        info_lines = [
+            "WASD to move   |   Left click to fire   |   TAB to open gun/inventory",
+            "Survive, kill enemies, collect XP orbs, stand on altars for buffs.",
+            f"Boss appears at 5:00.   |   Total points banked: {self.total_points}",
+        ]
+
+        GF.draw_button(self.screen, play_btn, "Play", font=self.font)
+        GF.draw_button(self.screen, quit_btn, "Quit", font=self.font)
+
+        info_y = 580
+        for line in info_lines:
+            line_surf = self.HUD_font.render(line, True, (200, 200, 200))
+            self.screen.blit(line_surf, ((self.screen_width - line_surf.get_width()) // 2, info_y))
+            info_y += 24
+
+        for event in events:
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                if play_btn.collidepoint(event.pos):
+                    self.gun_info = False
+                    TS1.reset_screen1(self)
+                    self.test_screen = 1
+                elif quit_btn.collidepoint(event.pos):
+                    pygame.event.post(pygame.event.Event(pygame.QUIT))
 
     def Start(self):
         # Control variable for the main loop
         running = True
 
-        while running:    
-            button1 = pygame.Rect(200, 120, 200, 60)
-            button2 = pygame.Rect(200, 220, 200, 60)
-        
+        while running:
             # Handle events (e.g., window close)
             events = pygame.event.get()
             for event in events:
@@ -69,15 +109,7 @@ class Game():
                     running = False
 
             if self.test_screen == 0:
-                GF.draw_button(self.screen, button1, "Test screen 1",  font=self.font)
-                GF.draw_button(self.screen, button2, "Test screen 2",  font=self.font)
-                for event in events:
-                    if event.type == pygame.MOUSEBUTTONDOWN:
-                        if button1.collidepoint(event.pos):
-                            self.gun_info = False
-                            self.test_screen = 1
-                        if button2.collidepoint(event.pos):
-                            self.test_screen = 1
+                self._draw_main_menu(events)
             elif self.test_screen == 1:
                 TS1.test_screen1(self, events)
             elif self.test_screen == 2:
