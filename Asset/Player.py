@@ -3,7 +3,8 @@ import pygame
 
 from collections import deque
 from Asset.GameSetting import GAME_CONFIG
-from Asset.Weapons import Gun, Card
+from Asset.Weapons import Gun
+from Asset.Card import Card
 import random
 
 class Player:
@@ -22,9 +23,9 @@ class Player:
 
         # The direction the player is facing, it should always be normalized
         self.face_direction : pygame.Vector2 = pygame.Vector2(1, 0)
-        self.inventory : list[Card | None] = [Card(type = 0, bullet_type = 0) for i in range(5)] + \
+        self.inventory : list[Card | None] = [Card(type = 0, bullet_type = i) for i in range(5)] + \
                                             [Card(type = 2, effect_modifier_type = 0)] + \
-                                            [Card(type = 2, effect_modifier_type = 10)] + \
+                                            [Card(type = 2, effect_modifier_type = 100)] + \
                                             [None for i in range(20)]
 
         # weapon
@@ -34,9 +35,11 @@ class Player:
             "scatter_angel" : 5,
             "capacity" : 20,
             "max_slots" : 20,
-            "card_list" : [Card(type = 0, bullet_type = 0)] + 
-                        [Card(type = 2, effect_modifier_type = i) for i in range(1)] + [Card(type = 2, effect_modifier_type = 10)] +
-                        [Card(type = 1, attribute_modifier_type = 1) for i in range(5)],
+            "card_list" : [Card(type = 1, attribute_modifier_type = 9)] + 
+                          [Card(type = 0, bullet_type = 0)] + 
+                          [Card(type = 2, effect_modifier_type = i) for i in range(1)] + 
+                          [Card(type = 2, effect_modifier_type = 100)] + 
+                          [Card(type = 2, effect_modifier_type = 50), Card(type = 2, effect_modifier_type = 54)]
         }
         basic_info2 = {
             "cooldown" : 0.4,

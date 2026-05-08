@@ -1,9 +1,13 @@
 
+
 import pygame
 from collections import deque
 import random
 
 from Asset.GameSetting import BULLET_CONFIG, ATTRIBUTE_MODIFIER_CONFIG, EFFECT_MODIFIER_CONFIG, COLOR_CONFIG
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from Asset.Card import Card
 
 class Gun():
     def __init__(self, basic_info : dict):
@@ -29,7 +33,7 @@ class Gun():
         self.bullets = pygame.sprite.Group()
         self.cooldown_timer = 0     # Timer for bullet cooldown
         self.reload_timer = 0       # Timer for reload
-        
+
     
     def _refresh(self):
         self.cooldown = self.basic_cooldown
@@ -38,7 +42,7 @@ class Gun():
         self.capacity = self.basic_capacity
         for card in self.card_list:
             if card:
-                card.run(self)
+                card.run_on_gun(self)
         if self.capacity_left > self.capacity:
             self.capacity_left = self.capacity
         if self.scatter_angel < 0:
@@ -65,7 +69,7 @@ class Gun():
             if card.type == 0:  # bullet
                 bullet_type = card.bullet_type
                 break
-            if card.type == 1:  # attribute_modifier
+            if card.type == 2:  # attribute_modifier
                 cart_to_bullet.append(card)
 
         if bullet_type == -1:
@@ -102,117 +106,9 @@ class Gun():
         for bullet in self.bullets:
             bullet.update(delta_time)
 
-        
-class Card(pygame.sprite.Sprite):
-    def __init__(self, type : int, bullet_type : int = -1, attribute_modifier_type : int = -1, effect_modifier_type : int = -1):
-        '''
-        type: 
-            0, bullet
-            1, attribute_modifier
-            2, effect_modifier
-        '''
-        self.type = type
-        self.bullet_type = bullet_type
-        self.attribute_modifier_type = attribute_modifier_type
-
-        self.effect_modifier_type = effect_modifier_type
-
-    def run(self, target : Gun):
-        if self.type == 0:  # bullet
-            info = BULLET_CONFIG[self.bullet_type][1]
-            target.cooldown += info.get("cooldown_modifier", 0) 
-            target.reload += info.get("reload_modifier", 0) 
-            target.scatter_angel += info.get("scatter_angel_modifier", 0) 
-            target.capacity += info.get("capacity_modifier", 0) 
-            
-            
-        elif self.type == 1:    # attribute_modifier
-            info = ATTRIBUTE_MODIFIER_CONFIG[self.attribute_modifier_type][1]
-            target.cooldown += info.get("cooldown_modifier", 0) 
-            target.reload += info.get("reload_modifier", 0) 
-            target.scatter_angel += info.get("scatter_angel_modifier", 0) 
-            target.capacity += info.get("capacity_modifier", 0) 
-
-        elif self.type == 2:    # effect_modifier
-            info = EFFECT_MODIFIER_CONFIG[self.effect_modifier_type][1]
-            
-            
-    
-    def draw(self, surface : pygame.Surface, rect : pygame.Rect):
-        if self.type == 0:
-            draw_info = BULLET_CONFIG[self.bullet_type][2]
-        elif self.type == 1:
-            draw_info = ATTRIBUTE_MODIFIER_CONFIG[self.attribute_modifier_type][2]
-        elif self.type == 2:
-            draw_info = EFFECT_MODIFIER_CONFIG[self.effect_modifier_type][2]
-            
-        start_w = rect.left
-        start_h = rect.top
-        rect_w = rect.width
-        rect_h = rect.height
-        for key, value in draw_info.items():
-            if key == "circle":
-                for circle in value:
-                    pos = pygame.math.Vector2(start_w + rect_w * circle["pos_x"], start_h + rect_h * circle["pos_y"])
-                    color = circle["color"]
-                    size = int(rect_w / 2 * circle["size"])
-                    pygame.draw.circle(surface, color, pos, size)
-            elif key == "line":
-                for line in value:
-                    start_pos = pygame.math.Vector2(start_w + rect_w * line["start_x"], start_h + rect_h * line["start_y"])
-                    end_pos = pygame.math.Vector2(start_w + rect_w * line["end_x"], start_h + rect_h * line["end_y"])
-                    color = line["color"]
-                    width = int(rect_w * line["width"])
-                    pygame.draw.line(surface, color, start_pos, end_pos, width)
-
-    def get_info(self):
-        if self.type == 0: # bullet
-            if self.bullet_type in BULLET_CONFIG:
-                name = BULLET_CONFIG[self.bullet_type][0]
-                info = BULLET_CONFIG[self.bullet_type][1].get("info", "")
-                info += f"\nSpeed: {BULLET_CONFIG[self.bullet_type][1].get('speed', 0)}"
-                if "physical_damage" in BULLET_CONFIG[self.bullet_type][1]:
-                    info += f"\nPhysical Damage: {BULLET_CONFIG[self.bullet_type][1].get('physical_damage', 0)}"
-                if "explosion_damage" in BULLET_CONFIG[self.bullet_type][1]:
-                    info += f"\nExplosion Damage: {BULLET_CONFIG[self.bullet_type][1].get('explosion_damage', 0)}"
-                if "burn_damage" in BULLET_CONFIG[self.bullet_type][1]:
-                    info += f"\nBurn Damage: {BULLET_CONFIG[self.bullet_type][1].get('burn_damage', 0)}"
-                if "radius" in BULLET_CONFIG[self.bullet_type][1]:
-                    info += f"\nExplosion Radius: {BULLET_CONFIG[self.bullet_type][1].get('radius', 0)}"
-                if "cooldown_modifier" in BULLET_CONFIG[self.bullet_type][1]:
-                    info += f"\nCooldown Modifier: {BULLET_CONFIG[self.bullet_type][1].get('cooldown_modifier', 0)}"
-                if "reload_modifier" in BULLET_CONFIG[self.bullet_type][1]:
-                    info += f"\nReload Modifier: {BULLET_CONFIG[self.bullet_type][1].get('reload_modifier', 0)}"
-                if "capacity_modifier" in BULLET_CONFIG[self.bullet_type][1]:
-                    info += f"\nCapacity Modifier: {BULLET_CONFIG[self.bullet_type][1].get('capacity_modifier', 0)}"
-                if "scatter_angel_modifier" in BULLET_CONFIG[self.bullet_type][1]:
-                    info += f"\nScatter Modifier: {BULLET_CONFIG[self.bullet_type][1].get('scatter_angel_modifier', 0)}"
-                
-                return name, info
-        elif self.type == 1: # attribute_modifier
-            if self.attribute_modifier_type in ATTRIBUTE_MODIFIER_CONFIG:
-                name = ATTRIBUTE_MODIFIER_CONFIG[self.attribute_modifier_type][0]
-                info = ATTRIBUTE_MODIFIER_CONFIG[self.attribute_modifier_type][1].get("info", "")
-                if "cooldown_modifier" in ATTRIBUTE_MODIFIER_CONFIG[self.attribute_modifier_type][1]:
-                    info += f"\nCooldown Modifier: {ATTRIBUTE_MODIFIER_CONFIG[self.attribute_modifier_type][1].get('cooldown_modifier', 0)}"
-                if "reload_modifier" in ATTRIBUTE_MODIFIER_CONFIG[self.attribute_modifier_type][1]:
-                    info += f"\nReload Modifier: {ATTRIBUTE_MODIFIER_CONFIG[self.attribute_modifier_type][1].get('reload_modifier', 0)}"
-                if "capacity_modifier" in ATTRIBUTE_MODIFIER_CONFIG[self.attribute_modifier_type][1]:
-                    info += f"\nCapacity Modifier: {ATTRIBUTE_MODIFIER_CONFIG[self.attribute_modifier_type][1].get('capacity_modifier', 0)}"
-                if "scatter_angel_modifier" in ATTRIBUTE_MODIFIER_CONFIG[self.attribute_modifier_type][1]:
-                    info += f"\nScatter Modifier: {ATTRIBUTE_MODIFIER_CONFIG[self.attribute_modifier_type][1].get('scatter_angel_modifier', 0)}"
-                return name, info
-                
-        elif self.type == 2: # effect_modifier
-           if self.effect_modifier_type in EFFECT_MODIFIER_CONFIG:
-               name = EFFECT_MODIFIER_CONFIG[self.effect_modifier_type][0]
-               info = EFFECT_MODIFIER_CONFIG[self.effect_modifier_type][1].get("info", "")
-               return name, info
-
-        return "Unknown Card", ""
 
 class Bullet(pygame.sprite.Sprite):
-    def __init__(self, card_list : list,
+    def __init__(self, card_list : list["Card"],
                 bullet_type : int,
                 lifetime : float,
                 pos2D : pygame.Vector2 = pygame.math.Vector2(0,0),
@@ -236,7 +132,6 @@ class Bullet(pygame.sprite.Sprite):
             acc2D (pygame.Vector2) : The acceleration of the bullet in 2D space
         '''
         super().__init__()
-        
         self.card_list = card_list  # List of cards attached to the bullet
         self.lifetime = lifetime    # How long the bullet will stay alive
         self.timer = 0              # Timer for bullet lifetime
@@ -246,6 +141,8 @@ class Bullet(pygame.sprite.Sprite):
         self.vel2D = vel2D        # The velocity of the bullet in 2D space
         self.acc2D = acc2D        # The acceleration of the bullet in 2D space
 
+        self.max_effect_count = 3
+    
         self.hit_enemies = set()  # Track enemies already hit by this bullet
         self.init_bullet()
 
@@ -256,6 +153,14 @@ class Bullet(pygame.sprite.Sprite):
         self.speed = BULLET_CONFIG[self.bullet_type][1].get("speed", 0)
         self.radius = BULLET_CONFIG[self.bullet_type][1].get("radius", 0)
         self.lifetime = BULLET_CONFIG[self.bullet_type][1].get("lifetime", self.lifetime)
+
+        effect_count = 0
+        for card in self.card_list:
+            card.run_on_bullet(self)
+            if card.type == 2:
+                effect_count += 1
+                if effect_count >= self.max_effect_count:
+                    break
             
         if self.vel2D.length() != 0:
             self.vel2D = self.vel2D.normalize() * self.speed
@@ -309,22 +214,28 @@ class Bullet(pygame.sprite.Sprite):
         player.add_damage_dealt(damage)
         self.hit_enemies.add(enemy)
 
+    def explode_effect(self, draw_type, effect_queue = None):
+        if effect_queue is not None:
+            if "explode" in draw_type:
+                effect_queue.append([{"disappearing_circle" : [{ "pos_2D" : self.pos2D, "radius" : self.radius, "color" : (255, 200, 0, 255), "total_time" : 0.5 }]}, 0.5])
+
     # TODO : enemies=[] change to grid to find enemies
-    def triger_hit(self, player, target_enemy, enemies=[]):
+    def triger_hit(self, player, target_enemy, enemies=[], effect_queue = None):
         if self.bullet_type == 0 or self.bullet_type == 1 or self.bullet_type == 2:
             self.hit(player, target_enemy)
             self.kill()
         elif self.bullet_type == 3: # Grenade
             self.explode(player, enemies)
+            self.explode_effect("explode", effect_queue)
             self.kill()
         elif self.bullet_type == 4: # Laser
             if target_enemy not in self.hit_enemies:
                 self.hit(player, target_enemy)
                 
-
-    def triger_lifetime(self, player, enemies=[]):
+    def triger_lifetime(self, player, enemies=[], effect_queue = None):
         if self.bullet_type == 3: # Grenade
             self.explode(player, enemies)
+            self.explode_effect("explode", effect_queue)
             self.kill()
         else:
             self.kill()
