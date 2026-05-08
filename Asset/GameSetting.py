@@ -63,7 +63,7 @@ BULLET_CONFIG = {
         {
             "speed": 100,
             "explosion_damage": 10,
-            "radius": 40,
+            "radius": 100,
             "capacity_modifier" : -20,
             "cooldown_modifier" : 0.5,
             "info" : "Deal explosion damage to enemies in an area. The explosion occurs either when its lifetime ends or when it collides with an enemy or an obstacle.",
@@ -245,7 +245,7 @@ UI_CONFIG = {
     "grid_rows": 2,
     "inv_bottom_padding": 20,
     "gun_box_padding_x": 50,
-    "gun_box_padding_y": 50,
+    "gun_box_padding_y": 120,
     "gun_box_spacing_y": 270,
 }
 

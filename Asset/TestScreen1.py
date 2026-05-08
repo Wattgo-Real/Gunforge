@@ -66,24 +66,6 @@ def _drop_boss_reward(game: "Game"):
 def _handle_collisions(game: "Game"):
     player = game.player
 
-    # Bullet vs enemy
-    for weapon in player.weapon_list:
-        if weapon is None:
-            continue
-        for bullet in list(weapon.bullets):
-            for enemy in game.enemy_manager.enemies:
-                if bullet.pos2D.distance_to(enemy.pos2D) < enemy.radius:
-                    dmg = (bullet.damage()) * player.damage_multiplier
-                    enemy.take_damage(dmg)
-                    player.add_damage_dealt(dmg)
-                    bullet.triger_hit()
-                    if not enemy.alive:
-                        game.xp_orbs.append(XPOrb(enemy.pos2D.copy(), value=enemy.xp_drop))
-                        player.add_kill()
-                        if enemy.is_boss:
-                            _drop_boss_reward(game)
-                    break
-
     # Enemy bullet vs player
     for bullet in list(game.enemy_manager.all_enemy_bullets()):
         if bullet.pos2D.distance_to(player.pos2D) < player.radius + bullet.radius:
@@ -99,6 +81,51 @@ def _handle_collisions(game: "Game"):
             elif e.is_boss:
                 player.take_damage(e.damage * 1.2)
 
+def _handle_player_bullets(game: "Game"):
+    player = game.player
+
+    # Bullet vs enemy
+    for weapon in player.weapon_list:
+        if weapon is None:
+            continue
+        for bullet in list(weapon.bullets):
+            # Because the bullet need to do complex damage calculation to all enemies.
+            # enemy need to input to bullet.triger_hit() function.
+            # TODO : use the grid to find the nearest enemy in the area around the bullet, because of the performance issue.
+            for enemy in game.enemy_manager.enemies:
+                if bullet.pos2D.distance_to(enemy.pos2D) < enemy.radius + 5: # Small buffer
+                    bullet.triger_hit(player, enemy, game.enemy_manager.enemies)
+                    if not enemy.alive:
+                        game.xp_orbs.append(XPOrb(enemy.pos2D.copy(), value=enemy.xp_drop))
+                        player.add_kill()
+                        if enemy.is_boss:
+                            _drop_boss_reward(game)
+                    break
+            '''
+            for enemy in game.enemy_manager.enemies:
+                if bullet.pos2D.distance_to(enemy.pos2D) < enemy.radius:
+                    dmg = (bullet.damage()) * player.damage_multiplier
+                    enemy.take_damage(dmg)
+                    player.add_damage_dealt(dmg)
+                    bullet.triger_hit()
+                    if not enemy.alive:
+                        game.xp_orbs.append(XPOrb(enemy.pos2D.copy(), value=enemy.xp_drop))
+                        player.add_kill()
+                        if enemy.is_boss:
+                            _drop_boss_reward(game)
+                    break
+            '''
+    
+    # Bullet lifetime
+    for weapon in player.weapon_list:
+        if weapon is None:
+            continue
+        for bullet in list(weapon.bullets):
+            if bullet.timer > bullet.lifetime:
+                bullet.triger_lifetime(player, game.enemy_manager.enemies)
+
+def _draw_effect(game: "Game"):
+    pass
 
 def _draw_hud(game: "Game"):
     player = game.player
@@ -118,12 +145,24 @@ def _draw_hud(game: "Game"):
 
     # XP bar (below HP)
     xp_y = hp_y + hp_bar_h + 6
-    pygame.draw.rect(game.screen, (30, 30, 30), (hp_x, xp_y, hp_bar_w, 14))
+    xp_bar_h = 14
+    pygame.draw.rect(game.screen, (30, 30, 30), (hp_x, xp_y, hp_bar_w, xp_bar_h))
     xp_ratio = player.xp / player.xp_to_next if player.xp_to_next > 0 else 0
-    pygame.draw.rect(game.screen, (140, 200, 255), (hp_x, xp_y, int(hp_bar_w * xp_ratio), 14))
-    pygame.draw.rect(game.screen, (220, 220, 220), (hp_x, xp_y, hp_bar_w, 14), 1)
+    pygame.draw.rect(game.screen, (140, 200, 255), (hp_x, xp_y, int(hp_bar_w * xp_ratio), xp_bar_h))
+    pygame.draw.rect(game.screen, (220, 220, 220), (hp_x, xp_y, hp_bar_w, xp_bar_h), 1)
     lvl_text = game.HUD_font.render(f"Lv {player.level}  XP {player.xp}/{player.xp_to_next}", True, (240, 240, 240))
     game.screen.blit(lvl_text, (hp_x + 8, xp_y - 2))
+
+    # Dash Cooldown (below XP)
+    dash_bar_y = xp_y + xp_bar_h + 6
+    dash_bar_h = 6
+    pygame.draw.rect(game.screen, (30, 30, 30), (hp_x, dash_bar_y, hp_bar_w, dash_bar_h))
+    if player.dash_cooldown_timer > 0:
+        dash_ratio = 1.0 - (player.dash_cooldown_timer / player.dash_cooldown)
+        pygame.draw.rect(game.screen, (100, 100, 100), (hp_x, dash_bar_y, int(hp_bar_w * dash_ratio), dash_bar_h))
+    else:
+        pygame.draw.rect(game.screen, (100, 255, 100), (hp_x, dash_bar_y, hp_bar_w, dash_bar_h))
+    pygame.draw.rect(game.screen, (220, 220, 220), (hp_x, dash_bar_y, hp_bar_w, dash_bar_h), 1)
 
     # Stats line (right of bars)
     stats_text = game.HUD_font.render(
@@ -466,12 +505,18 @@ def test_screen1(game: "Game", events):
 
     # ---- 0. Event handling ----
     selected_slot = False
+    mouse_clicked = False
     for event in events:
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_TAB:
                 game.gun_info = not game.gun_info
-        if game.gun_info and event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-            selected_slot = True
+            if event.key in (pygame.K_LSHIFT, pygame.K_RSHIFT):
+                game.player.dash()
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            if game.gun_info:
+                selected_slot = True
+            else:
+                mouse_clicked = True
 
     mouse_pos_world = game.to_world(pygame.mouse.get_pos())
     diff = pygame.Vector2(mouse_pos_world) - game.player.pos2D
@@ -482,7 +527,7 @@ def test_screen1(game: "Game", events):
     game.world.ensure_around(game.player.pos2D)
 
     # ---- 2. Player ----
-    game.PlayerUpdate()
+    game.PlayerUpdate(mouse_clicked)
     game.player.update_timers(game.delta_time)
     for obs in game.world.obstacles:
         if obs.collides_circle(game.player.pos2D, game.player.radius):
@@ -504,7 +549,9 @@ def test_screen1(game: "Game", events):
             game.message_queue.append([f"Altar: {label}", 2.5, (255, 230, 120)])
 
     # ---- 5. Combat ----
+    _handle_player_bullets(game)
     _handle_collisions(game)
+    
 
     # ---- 6. XP orbs ----
     for orb in list(game.xp_orbs):
@@ -549,6 +596,7 @@ def test_screen1(game: "Game", events):
 
     game.DrawLayer1()
     _draw_player_invuln_flash(game)
+    _draw_effect(game)
 
     # HUD always on top
     _draw_hud(game)
