@@ -4,6 +4,7 @@ import pygame
 from collections import deque
 from Asset.GameSetting import GAME_CONFIG
 from Asset.Weapons import Gun, Card
+import random
 
 class Player:
     def __init__(self, position : pygame.Vector2 = pygame.Vector2(0,0), radius : int = 10, color : tuple = (255, 255, 255),
@@ -21,7 +22,10 @@ class Player:
 
         # The direction the player is facing, it should always be normalized
         self.face_direction : pygame.Vector2 = pygame.Vector2(1, 0)
-        self.inventory : list[Card | None] = [None for i in range(40)]
+        self.inventory : list[Card | None] = [Card(type = 0, bullet_type = 0) for i in range(5)] + \
+                                            [Card(type = 2, effect_modifier_type = 0)] + \
+                                            [Card(type = 2, effect_modifier_type = 10)] + \
+                                            [None for i in range(20)]
 
         # weapon
         basic_info = {
@@ -30,12 +34,20 @@ class Player:
             "scatter_angel" : 5,
             "capacity" : 20,
             "max_slots" : 20,
-            "card_list" : [Card(type = 0, bullet_type = i) for i in range(5)] + 
+            "card_list" : [Card(type = 0, bullet_type = 0)] + 
                         [Card(type = 2, effect_modifier_type = i) for i in range(1)] + [Card(type = 2, effect_modifier_type = 10)] +
-                        [Card(type = 1, attribute_modifier_type = i) for i in range(8)],
+                        [Card(type = 1, attribute_modifier_type = 1) for i in range(5)],
+        }
+        basic_info2 = {
+            "cooldown" : 0.4,
+            "reload" : 2,
+            "scatter_angel" : 5,
+            "capacity" : 20,
+            "max_slots" : 20,
+            "card_list" : [Card(type = 0, bullet_type = 0)],
         }
 
-        self.weapon_list : list[Gun | None] = [Gun(basic_info), None, None, None]
+        self.weapon_list : list[Gun | None] = [Gun(basic_info), Gun(basic_info2), None, None]
         self.weapon_index : int = 0
 
         # This is for the player to record its trajectory
@@ -60,6 +72,18 @@ class Player:
         self.kills : int = 0
         self.damage_dealt : float = 0.0
         self.points : int = 0
+        
+        # Dash mechanic
+        self.dash_cooldown : float = 5.0
+        self.dash_cooldown_timer : float = 0.0
+        self.dash_duration : float = 0.2
+        self.dash_timer : float = 0.0
+        self.dash_speed_boost : float = 600.0  # Added to max velocity
+        self.dash_acc_boost : float = 20000.0 # Added to max acceleration
+        
+        # Weapon feedback
+        self.weapon_error_msg : str = ""
+        self.weapon_error_timer : float = 0.0
 
     def get_velocity(self):
         '''
@@ -159,11 +183,23 @@ class Player:
                 acc_vector = pygame.Vector2(0, 0)
         self.set_acceleration(acc_vector)
 
+        # Handle Dash Speed Boost
+        current_max_vel = self.max_velocity
+        current_max_acc = self.max_acceleration
+
+        if self.dash_timer > 0:
+            current_max_vel += self.dash_speed_boost
+            current_max_acc += self.dash_acc_boost
+
         old_vel = pygame.Vector2(self.vel2D)
 
         # Update speed: v = v0 + a * dt
         new_vel = self.vel2D + self.acc2D * delta_time
-        self.set_velocity(new_vel)
+        
+        # Manually apply velocity limit here because set_velocity uses self.max_velocity
+        if new_vel.length() > current_max_vel:
+            new_vel.scale_to_length(current_max_vel)
+        self.vel2D = new_vel
 
         # Update position: p = p0 + (v0 + v1)/2 * dt
         self.pos2D += (old_vel + self.vel2D) * 0.5 * delta_time
@@ -173,13 +209,14 @@ class Player:
         if self.total_frame_passed % 10 == 0:
             self.history_position.append(pygame.Vector2(self.pos2D))
 
-    def UpdateWeapon(self, delta_time : float, fire : bool = False):
+    def UpdateWeapon(self, delta_time : float, fire : bool = False, trigger_feedback : bool = False):
         '''
         Update the weapon.
 
         Args:
             delta_time (float): The time step, e.g. 1/60
             fire (bool): Whether to fire
+            trigger_feedback (bool): Whether to trigger feedback messages
         '''
 
         for i, weapon in enumerate(self.weapon_list):
@@ -188,10 +225,14 @@ class Player:
 
             if i == self.weapon_index:
                 if fire:
-                    weapon.fire(self.face_direction, self.pos2D)
+                    res = weapon.fire(self.face_direction, self.pos2D)
+                    if res != "" and trigger_feedback:
+                        self.weapon_error_msg = res
+                        self.weapon_error_timer = 0.5
             else:
-                pass
+                weapon.fire(pygame.Vector2(1, 0).rotate(random.random() * 360), self.pos2D)
             weapon.update(delta_time)
+                
 
     def take_damage(self, damage : float):
         if self.invincible_timer > 0 or not self.alive:
@@ -209,6 +250,25 @@ class Player:
     def update_timers(self, delta_time : float):
         if self.invincible_timer > 0:
             self.invincible_timer = max(0.0, self.invincible_timer - delta_time)
+        
+        if self.dash_cooldown_timer > 0:
+            self.dash_cooldown_timer = max(0.0, self.dash_cooldown_timer - delta_time)
+        
+        if self.dash_timer > 0:
+            self.dash_timer = max(0.0, self.dash_timer - delta_time)
+        
+        if self.weapon_error_timer > 0:
+            self.weapon_error_timer = max(0.0, self.weapon_error_timer - delta_time)
+
+    def dash(self):
+        '''
+        Trigger the dash burst if cooldown is ready.
+        '''
+        if self.dash_cooldown_timer <= 0:
+            self.dash_timer = self.dash_duration
+            self.dash_cooldown_timer = self.dash_cooldown
+            return True
+        return False
 
     def gain_xp(self, value : int):
         self.xp += value
@@ -251,4 +311,8 @@ class Player:
         self.kills = 0
         self.damage_dealt = 0.0
         self.points = 0
+        self.dash_cooldown_timer = 0.0
+        self.dash_timer = 0.0
+        self.weapon_error_msg = ""
+        self.weapon_error_timer = 0.0
         self.history_position.clear()

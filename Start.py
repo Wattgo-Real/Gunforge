@@ -116,8 +116,6 @@ class Game():
                 TS2.test_screen2(self, events)
 
 
-
-
             # Update the display (render everything to the screen)
             pygame.display.flip()
 
@@ -167,7 +165,7 @@ class Game():
             if weapon is None:
                 continue
             for bullet in weapon.bullets:
-                pygame.draw.circle(self.screen, (255, 255, 255), self.to_screen(bullet.pos2D), 2)
+                bullet.draw(self.screen, self.to_screen)
 
         # --- 2. Draw player. ---
         # Draw Trajectory Trail
@@ -183,7 +181,25 @@ class Game():
         # Add a little "glow" or detail
         pygame.draw.circle(self.screen, (255, 255, 255), self.to_screen(self.player.pos2D), self.player.radius, 2)
 
-    def PlayerUpdate(self):
+        # --- 3. Draw Player Feedback Messages ---
+        if self.player.weapon_error_timer > 0:
+            # Position above player's head
+            world_pos_above = self.player.pos2D + pygame.Vector2(0, self.player.radius + 15)
+            screen_pos = self.to_screen(world_pos_above)
+            
+            # Render text
+            alpha = min(255, int(255 * (self.player.weapon_error_timer / 0.5))) if self.player.weapon_error_timer < 0.5 else 255
+            color = (255, 100, 100) # Reddish
+            
+            error_surf = self.HUD_font.render(self.player.weapon_error_msg, True, color)
+            # Create a surface for alpha if needed, but simple blit with HUD_font is usually fine.
+            # Pygame's render doesn't support per-pixel alpha easily without a temporary surface if using .set_alpha()
+            # For simplicity, we just blit it.
+            
+            text_rect = error_surf.get_rect(center=(screen_pos.x, screen_pos.y))
+            self.screen.blit(error_surf, text_rect)
+
+    def PlayerUpdate(self, mouse_clicked : bool = False):
         """
         If self.KeyBoardControl is True, the target position can be controlled by arrow keys, and the camera will follow the target. \n
         If self.KeyBoardControl is False, the camera will follow the Main Agent.
@@ -195,7 +211,7 @@ class Game():
         mouse_buttons = pygame.mouse.get_pressed()
         
         # Update weapon
-        self.player.UpdateWeapon(self.delta_time, fire = mouse_buttons[0])
+        self.player.UpdateWeapon(self.delta_time, fire = mouse_buttons[0], trigger_feedback = mouse_clicked)
 
         # Update position based on arrow key input
         acc_dir = pygame.Vector2(0, 0)

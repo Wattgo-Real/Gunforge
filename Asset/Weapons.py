@@ -26,11 +26,10 @@ class Gun():
         # Bullet's default attributes
         self.bullet_lifetime = 1.5  # How long the bullet will stay alive
 
-        
-
         self.bullets = pygame.sprite.Group()
         self.cooldown_timer = 0     # Timer for bullet cooldown
         self.reload_timer = 0       # Timer for reload
+        
     
     def _refresh(self):
         self.cooldown = self.basic_cooldown
@@ -70,14 +69,14 @@ class Gun():
                 cart_to_bullet.append(card)
 
         if bullet_type == -1:
-            return False
+            return "No bullet card equipped!"
 
         if self.cooldown_timer == 0 and self.reload_timer == 0: 
             if self.capacity_left == 0:
                 self.capacity_left = self.capacity
             if self.capacity_left <= 0:
                 self.capacity_left = 0
-                return False
+                return "No bullet in clip!"
 
             direction = direction.rotate(random.uniform(-self.scatter_angel, self.scatter_angel))
             new_bullet = Bullet(cart_to_bullet, bullet_type, self.bullet_lifetime, pos2D, direction)
@@ -89,9 +88,12 @@ class Gun():
             if self.capacity_left == 0:
                 self.reload_timer = self.reload
             
-            return True
+            return ""
         else:
-            return False
+            if self.reload_timer > 0:
+                return "Gun is reloading"
+            else:
+                return ""
 
     def update(self, delta_time):
         self.cooldown_timer = max(0, self.cooldown_timer - delta_time)
@@ -247,6 +249,18 @@ class Bullet(pygame.sprite.Sprite):
         self.hit_enemies = set()  # Track enemies already hit by this bullet
         self.init_bullet()
 
+    def init_bullet(self):
+        self.phy_damage = BULLET_CONFIG[self.bullet_type][1].get("physical_damage", 0)
+        self.exp_damage = BULLET_CONFIG[self.bullet_type][1].get("explosion_damage", 0)
+        self.bur_damage = BULLET_CONFIG[self.bullet_type][1].get("burn_damage", 0)
+        self.speed = BULLET_CONFIG[self.bullet_type][1].get("speed", 0)
+        self.radius = BULLET_CONFIG[self.bullet_type][1].get("radius", 0)
+        self.lifetime = BULLET_CONFIG[self.bullet_type][1].get("lifetime", self.lifetime)
+            
+        if self.vel2D.length() != 0:
+            self.vel2D = self.vel2D.normalize() * self.speed
+        pass
+    
     def draw(self, surface : pygame.Surface, to_screen : bool):
         draw_info = BULLET_CONFIG[self.bullet_type][1].get("draw_info", {})
         for key, value in draw_info.items():
@@ -266,65 +280,52 @@ class Bullet(pygame.sprite.Sprite):
 
     def damage(self, phy_multiplier : float = 1, exp_multiplier : float = 1, bur_multiplier : float = 1):
         return self.phy_damage * phy_multiplier + self.exp_damage * exp_multiplier + self.bur_damage * bur_multiplier
-
-    def init_bullet(self):
-        self.phy_damage = BULLET_CONFIG[self.bullet_type][1].get("physical_damage", 0)
-        self.exp_damage = BULLET_CONFIG[self.bullet_type][1].get("explosion_damage", 0)
-        self.bur_damage = BULLET_CONFIG[self.bullet_type][1].get("burn_damage", 0)
-        self.speed = BULLET_CONFIG[self.bullet_type][1].get("speed", 0)
-        self.lifetime = BULLET_CONFIG[self.bullet_type][1].get("lifetime", self.lifetime)
-            
-        if self.vel2D.length() != 0:
-            self.vel2D = self.vel2D.normalize() * self.speed
-        pass
-        
+    
     def update(self, delta_time):
         old_vel = pygame.Vector2(self.vel2D)
         self.vel2D = self.vel2D + self.acc2D * delta_time
         self.pos2D = self.pos2D + (old_vel + self.vel2D) * 0.5 * delta_time
 
         self.timer += delta_time
-        # Deletion is now handled externally in test_screen1 to allow for triger_lifetime effects
-    
+
     def apply_card_effects(self):
         for card in self.card_list:
             if card.type == 2:
                 pass
 
-    def explode(self, enemies):
-        radius = BULLET_CONFIG[self.bullet_type][1].get("radius", 0)
+    def explode(self, player, enemies):
+        total_damage = 0
         for enemy in enemies:
-            if self.pos2D.distance_to(enemy.pos2D) < radius:
-                if self.phy_damage > 0: enemy.take_damage(self.phy_damage, COLOR_CONFIG["phy_damage"])
-                if self.exp_damage > 0: enemy.take_damage(self.exp_damage, COLOR_CONFIG["exp_damage"])
-                if self.bur_damage > 0: enemy.take_damage(self.bur_damage, COLOR_CONFIG["bur_damage"])
-        self.kill()
+            if self.pos2D.distance_to(enemy.pos2D) < self.radius:
+                damage = self.damage() * player.damage_multiplier
+                total_damage += damage
+                enemy.take_damage(damage)
+                self.hit_enemies.add(enemy)
+        player.add_damage_dealt(total_damage)
 
-    def triger_hit(self, enemies=[]):
-        if self.bullet_type == 3: # Grenade
-            self.explode(enemies)
-        else:
-            # For other bullets, damage enemies that were actually hit
-            for enemy in enemies:
-                # Check if enemy was already hit by this bullet
-                if enemy in self.hit_enemies:
-                    continue
+    def hit(self, player, enemy):
+        damage = self.damage() * player.damage_multiplier
+        enemy.take_damage(damage)
+        player.add_damage_dealt(damage)
+        self.hit_enemies.add(enemy)
 
-                # Double check distance since hit check is usually done before calling this
-                if self.pos2D.distance_to(enemy.pos2D) < enemy.radius + 5: # Small buffer
-                    if self.phy_damage > 0: enemy.take_damage(self.phy_damage, COLOR_CONFIG["phy_damage"])
-                    if self.exp_damage > 0: enemy.take_damage(self.exp_damage, COLOR_CONFIG["exp_damage"])
-                    if self.bur_damage > 0: enemy.take_damage(self.bur_damage, COLOR_CONFIG["bur_damage"])
-                    self.hit_enemies.add(enemy)
-            
-            if self.bullet_type == 4: # Laser
-                return
-            
+    # TODO : enemies=[] change to grid to find enemies
+    def triger_hit(self, player, target_enemy, enemies=[]):
+        if self.bullet_type == 0 or self.bullet_type == 1 or self.bullet_type == 2:
+            self.hit(player, target_enemy)
             self.kill()
+        elif self.bullet_type == 3: # Grenade
+            self.explode(player, enemies)
+            self.kill()
+        elif self.bullet_type == 4: # Laser
+            if target_enemy not in self.hit_enemies:
+                self.hit(player, target_enemy)
+                
 
-    def triger_lifetime(self, enemies=[]):
+    def triger_lifetime(self, player, enemies=[]):
         if self.bullet_type == 3: # Grenade
-            self.explode(enemies)
+            self.explode(player, enemies)
+            self.kill()
         else:
             self.kill()
 
