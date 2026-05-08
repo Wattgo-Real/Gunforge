@@ -52,7 +52,6 @@ class Game():
         self.now_time : float = 0
 
         self.test_screen = 0
-<<<<<<< HEAD
         self.selected_slot_info = None
         self.gun_info = False
 
@@ -97,21 +96,12 @@ class Game():
                     self.test_screen = 1
                 elif quit_btn.collidepoint(event.pos):
                     pygame.event.post(pygame.event.Event(pygame.QUIT))
-=======
->>>>>>> origin/main
 
     def Start(self):
         # Control variable for the main loop
         running = True
 
-<<<<<<< HEAD
         while running:
-=======
-        while running:    
-            button1 = pygame.Rect(200, 120, 200, 60)
-            button2 = pygame.Rect(200, 220, 200, 60)
-        
->>>>>>> origin/main
             # Handle events (e.g., window close)
             events = pygame.event.get()
             for event in events:
@@ -119,18 +109,7 @@ class Game():
                     running = False
 
             if self.test_screen == 0:
-<<<<<<< HEAD
                 self._draw_main_menu(events)
-=======
-                GF.draw_button(self.screen, button1, "Test screen 1",  font=self.font)
-                GF.draw_button(self.screen, button2, "Test screen 2",  font=self.font)
-                for event in events:
-                    if event.type == pygame.MOUSEBUTTONDOWN:
-                        if button1.collidepoint(event.pos):
-                            self.test_screen = 1
-                        if button2.collidepoint(event.pos):
-                            self.test_screen = 1
->>>>>>> origin/main
             elif self.test_screen == 1:
                 TS1.test_screen1(self, events)
             elif self.test_screen == 2:
@@ -185,11 +164,8 @@ class Game():
         """
         # --- 1. Draw bullet. ---
         for weapon in self.player.weapon_list:
-<<<<<<< HEAD
             if weapon is None:
                 continue
-=======
->>>>>>> origin/main
             for bullet in weapon.bullets:
                 pygame.draw.circle(self.screen, (255, 255, 255), self.to_screen(bullet.pos2D), 2)
 

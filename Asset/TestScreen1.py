@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from Start import Game
 
-<<<<<<< HEAD
 from Asset.GameSetting import UI_CONFIG, COLOR_CONFIG, GAME_CONFIG
 from Asset.Enemies import EnemyManager
 from Asset.Pickups import WorldChunkManager, XPOrb
@@ -74,7 +73,7 @@ def _handle_collisions(game: "Game"):
         for bullet in list(weapon.bullets):
             for enemy in game.enemy_manager.enemies:
                 if bullet.pos2D.distance_to(enemy.pos2D) < enemy.radius:
-                    dmg = bullet.damage * player.damage_multiplier
+                    dmg = (bullet.damage()) * player.damage_multiplier
                     enemy.take_damage(dmg)
                     player.add_damage_dealt(dmg)
                     bullet.triger_hit()
@@ -558,24 +557,3 @@ def test_screen1(game: "Game", events):
 
     if game.gun_info:
         _draw_gun_info_overlay(game, events, selected_slot)
-=======
-# 可以在裡面測試不同項目，目前使用當中: Wattgo
-def test_screen1(self : "Game", events):
-    mouse_pos_world = self.to_world(pygame.mouse.get_pos())
-    self.player.face_direction = (pygame.Vector2(mouse_pos_world) - self.player.pos2D).normalize()
-
-    # --- 1. Player Movement & Weapon Update. ---
-    self.PlayerUpdate()
-
-    # --- 2. Draw background. ---
-    # Draw the background.
-    self.DrawBackground()
-
-    # --- 3. Draw player, bullet, weapon, enemy. ---
-    self.DrawLayer1()
-
-    # self.DrawLayer2() 
-    # self.DrawLayer3() 
-    # self.DrawLayer4() 
-
->>>>>>> origin/main
