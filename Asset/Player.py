@@ -2,7 +2,12 @@
 import pygame
 
 from collections import deque
+<<<<<<< HEAD
+from Asset.GameSetting import GAME_CONFIG
+from Asset.Weapons import Gun, Card
+=======
 from Asset.Weapons import Gun
+>>>>>>> origin/main
 
 class Player:
     def __init__(self, position : pygame.Vector2 = pygame.Vector2(0,0), radius : int = 10, color : tuple = (255, 255, 255),
@@ -19,16 +24,57 @@ class Player:
         self.mass : float = radius*radius
 
         # The direction the player is facing, it should always be normalized
+<<<<<<< HEAD
+        self.face_direction : pygame.Vector2 = pygame.Vector2(1, 0)
+        self.inventory : list[Card | None] = [None for i in range(40)]
+
+        # weapon
+        basic_info = {
+            "cooldown" : 0.4,
+            "reload" : 2,
+            "scatter_angel" : 5,
+            "capacity" : 20,
+            "max_slots" : 20,
+            "card_list" : [Card(type = 0, bullet_type = i) for i in range(5)] + 
+                        [Card(type = 2, effect_modifier_type = i) for i in range(1)] + [Card(type = 2, effect_modifier_type = 10)] +
+                        [Card(type = 1, attribute_modifier_type = i) for i in range(8)],
+        }
+
+        self.weapon_list : list[Gun | None] = [Gun(basic_info), None, None, None]
+=======
         self.face_direction : pygame.Vector2 = pygame.Vector2(1, 0) 
 
         # weapon
         self.weapon_list : list[Gun] = [Gun()]
+>>>>>>> origin/main
         self.weapon_index : int = 0
 
         # This is for the player to record its trajectory
         self.history_position : deque = deque(maxlen=50)
         self.total_frame_passed : int = 0
 
+<<<<<<< HEAD
+        # Combat / progression stats
+        self.max_hp : float = GAME_CONFIG["player_max_hp"]
+        self.hp : float = self.max_hp
+        self.invincible_timer : float = 0.0
+        self.alive : bool = True
+
+        self.xp : int = 0
+        self.level : int = 1
+        self.xp_to_next : int = GAME_CONFIG["xp_per_level_base"]
+
+        # Run-time stat modifiers (granted by altars)
+        self.damage_multiplier : float = 1.0
+        self.bonus_speed : float = 0.0
+
+        # Stat tracking (for end-of-run summary)
+        self.kills : int = 0
+        self.damage_dealt : float = 0.0
+        self.points : int = 0
+
+=======
+>>>>>>> origin/main
     def get_velocity(self):
         '''
         Returns the velocity of the player
@@ -151,6 +197,12 @@ class Player:
         '''
 
         for i, weapon in enumerate(self.weapon_list):
+<<<<<<< HEAD
+            if weapon is None:
+                continue
+
+=======
+>>>>>>> origin/main
             if i == self.weapon_index:
                 if fire:
                     weapon.fire(self.face_direction, self.pos2D)
@@ -158,3 +210,65 @@ class Player:
                 pass
             weapon.update(delta_time)
 
+<<<<<<< HEAD
+    def take_damage(self, damage : float):
+        if self.invincible_timer > 0 or not self.alive:
+            return False
+        self.hp -= damage
+        self.invincible_timer = GAME_CONFIG["player_invincible_time"]
+        if self.hp <= 0:
+            self.hp = 0
+            self.alive = False
+        return True
+
+    def heal(self, amount : float):
+        self.hp = min(self.max_hp, self.hp + amount)
+
+    def update_timers(self, delta_time : float):
+        if self.invincible_timer > 0:
+            self.invincible_timer = max(0.0, self.invincible_timer - delta_time)
+
+    def gain_xp(self, value : int):
+        self.xp += value
+        leveled = False
+        while self.xp >= self.xp_to_next:
+            self.xp -= self.xp_to_next
+            self.level += 1
+            self.xp_to_next = int(GAME_CONFIG["xp_per_level_base"] * (self.level ** 1.4))
+            leveled = True
+        return leveled
+
+    def apply_altar_buff(self, buff_type : str):
+        amounts = GAME_CONFIG["altar_buff_amount"]
+        if buff_type == "hp":
+            self.max_hp += amounts["hp"]
+            self.hp += amounts["hp"]
+        elif buff_type == "damage":
+            self.damage_multiplier += amounts["damage"]
+        elif buff_type == "speed":
+            self.bonus_speed += amounts["speed"]
+            self.max_velocity += amounts["speed"]
+
+    def add_kill(self, damage_overflow : float = 0.0):
+        self.kills += 1
+        self.points += 1
+
+    def add_damage_dealt(self, dmg : float):
+        self.damage_dealt += dmg
+
+    def reset_run(self, position : pygame.Vector2 = pygame.Vector2(0, 0)):
+        self.pos2D = pygame.Vector2(position)
+        self.vel2D = pygame.Vector2(0, 0)
+        self.acc2D = pygame.Vector2(0, 0)
+        self.hp = self.max_hp
+        self.invincible_timer = 0.0
+        self.alive = True
+        self.xp = 0
+        self.level = 1
+        self.xp_to_next = GAME_CONFIG["xp_per_level_base"]
+        self.kills = 0
+        self.damage_dealt = 0.0
+        self.points = 0
+        self.history_position.clear()
+=======
+>>>>>>> origin/main
