@@ -2,8 +2,12 @@
 import pygame
 
 from collections import deque
+<<<<<<< HEAD
 from Asset.GameSetting import GAME_CONFIG
 from Asset.Weapons import Gun, Card
+=======
+from Asset.Weapons import Gun
+>>>>>>> origin/main
 
 class Player:
     def __init__(self, position : pygame.Vector2 = pygame.Vector2(0,0), radius : int = 10, color : tuple = (255, 255, 255),
@@ -20,6 +24,7 @@ class Player:
         self.mass : float = radius*radius
 
         # The direction the player is facing, it should always be normalized
+<<<<<<< HEAD
         self.face_direction : pygame.Vector2 = pygame.Vector2(1, 0)
         self.inventory : list[Card | None] = [None for i in range(40)]
 
@@ -36,12 +41,19 @@ class Player:
         }
 
         self.weapon_list : list[Gun | None] = [Gun(basic_info), None, None, None]
+=======
+        self.face_direction : pygame.Vector2 = pygame.Vector2(1, 0) 
+
+        # weapon
+        self.weapon_list : list[Gun] = [Gun()]
+>>>>>>> origin/main
         self.weapon_index : int = 0
 
         # This is for the player to record its trajectory
         self.history_position : deque = deque(maxlen=50)
         self.total_frame_passed : int = 0
 
+<<<<<<< HEAD
         # Combat / progression stats
         self.max_hp : float = GAME_CONFIG["player_max_hp"]
         self.hp : float = self.max_hp
@@ -61,6 +73,8 @@ class Player:
         self.damage_dealt : float = 0.0
         self.points : int = 0
 
+=======
+>>>>>>> origin/main
     def get_velocity(self):
         '''
         Returns the velocity of the player
@@ -183,9 +197,12 @@ class Player:
         '''
 
         for i, weapon in enumerate(self.weapon_list):
+<<<<<<< HEAD
             if weapon is None:
                 continue
 
+=======
+>>>>>>> origin/main
             if i == self.weapon_index:
                 if fire:
                     weapon.fire(self.face_direction, self.pos2D)
@@ -193,6 +210,7 @@ class Player:
                 pass
             weapon.update(delta_time)
 
+<<<<<<< HEAD
     def take_damage(self, damage : float):
         if self.invincible_timer > 0 or not self.alive:
             return False
@@ -252,3 +270,5 @@ class Player:
         self.damage_dealt = 0.0
         self.points = 0
         self.history_position.clear()
+=======
+>>>>>>> origin/main

@@ -1,4 +1,5 @@
 ## Hackmd Website
+<<<<<<< HEAD
 > https://hackmd.io/@yunshiuan/HyLdELvhbl
 
 ## 2026/05/04
@@ -10,3 +11,6 @@
 ## 2026/05/05
 
 Simple Ui add and value Setting `GameSetting.py、Start.py TestScreen1.py TestScreen2.py`, and bastic Enemies and Boss designed `Enemies.py`
+=======
+> https://hackmd.io/@yunshiuan/HyLdELvhbl
+>>>>>>> origin/main

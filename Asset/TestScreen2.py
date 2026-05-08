@@ -1,5 +1,6 @@
 
 
+<<<<<<< HEAD
 import pygame
 
 from typing import TYPE_CHECKING
@@ -95,3 +96,16 @@ def test_screen2(game: "Game", events):
     # Buttons
     GF.draw_button(game.screen, play_btn, "Play Again", font=game.font)
     GF.draw_button(game.screen, menu_btn, "Main Menu", font=game.font)
+=======
+# 可以在裡面測試不同項目
+def test_screen2(self, events):
+    # --- 1. Draw background. ---
+    # Draw the background.
+    self.DrawBackground()
+
+    # --- 2. Draw player. ---
+    self.DrawPlayer()
+
+    # --- 3. Handles keyboard input (Player Movement). ---
+    self.KeyBoardDetectionAndSetCamera()
+>>>>>>> origin/main
