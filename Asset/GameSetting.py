@@ -95,7 +95,7 @@ BULLET_CONFIG = {
 
 ATTRIBUTE_MODIFIER_CONFIG = {
     0 : [
-        "Add Cooldown",
+        "Add Cooldown I",
         {
             "cooldown_modifier" : 0.1,
             "info" : "Add cooldown"
@@ -108,7 +108,59 @@ ATTRIBUTE_MODIFIER_CONFIG = {
         }
     ],
     1 : [
-        "Sub Cooldown",
+        "Add Cooldown II",
+        {
+            "cooldown_modifier" : 0.2,
+            "info" : "Add cooldown"
+        },
+        {
+            "line" : [{"start_x" : 0.50, "start_y" : 0.25, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.1, "color" : COLOR_CONFIG["cooldown"]},
+                     {"start_x" : 0.40, "start_y" : 0.35, "end_x" : 0.50, "end_y" : 0.25, "width" : 0.1, "color" : COLOR_CONFIG["cooldown"]},
+                     {"start_x" : 0.60, "start_y" : 0.35, "end_x" : 0.50, "end_y" : 0.25, "width" : 0.1, "color" : COLOR_CONFIG["cooldown"]}],
+            #"string" : [{"text" : "+", "font" : "Arial", "pos_x" : 0.3, "pos_y" : 0.3, "size" : 0.4, "color" : (255, 255, 255, 255)}],
+        }
+    ],
+    2 : [
+        "Add Cooldown III",
+        {
+            "cooldown_modifier" : 0.3,
+            "info" : "Add cooldown"
+        },
+        {
+            "line" : [{"start_x" : 0.50, "start_y" : 0.25, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.15, "color" : COLOR_CONFIG["cooldown"]},
+                     {"start_x" : 0.40, "start_y" : 0.35, "end_x" : 0.50, "end_y" : 0.25, "width" : 0.15, "color" : COLOR_CONFIG["cooldown"]},
+                     {"start_x" : 0.60, "start_y" : 0.35, "end_x" : 0.50, "end_y" : 0.25, "width" : 0.15, "color" : COLOR_CONFIG["cooldown"]}],
+            #"string" : [{"text" : "+", "font" : "Arial", "pos_x" : 0.3, "pos_y" : 0.3, "size" : 0.4, "color" : (255, 255, 255, 255)}],
+        }
+    ],
+    3 : [
+        "Add Cooldown IV",
+        {
+            "cooldown_modifier" : 0.4,
+            "info" : "Add cooldown"
+        },
+        {
+            "line" : [{"start_x" : 0.50, "start_y" : 0.25, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.2, "color" : COLOR_CONFIG["cooldown"]},
+                     {"start_x" : 0.40, "start_y" : 0.35, "end_x" : 0.50, "end_y" : 0.25, "width" : 0.2, "color" : COLOR_CONFIG["cooldown"]},
+                     {"start_x" : 0.60, "start_y" : 0.35, "end_x" : 0.50, "end_y" : 0.25, "width" : 0.2, "color" : COLOR_CONFIG["cooldown"]}],
+            #"string" : [{"text" : "+", "font" : "Arial", "pos_x" : 0.3, "pos_y" : 0.3, "size" : 0.4, "color" : (255, 255, 255, 255)}],
+        }
+    ],
+    4 : [
+        "Add Cooldown V",
+        {
+            "cooldown_modifier" : 0.5,
+            "info" : "Add cooldown"
+        },
+        {
+            "line" : [{"start_x" : 0.50, "start_y" : 0.25, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.25, "color" : COLOR_CONFIG["cooldown"]},
+                     {"start_x" : 0.40, "start_y" : 0.35, "end_x" : 0.50, "end_y" : 0.25, "width" : 0.25, "color" : COLOR_CONFIG["cooldown"]},
+                     {"start_x" : 0.60, "start_y" : 0.35, "end_x" : 0.50, "end_y" : 0.25, "width" : 0.25, "color" : COLOR_CONFIG["cooldown"]}],
+            #"string" : [{"text" : "+", "font" : "Arial", "pos_x" : 0.3, "pos_y" : 0.3, "size" : 0.4, "color" : (255, 255, 255, 255)}],
+        }
+    ],
+    5 : [
+        "Sub Cooldown I",
         {
             "cooldown_modifier" : -0.1,
             "info" : "Subtract cooldown"
@@ -120,10 +172,62 @@ ATTRIBUTE_MODIFIER_CONFIG = {
             #"string" : [{"text" : "+", "font" : "Arial", "pos_x" : 0.3, "pos_y" : 0.3, "size" : 0.4, "color" : (255, 255, 255, 255)}],
         }
     ],
-    2 : [
-        "Add Reload",
+    6 : [
+        "Sub Cooldown II",
         {
-            "reload_modifier" : 0.5,
+            "cooldown_modifier" : -0.2,
+            "info" : "Subtract cooldown"
+        },
+        {
+            "line" : [{"start_x" : 0.50, "start_y" : 0.25, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.1, "color" : COLOR_CONFIG["cooldown"]},
+                     {"start_x" : 0.40, "start_y" : 0.65, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.1, "color" : COLOR_CONFIG["cooldown"]},
+                     {"start_x" : 0.60, "start_y" : 0.65, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.1, "color" : COLOR_CONFIG["cooldown"]}],
+            #"string" : [{"text" : "+", "font" : "Arial", "pos_x" : 0.3, "pos_y" : 0.3, "size" : 0.4, "color" : (255, 255, 255, 255)}],
+        }
+    ],
+    7 : [
+        "Sub Cooldown III",
+        {
+            "cooldown_modifier" : -0.3,
+            "info" : "Subtract cooldown"
+        },
+        {
+            "line" : [{"start_x" : 0.50, "start_y" : 0.25, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.15, "color" : COLOR_CONFIG["cooldown"]},
+                     {"start_x" : 0.40, "start_y" : 0.65, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.15, "color" : COLOR_CONFIG["cooldown"]},
+                     {"start_x" : 0.60, "start_y" : 0.65, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.15, "color" : COLOR_CONFIG["cooldown"]}],
+            #"string" : [{"text" : "+", "font" : "Arial", "pos_x" : 0.3, "pos_y" : 0.3, "size" : 0.4, "color" : (255, 255, 255, 255)}],
+        }
+    ],
+    8 : [
+        "Sub Cooldown IV",
+        {
+            "cooldown_modifier" : -0.4,
+            "info" : "Subtract cooldown"
+        },
+        {
+            "line" : [{"start_x" : 0.50, "start_y" : 0.25, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.2, "color" : COLOR_CONFIG["cooldown"]},
+                     {"start_x" : 0.40, "start_y" : 0.65, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.2, "color" : COLOR_CONFIG["cooldown"]},
+                     {"start_x" : 0.60, "start_y" : 0.65, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.2, "color" : COLOR_CONFIG["cooldown"]}],
+            #"string" : [{"text" : "+", "font" : "Arial", "pos_x" : 0.3, "pos_y" : 0.3, "size" : 0.4, "color" : (255, 255, 255, 255)}],
+        }
+    ],
+    9 : [
+        "Sub Cooldown V",
+        {
+            "cooldown_modifier" : -0.5,
+            "info" : "Subtract cooldown"
+        },
+        {
+            "line" : [{"start_x" : 0.50, "start_y" : 0.25, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.25, "color" : COLOR_CONFIG["cooldown"]},
+                     {"start_x" : 0.40, "start_y" : 0.65, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.25, "color" : COLOR_CONFIG["cooldown"]},
+                     {"start_x" : 0.60, "start_y" : 0.65, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.25, "color" : COLOR_CONFIG["cooldown"]}],
+            #"string" : [{"text" : "+", "font" : "Arial", "pos_x" : 0.3, "pos_y" : 0.3, "size" : 0.4, "color" : (255, 255, 255, 255)}],
+        }
+    ],
+    10 : [
+        "Add Reload I",
+        {
+            "reload_modifier" : 0.2,
             "info" : "Add reload"
         },
         {
@@ -133,10 +237,62 @@ ATTRIBUTE_MODIFIER_CONFIG = {
             #"string" : [{"text" : "+", "font" : "Arial", "pos_x" : 0.3, "pos_y" : 0.3, "size" : 0.4, "color" : (255, 255, 255, 255)}],
         }
     ],
-    3 : [
-        "Sub Reload",
+    11 : [
+        "Add Reload II",
         {
-            "reload_modifier" : -0.5,
+            "reload_modifier" : 0.5,
+            "info" : "Add reload"
+        },
+        {
+            "line" : [{"start_x" : 0.50, "start_y" : 0.25, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.1, "color" : COLOR_CONFIG["reload"]},
+                     {"start_x" : 0.40, "start_y" : 0.35, "end_x" : 0.50, "end_y" : 0.25, "width" : 0.1, "color" : COLOR_CONFIG["reload"]},
+                     {"start_x" : 0.60, "start_y" : 0.35, "end_x" : 0.50, "end_y" : 0.25, "width" : 0.1, "color" : COLOR_CONFIG["reload"]},],
+            #"string" : [{"text" : "+", "font" : "Arial", "pos_x" : 0.3, "pos_y" : 0.3, "size" : 0.4, "color" : (255, 255, 255, 255)}],
+        }
+    ],
+    12 : [
+        "Add Reload III",
+        {
+            "reload_modifier" : 1.0,
+            "info" : "Add reload"
+        },
+        {
+            "line" : [{"start_x" : 0.50, "start_y" : 0.25, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.15, "color" : COLOR_CONFIG["reload"]},
+                     {"start_x" : 0.40, "start_y" : 0.35, "end_x" : 0.50, "end_y" : 0.25, "width" : 0.15, "color" : COLOR_CONFIG["reload"]},
+                     {"start_x" : 0.60, "start_y" : 0.35, "end_x" : 0.50, "end_y" : 0.25, "width" : 0.15, "color" : COLOR_CONFIG["reload"]},],
+            #"string" : [{"text" : "+", "font" : "Arial", "pos_x" : 0.3, "pos_y" : 0.3, "size" : 0.4, "color" : (255, 255, 255, 255)}],
+        }
+    ],
+    13 : [
+        "Add Reload IV",
+        {
+            "reload_modifier" : 1.5,
+            "info" : "Add reload"
+        },
+        {
+            "line" : [{"start_x" : 0.50, "start_y" : 0.25, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.2, "color" : COLOR_CONFIG["reload"]},
+                     {"start_x" : 0.40, "start_y" : 0.35, "end_x" : 0.50, "end_y" : 0.25, "width" : 0.2, "color" : COLOR_CONFIG["reload"]},
+                     {"start_x" : 0.60, "start_y" : 0.35, "end_x" : 0.50, "end_y" : 0.25, "width" : 0.2, "color" : COLOR_CONFIG["reload"]},],
+            #"string" : [{"text" : "+", "font" : "Arial", "pos_x" : 0.3, "pos_y" : 0.3, "size" : 0.4, "color" : (255, 255, 255, 255)}],
+        }
+    ],
+    14 : [
+        "Add Reload V",
+        {
+            "reload_modifier" : 2.5,
+            "info" : "Add reload"
+        },
+        {
+            "line" : [{"start_x" : 0.50, "start_y" : 0.25, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.25, "color" : COLOR_CONFIG["reload"]},
+                     {"start_x" : 0.40, "start_y" : 0.35, "end_x" : 0.50, "end_y" : 0.25, "width" : 0.25, "color" : COLOR_CONFIG["reload"]},
+                     {"start_x" : 0.60, "start_y" : 0.35, "end_x" : 0.50, "end_y" : 0.25, "width" : 0.25, "color" : COLOR_CONFIG["reload"]},],
+            #"string" : [{"text" : "+", "font" : "Arial", "pos_x" : 0.3, "pos_y" : 0.3, "size" : 0.4, "color" : (255, 255, 255, 255)}],
+        }
+    ],
+    15 : [
+        "Sub Reload I",
+        {
+            "reload_modifier" : -0.2,
             "info" : "Subtract reload"
         },
         {
@@ -146,8 +302,60 @@ ATTRIBUTE_MODIFIER_CONFIG = {
             #"string" : [{"text" : "+", "font" : "Arial", "pos_x" : 0.3, "pos_y" : 0.3, "size" : 0.4, "color" : (255, 255, 255, 255)}],
         }
     ],
-    4 : [
-        "Add Scatter Angel",
+    16 : [
+        "Sub Reload II",
+        {
+            "reload_modifier" : -0.5,
+            "info" : "Subtract reload"
+        },
+        {
+            "line" : [{"start_x" : 0.50, "start_y" : 0.25, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.1, "color" : COLOR_CONFIG["reload"]},
+                     {"start_x" : 0.40, "start_y" : 0.65, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.1, "color" : COLOR_CONFIG["reload"]},
+                     {"start_x" : 0.60, "start_y" : 0.65, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.1, "color" : COLOR_CONFIG["reload"]}],
+            #"string" : [{"text" : "+", "font" : "Arial", "pos_x" : 0.3, "pos_y" : 0.3, "size" : 0.4, "color" : (255, 255, 255, 255)}],
+        }
+    ],
+    17 : [
+        "Sub Reload III",
+        {
+            "reload_modifier" : -1.0,
+            "info" : "Subtract reload"
+        },
+        {
+            "line" : [{"start_x" : 0.50, "start_y" : 0.25, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.15, "color" : COLOR_CONFIG["reload"]},
+                     {"start_x" : 0.40, "start_y" : 0.65, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.15, "color" : COLOR_CONFIG["reload"]},
+                     {"start_x" : 0.60, "start_y" : 0.65, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.15, "color" : COLOR_CONFIG["reload"]}],
+            #"string" : [{"text" : "+", "font" : "Arial", "pos_x" : 0.3, "pos_y" : 0.3, "size" : 0.4, "color" : (255, 255, 255, 255)}],
+        }
+    ],
+    18 : [
+        "Sub Reload IV",
+        {
+            "reload_modifier" : -1.5,
+            "info" : "Subtract reload"
+        },
+        {
+            "line" : [{"start_x" : 0.50, "start_y" : 0.25, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.2, "color" : COLOR_CONFIG["reload"]},
+                     {"start_x" : 0.40, "start_y" : 0.65, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.2, "color" : COLOR_CONFIG["reload"]},
+                     {"start_x" : 0.60, "start_y" : 0.65, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.2, "color" : COLOR_CONFIG["reload"]}],
+            #"string" : [{"text" : "+", "font" : "Arial", "pos_x" : 0.3, "pos_y" : 0.3, "size" : 0.4, "color" : (255, 255, 255, 255)}],
+        }
+    ],
+    19 : [
+        "Sub Reload V",
+        {
+            "reload_modifier" : -2.5,
+            "info" : "Subtract reload"
+        },
+        {
+            "line" : [{"start_x" : 0.50, "start_y" : 0.25, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.25, "color" : COLOR_CONFIG["reload"]},
+                     {"start_x" : 0.40, "start_y" : 0.65, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.25, "color" : COLOR_CONFIG["reload"]},
+                     {"start_x" : 0.60, "start_y" : 0.65, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.25, "color" : COLOR_CONFIG["reload"]}],
+            #"string" : [{"text" : "+", "font" : "Arial", "pos_x" : 0.3, "pos_y" : 0.3, "size" : 0.4, "color" : (255, 255, 255, 255)}],
+        }
+    ],
+    20 : [
+        "Add Scatter Angel I",
         {
             "scatter_angel_modifier" : 5,
             "info" : "Add scatter angel"
@@ -159,8 +367,60 @@ ATTRIBUTE_MODIFIER_CONFIG = {
             #"string" : [{"text" : "+", "font" : "Arial", "pos_x" : 0.3, "pos_y" : 0.3, "size" : 0.4, "color" : (255, 255, 255, 255)}],
         }
     ],
-    5 : [
-        "Sub Scatter Angel",
+    21 : [
+        "Add Scatter Angel II",
+        {
+            "scatter_angel_modifier" : 10,
+            "info" : "Add scatter angel"
+        },
+        {
+            "line" : [{"start_x" : 0.50, "start_y" : 0.25, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.1, "color" : COLOR_CONFIG["scatter_angel"]},
+                     {"start_x" : 0.40, "start_y" : 0.35, "end_x" : 0.50, "end_y" : 0.25, "width" : 0.1, "color" : COLOR_CONFIG["scatter_angel"]},
+                     {"start_x" : 0.60, "start_y" : 0.35, "end_x" : 0.50, "end_y" : 0.25, "width" : 0.1, "color" : COLOR_CONFIG["scatter_angel"]},],
+            #"string" : [{"text" : "+", "font" : "Arial", "pos_x" : 0.3, "pos_y" : 0.3, "size" : 0.4, "color" : (255, 255, 255, 255)}],
+        }
+    ],
+    22 : [
+        "Add Scatter Angel III",
+        {
+            "scatter_angel_modifier" : 15,
+            "info" : "Add scatter angel"
+        },
+        {
+            "line" : [{"start_x" : 0.50, "start_y" : 0.25, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.15, "color" : COLOR_CONFIG["scatter_angel"]},
+                     {"start_x" : 0.40, "start_y" : 0.35, "end_x" : 0.50, "end_y" : 0.25, "width" : 0.15, "color" : COLOR_CONFIG["scatter_angel"]},
+                     {"start_x" : 0.60, "start_y" : 0.35, "end_x" : 0.50, "end_y" : 0.25, "width" : 0.15, "color" : COLOR_CONFIG["scatter_angel"]},],
+            #"string" : [{"text" : "+", "font" : "Arial", "pos_x" : 0.3, "pos_y" : 0.3, "size" : 0.4, "color" : (255, 255, 255, 255)}],
+        }
+    ],
+    23 : [
+        "Add Scatter Angel IV",
+        {
+            "scatter_angel_modifier" : 20,
+            "info" : "Add scatter angel"
+        },
+        {
+            "line" : [{"start_x" : 0.50, "start_y" : 0.25, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.2, "color" : COLOR_CONFIG["scatter_angel"]},
+                     {"start_x" : 0.40, "start_y" : 0.35, "end_x" : 0.50, "end_y" : 0.25, "width" : 0.2, "color" : COLOR_CONFIG["scatter_angel"]},
+                     {"start_x" : 0.60, "start_y" : 0.35, "end_x" : 0.50, "end_y" : 0.25, "width" : 0.2, "color" : COLOR_CONFIG["scatter_angel"]},],
+            #"string" : [{"text" : "+", "font" : "Arial", "pos_x" : 0.3, "pos_y" : 0.3, "size" : 0.4, "color" : (255, 255, 255, 255)}],
+        }
+    ],
+    24 : [
+        "Add Scatter Angel V",
+        {
+            "scatter_angel_modifier" : 30,
+            "info" : "Add scatter angel"
+        },
+        {
+            "line" : [{"start_x" : 0.50, "start_y" : 0.25, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.25, "color" : COLOR_CONFIG["scatter_angel"]},
+                     {"start_x" : 0.40, "start_y" : 0.35, "end_x" : 0.50, "end_y" : 0.25, "width" : 0.25, "color" : COLOR_CONFIG["scatter_angel"]},
+                     {"start_x" : 0.60, "start_y" : 0.35, "end_x" : 0.50, "end_y" : 0.25, "width" : 0.25, "color" : COLOR_CONFIG["scatter_angel"]},],
+            #"string" : [{"text" : "+", "font" : "Arial", "pos_x" : 0.3, "pos_y" : 0.3, "size" : 0.4, "color" : (255, 255, 255, 255)}],
+        }
+    ],
+    25 : [
+        "Sub Scatter Angel I",
         {
             "scatter_angel_modifier" : -5,
             "info" : "Subtract scatter angel"
@@ -172,8 +432,60 @@ ATTRIBUTE_MODIFIER_CONFIG = {
             #"string" : [{"text" : "+", "font" : "Arial", "pos_x" : 0.3, "pos_y" : 0.3, "size" : 0.4, "color" : (255, 255, 255, 255)}],
         }
     ],
-    6 : [
-        "Add Capacity",
+    26 : [
+        "Sub Scatter Angel II",
+        {
+            "scatter_angel_modifier" : -10,
+            "info" : "Subtract scatter angel"
+        },
+        {
+            "line" : [{"start_x" : 0.50, "start_y" : 0.25, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.1, "color" : COLOR_CONFIG["scatter_angel"]},
+                     {"start_x" : 0.40, "start_y" : 0.65, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.1, "color" : COLOR_CONFIG["scatter_angel"]},
+                     {"start_x" : 0.60, "start_y" : 0.65, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.1, "color" : COLOR_CONFIG["scatter_angel"]}],
+            #"string" : [{"text" : "+", "font" : "Arial", "pos_x" : 0.3, "pos_y" : 0.3, "size" : 0.4, "color" : (255, 255, 255, 255)}],
+        }
+    ],
+    27 : [
+        "Sub Scatter Angel III",
+        {
+            "scatter_angel_modifier" : -15,
+            "info" : "Subtract scatter angel"
+        },
+        {
+            "line" : [{"start_x" : 0.50, "start_y" : 0.25, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.15, "color" : COLOR_CONFIG["scatter_angel"]},
+                     {"start_x" : 0.40, "start_y" : 0.65, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.15, "color" : COLOR_CONFIG["scatter_angel"]},
+                     {"start_x" : 0.60, "start_y" : 0.65, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.15, "color" : COLOR_CONFIG["scatter_angel"]}],
+            #"string" : [{"text" : "+", "font" : "Arial", "pos_x" : 0.3, "pos_y" : 0.3, "size" : 0.4, "color" : (255, 255, 255, 255)}],
+        }
+    ],
+    28 : [
+        "Sub Scatter Angel IV",
+        {
+            "scatter_angel_modifier" : -20,
+            "info" : "Subtract scatter angel"
+        },
+        {
+            "line" : [{"start_x" : 0.50, "start_y" : 0.25, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.2, "color" : COLOR_CONFIG["scatter_angel"]},
+                     {"start_x" : 0.40, "start_y" : 0.65, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.2, "color" : COLOR_CONFIG["scatter_angel"]},
+                     {"start_x" : 0.60, "start_y" : 0.65, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.2, "color" : COLOR_CONFIG["scatter_angel"]}],
+            #"string" : [{"text" : "+", "font" : "Arial", "pos_x" : 0.3, "pos_y" : 0.3, "size" : 0.4, "color" : (255, 255, 255, 255)}],
+        }
+    ],
+    29 : [
+        "Sub Scatter Angel V",
+        {
+            "scatter_angel_modifier" : -30,
+            "info" : "Subtract scatter angel"
+        },
+        {
+            "line" : [{"start_x" : 0.50, "start_y" : 0.25, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.25, "color" : COLOR_CONFIG["scatter_angel"]},
+                     {"start_x" : 0.40, "start_y" : 0.65, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.25, "color" : COLOR_CONFIG["scatter_angel"]},
+                     {"start_x" : 0.60, "start_y" : 0.65, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.25, "color" : COLOR_CONFIG["scatter_angel"]}],
+            #"string" : [{"text" : "+", "font" : "Arial", "pos_x" : 0.3, "pos_y" : 0.3, "size" : 0.4, "color" : (255, 255, 255, 255)}],
+        }
+    ],
+    30 : [
+        "Add Capacity I",
         {
             "capacity_modifier" : 5,
             "info" : "Add capacity"
@@ -185,8 +497,60 @@ ATTRIBUTE_MODIFIER_CONFIG = {
             #"string" : [{"text" : "+", "font" : "Arial", "pos_x" : 0.3, "pos_y" : 0.3, "size" : 0.4, "color" : (255, 255, 255, 255)}],
         }
     ],
-    7 : [
-        "Sub Capacity",
+    31 : [
+        "Add Capacity II",
+        {
+            "capacity_modifier" : 10,
+            "info" : "Add capacity"
+        },
+        {
+            "line" : [{"start_x" : 0.50, "start_y" : 0.25, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.1, "color" : COLOR_CONFIG["capacity"]},
+                     {"start_x" : 0.40, "start_y" : 0.35, "end_x" : 0.50, "end_y" : 0.25, "width" : 0.1, "color" : COLOR_CONFIG["capacity"]},
+                     {"start_x" : 0.60, "start_y" : 0.35, "end_x" : 0.50, "end_y" : 0.25, "width" : 0.1, "color" : COLOR_CONFIG["capacity"]},],
+            #"string" : [{"text" : "+", "font" : "Arial", "pos_x" : 0.3, "pos_y" : 0.3, "size" : 0.4, "color" : (255, 255, 255, 255)}],
+        }
+    ],
+    32 : [
+        "Add Capacity III",
+        {
+            "capacity_modifier" : 15,
+            "info" : "Add capacity"
+        },
+        {
+            "line" : [{"start_x" : 0.50, "start_y" : 0.25, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.15, "color" : COLOR_CONFIG["capacity"]},
+                     {"start_x" : 0.40, "start_y" : 0.35, "end_x" : 0.50, "end_y" : 0.25, "width" : 0.15, "color" : COLOR_CONFIG["capacity"]},
+                     {"start_x" : 0.60, "start_y" : 0.35, "end_x" : 0.50, "end_y" : 0.25, "width" : 0.15, "color" : COLOR_CONFIG["capacity"]},],
+            #"string" : [{"text" : "+", "font" : "Arial", "pos_x" : 0.3, "pos_y" : 0.3, "size" : 0.4, "color" : (255, 255, 255, 255)}],
+        }
+    ],
+    33 : [
+        "Add Capacity IV",
+        {
+            "capacity_modifier" : 20,
+            "info" : "Add capacity"
+        },
+        {
+            "line" : [{"start_x" : 0.50, "start_y" : 0.25, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.2, "color" : COLOR_CONFIG["capacity"]},
+                     {"start_x" : 0.40, "start_y" : 0.35, "end_x" : 0.50, "end_y" : 0.25, "width" : 0.2, "color" : COLOR_CONFIG["capacity"]},
+                     {"start_x" : 0.60, "start_y" : 0.35, "end_x" : 0.50, "end_y" : 0.25, "width" : 0.2, "color" : COLOR_CONFIG["capacity"]},],
+            #"string" : [{"text" : "+", "font" : "Arial", "pos_x" : 0.3, "pos_y" : 0.3, "size" : 0.4, "color" : (255, 255, 255, 255)}],
+        }
+    ],
+    34 : [
+        "Add Capacity V",
+        {
+            "capacity_modifier" : 30,
+            "info" : "Add capacity"
+        },
+        {
+            "line" : [{"start_x" : 0.50, "start_y" : 0.25, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.25, "color" : COLOR_CONFIG["capacity"]},
+                     {"start_x" : 0.40, "start_y" : 0.35, "end_x" : 0.50, "end_y" : 0.25, "width" : 0.25, "color" : COLOR_CONFIG["capacity"]},
+                     {"start_x" : 0.60, "start_y" : 0.35, "end_x" : 0.50, "end_y" : 0.25, "width" : 0.25, "color" : COLOR_CONFIG["capacity"]},],
+            #"string" : [{"text" : "+", "font" : "Arial", "pos_x" : 0.3, "pos_y" : 0.3, "size" : 0.4, "color" : (255, 255, 255, 255)}],
+        }
+    ],
+    35 : [
+        "Sub Capacity I",
         {
             "capacity_modifier" : -5,
             "info" : "Subtract capacity"
@@ -197,7 +561,59 @@ ATTRIBUTE_MODIFIER_CONFIG = {
                      {"start_x" : 0.60, "start_y" : 0.65, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.05, "color" : COLOR_CONFIG["capacity"]}],
             #"string" : [{"text" : "+", "font" : "Arial", "pos_x" : 0.3, "pos_y" : 0.3, "size" : 0.4, "color" : (255, 255, 255, 255)}],
         }
-    ]
+    ],
+    36 : [
+        "Sub Capacity II",
+        {
+            "capacity_modifier" : -10,
+            "info" : "Subtract capacity"
+        },
+        {
+            "line" : [{"start_x" : 0.50, "start_y" : 0.25, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.1, "color" : COLOR_CONFIG["capacity"]},
+                     {"start_x" : 0.40, "start_y" : 0.65, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.1, "color" : COLOR_CONFIG["capacity"]},
+                     {"start_x" : 0.60, "start_y" : 0.65, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.1, "color" : COLOR_CONFIG["capacity"]}],
+            #"string" : [{"text" : "+", "font" : "Arial", "pos_x" : 0.3, "pos_y" : 0.3, "size" : 0.4, "color" : (255, 255, 255, 255)}],
+        }
+    ],
+    37 : [
+        "Sub Capacity III",
+        {
+            "capacity_modifier" : -15,
+            "info" : "Subtract capacity"
+        },
+        {
+            "line" : [{"start_x" : 0.50, "start_y" : 0.25, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.15, "color" : COLOR_CONFIG["capacity"]},
+                     {"start_x" : 0.40, "start_y" : 0.65, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.15, "color" : COLOR_CONFIG["capacity"]},
+                     {"start_x" : 0.60, "start_y" : 0.65, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.15, "color" : COLOR_CONFIG["capacity"]}],
+            #"string" : [{"text" : "+", "font" : "Arial", "pos_x" : 0.3, "pos_y" : 0.3, "size" : 0.4, "color" : (255, 255, 255, 255)}],
+        }
+    ],
+    38 : [
+        "Sub Capacity IV",
+        {
+            "capacity_modifier" : -20,
+            "info" : "Subtract capacity"
+        },
+        {
+            "line" : [{"start_x" : 0.50, "start_y" : 0.25, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.2, "color" : COLOR_CONFIG["capacity"]},
+                     {"start_x" : 0.40, "start_y" : 0.65, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.2, "color" : COLOR_CONFIG["capacity"]},
+                     {"start_x" : 0.60, "start_y" : 0.65, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.2, "color" : COLOR_CONFIG["capacity"]}],
+            #"string" : [{"text" : "+", "font" : "Arial", "pos_x" : 0.3, "pos_y" : 0.3, "size" : 0.4, "color" : (255, 255, 255, 255)}],
+        }
+    ],
+    39 : [
+        "Sub Capacity V",
+        {
+            "capacity_modifier" : -30,
+            "info" : "Subtract capacity"
+        },
+        {
+            "line" : [{"start_x" : 0.50, "start_y" : 0.25, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.25, "color" : COLOR_CONFIG["capacity"]},
+                     {"start_x" : 0.40, "start_y" : 0.65, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.25, "color" : COLOR_CONFIG["capacity"]},
+                     {"start_x" : 0.60, "start_y" : 0.65, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.25, "color" : COLOR_CONFIG["capacity"]}],
+            #"string" : [{"text" : "+", "font" : "Arial", "pos_x" : 0.3, "pos_y" : 0.3, "size" : 0.4, "color" : (255, 255, 255, 255)}],
+        }
+    ],
 }
 
 EFFECT_MODIFIER_CONFIG = {
@@ -208,8 +624,8 @@ EFFECT_MODIFIER_CONFIG = {
         },
         {
             "circle" : [{"pos_x" : 0.25, "pos_y" : 0.50, "size" : 0.20, "color" : (255,255,255,255)}],
-            "line" : [{"start_x" : 0.15, "start_y" : 0.40, "end_x" : 0.35, "end_y" : 0.60, "width" : 0.05, "color" : (255,255,255,255)},
-                     {"start_x" : 0.15, "start_y" : 0.60, "end_x" : 0.35, "end_y" : 0.40, "width" : 0.05, "color" : (255,255,255,255)},
+            "line" : [{"start_x" : 0.15, "start_y" : 0.40, "end_x" : 0.35, "end_y" : 0.60, "width" : 0.1, "color" : (255,255,255,255)},
+                     {"start_x" : 0.15, "start_y" : 0.60, "end_x" : 0.35, "end_y" : 0.40, "width" : 0.1, "color" : (255,255,255,255)},
                      {"start_x" : 0.70, "start_y" : 0.30, "end_x" : 0.80, "end_y" : 0.50, "width" : 0.15, "color" : COLOR_CONFIG["speed"]},
                      {"start_x" : 0.70, "start_y" : 0.70, "end_x" : 0.80, "end_y" : 0.50, "width" : 0.15, "color" : COLOR_CONFIG["speed"]},
 
@@ -218,19 +634,130 @@ EFFECT_MODIFIER_CONFIG = {
                      {"start_x" : 0.60, "start_y" : 0.35, "end_x" : 0.50, "end_y" : 0.25, "width" : 0.025, "color" : (255,255,255,255)}],
         }
     ],
-    10 : [
+    50 : [
+        "Add Speed I",
+        {
+            "bullet_speed_modifier" : 100,
+            "info" : "Add bullet speed"
+        },
+        {
+            "line" : [{"start_x" : 0.40, "start_y" : 0.30, "end_x" : 0.60, "end_y" : 0.50, "width" : 0.05, "color" : COLOR_CONFIG["speed"]},
+                     {"start_x" : 0.40, "start_y" : 0.70, "end_x" : 0.60, "end_y" : 0.50, "width" : 0.05, "color" : COLOR_CONFIG["speed"]}],
+        }
+    ],
+    51 : [
+        "Add Speed II",
+        {
+            "bullet_speed_modifier" : 200,
+            "info" : "Add bullet speed"
+        },
+        {
+            "line" : [{"start_x" : 0.40, "start_y" : 0.30, "end_x" : 0.60, "end_y" : 0.50, "width" : 0.1, "color" : COLOR_CONFIG["speed"]},
+                     {"start_x" : 0.40, "start_y" : 0.70, "end_x" : 0.60, "end_y" : 0.50, "width" : 0.1, "color" : COLOR_CONFIG["speed"]}],
+        }
+    ],
+    52 : [
+        "Add Speed III",
+        {
+            "bullet_speed_modifier" : 300,
+            "info" : "Add bullet speed"
+        },
+        {
+            "line" : [{"start_x" : 0.40, "start_y" : 0.30, "end_x" : 0.60, "end_y" : 0.50, "width" : 0.15, "color" : COLOR_CONFIG["speed"]},
+                     {"start_x" : 0.40, "start_y" : 0.70, "end_x" : 0.60, "end_y" : 0.50, "width" : 0.15, "color" : COLOR_CONFIG["speed"]}],
+        }
+    ],
+    53 : [
+        "Add Speed IV",
+        {
+            "bullet_speed_modifier" : 450,
+            "info" : "Add bullet speed"
+        },
+        {
+            "line" : [{"start_x" : 0.40, "start_y" : 0.30, "end_x" : 0.60, "end_y" : 0.50, "width" : 0.2, "color" : COLOR_CONFIG["speed"]},
+                     {"start_x" : 0.40, "start_y" : 0.70, "end_x" : 0.60, "end_y" : 0.50, "width" : 0.2, "color" : COLOR_CONFIG["speed"]}],
+        }
+    ],
+    54 : [
+        "Add Speed V",
+        {
+            "bullet_speed_modifier" : 600,
+            "info" : "Add bullet speed"
+        },
+        {
+            "line" : [{"start_x" : 0.40, "start_y" : 0.30, "end_x" : 0.60, "end_y" : 0.50, "width" : 0.25, "color" : COLOR_CONFIG["speed"]},
+                     {"start_x" : 0.40, "start_y" : 0.70, "end_x" : 0.60, "end_y" : 0.50, "width" : 0.25, "color" : COLOR_CONFIG["speed"]}],
+        }
+    ],
+    55 : [
+        "Sub Speed I",
+        {
+            "bullet_speed_modifier" : -100,
+            "info" : "Subtract bullet speed"
+        },
+        {
+            "line" : [{"start_x" : 0.40, "start_y" : 0.30, "end_x" : 0.60, "end_y" : 0.50, "width" : 0.05, "color" : COLOR_CONFIG["speed"]},
+                     {"start_x" : 0.40, "start_y" : 0.70, "end_x" : 0.60, "end_y" : 0.50, "width" : 0.05, "color" : COLOR_CONFIG["speed"]}],
+        }
+    ],
+    56 : [
+        "Sub Speed II",
+        {
+            "bullet_speed_modifier" : -200,
+            "info" : "Subtract bullet speed"
+        },
+        {
+            "line" : [{"start_x" : 0.40, "start_y" : 0.30, "end_x" : 0.60, "end_y" : 0.50, "width" : 0.1, "color" : COLOR_CONFIG["speed"]},
+                     {"start_x" : 0.40, "start_y" : 0.70, "end_x" : 0.60, "end_y" : 0.50, "width" : 0.1, "color" : COLOR_CONFIG["speed"]}],
+        }
+    ],
+    57 : [
+        "Sub Speed III",
+        {
+            "bullet_speed_modifier" : -300,
+            "info" : "Subtract bullet speed"
+        },
+        {
+            "line" : [{"start_x" : 0.40, "start_y" : 0.30, "end_x" : 0.60, "end_y" : 0.50, "width" : 0.15, "color" : COLOR_CONFIG["speed"]},
+                     {"start_x" : 0.40, "start_y" : 0.70, "end_x" : 0.60, "end_y" : 0.50, "width" : 0.15, "color" : COLOR_CONFIG["speed"]}],
+        }
+    ],
+    58 : [
+        "Sub Speed IV",
+        {
+            "bullet_speed_modifier" : -450,
+            "info" : "Subtract bullet speed"
+        },
+        {
+            "line" : [{"start_x" : 0.40, "start_y" : 0.30, "end_x" : 0.60, "end_y" : 0.50, "width" : 0.2, "color" : COLOR_CONFIG["speed"]},
+                     {"start_x" : 0.40, "start_y" : 0.70, "end_x" : 0.60, "end_y" : 0.50, "width" : 0.2, "color" : COLOR_CONFIG["speed"]}],
+        }
+    ],
+    59 : [
+        "Sub Speed V",
+        {
+            "bullet_speed_modifier" : -600,
+            "info" : "Subtract bullet speed"
+        },
+        {
+            "line" : [{"start_x" : 0.40, "start_y" : 0.30, "end_x" : 0.60, "end_y" : 0.50, "width" : 0.25, "color" : COLOR_CONFIG["speed"]},
+                     {"start_x" : 0.40, "start_y" : 0.70, "end_x" : 0.60, "end_y" : 0.50, "width" : 0.25, "color" : COLOR_CONFIG["speed"]}],
+        }
+    ],
+
+    100 : [
         "Split",
         { 
             "info" : "aa"
         },
         {
-            "circle" : [{"pos_x" : 0.50, "pos_y" : 0.75, "size" : 0.15, "color" : (200, 200, 200, 255)}],
-            "line" : [{"start_x" : 0.50, "start_y" : 0.75, "end_x" : 0.25, "end_y" : 0.25, "width" : 0.05, "color" : (255, 255, 255, 255)},
-                     {"start_x" : 0.50, "start_y" : 0.75, "end_x" : 0.75, "end_y" : 0.25, "width" : 0.05, "color" : (255, 255, 255, 255)},
-                     {"start_x" : 0.25, "start_y" : 0.25, "end_x" : 0.20, "end_y" : 0.40, "width" : 0.03, "color" : (200, 200, 200, 255)},
-                     {"start_x" : 0.25, "start_y" : 0.25, "end_x" : 0.40, "end_y" : 0.30, "width" : 0.03, "color" : (200, 200, 200, 255)},
-                     {"start_x" : 0.75, "start_y" : 0.25, "end_x" : 0.80, "end_y" : 0.40, "width" : 0.03, "color" : (200, 200, 200, 255)},
-                     {"start_x" : 0.75, "start_y" : 0.25, "end_x" : 0.60, "end_y" : 0.30, "width" : 0.03, "color" : (200, 200, 200, 255)}],
+            "circle" : [{"pos_x" : 0.50, "pos_y" : 0.65, "size" : 0.3, "color" : (200, 200, 200, 255)}],
+            "line" : [{"start_x" : 0.50, "start_y" : 0.65, "end_x" : 0.25, "end_y" : 0.25, "width" : 0.05, "color" : (255, 255, 255, 255)},
+                     {"start_x" : 0.50, "start_y" : 0.65, "end_x" : 0.75, "end_y" : 0.25, "width" : 0.05, "color" : (255, 255, 255, 255)},
+                     {"start_x" : 0.25, "start_y" : 0.25, "end_x" : 0.20, "end_y" : 0.40, "width" : 0.05, "color" : (200, 200, 200, 255)},
+                     {"start_x" : 0.25, "start_y" : 0.25, "end_x" : 0.40, "end_y" : 0.30, "width" : 0.05, "color" : (200, 200, 200, 255)},
+                     {"start_x" : 0.75, "start_y" : 0.25, "end_x" : 0.80, "end_y" : 0.40, "width" : 0.05, "color" : (200, 200, 200, 255)},
+                     {"start_x" : 0.75, "start_y" : 0.25, "end_x" : 0.60, "end_y" : 0.30, "width" : 0.05, "color" : (200, 200, 200, 255)}],
         }
     ],
 }

@@ -1,5 +1,6 @@
 
 
+from turtle import position
 import pygame
 
 from typing import TYPE_CHECKING
@@ -9,7 +10,9 @@ if TYPE_CHECKING:
 from Asset.GameSetting import UI_CONFIG, COLOR_CONFIG, GAME_CONFIG
 from Asset.Enemies import EnemyManager
 from Asset.Pickups import WorldChunkManager, XPOrb
-from Asset.Weapons import Card, Gun
+from Asset.Weapons import Gun
+from Asset.Card import Card
+
 
 
 def _ensure_runtime_state(game: "Game"):
@@ -22,6 +25,7 @@ def _ensure_runtime_state(game: "Game"):
     game.run_start_time = game.now_time
     game.run_summary = None
     game.message_queue = []  # list of [text, timer_left, color]
+    game.effects_queue = []  # list of [effect : {}, timer_left]
     game._screen1_initialised = True
 
 
@@ -39,6 +43,7 @@ def reset_screen1(game: "Game"):
     game.run_start_time = game.now_time
     game.run_summary = None
     game.message_queue = []
+    game.effects_queue = []
     game.player.reset_run(pygame.Vector2(0, 0))
     game._screen1_initialised = True
 
@@ -81,6 +86,7 @@ def _handle_collisions(game: "Game"):
             elif e.is_boss:
                 player.take_damage(e.damage * 1.2)
 
+
 def _handle_player_bullets(game: "Game"):
     player = game.player
 
@@ -94,7 +100,7 @@ def _handle_player_bullets(game: "Game"):
             # TODO : use the grid to find the nearest enemy in the area around the bullet, because of the performance issue.
             for enemy in game.enemy_manager.enemies:
                 if bullet.pos2D.distance_to(enemy.pos2D) < enemy.radius + 5: # Small buffer
-                    bullet.triger_hit(player, enemy, game.enemy_manager.enemies)
+                    bullet.triger_hit(player, enemy, game.enemy_manager.enemies, effect_queue = game.effects_queue)
                     if not enemy.alive:
                         game.xp_orbs.append(XPOrb(enemy.pos2D.copy(), value=enemy.xp_drop))
                         player.add_kill()
@@ -122,10 +128,30 @@ def _handle_player_bullets(game: "Game"):
             continue
         for bullet in list(weapon.bullets):
             if bullet.timer > bullet.lifetime:
-                bullet.triger_lifetime(player, game.enemy_manager.enemies)
+                bullet.triger_lifetime(player, game.enemy_manager.enemies, effect_queue = game.effects_queue)
+
 
 def _draw_effect(game: "Game"):
-    pass
+    for effect in game.effects_queue:
+        effect[1] -= game.delta_time
+        effect_info = effect[0]
+
+        time_left = effect[1]
+        if time_left <= 0:
+            game.effects_queue.remove(effect)
+            continue
+
+        if 'disappearing_circle' in effect_info:
+            for info in effect_info['disappearing_circle']:
+                color = info['color']
+                alpha = int(color[3] * (time_left / info['total_time']))
+                position = info['pos_2D']
+                position = game.to_screen(position)
+                radius = info['radius']
+                effect_surf = pygame.Surface((radius * 2, radius * 2), pygame.SRCALPHA)
+                pygame.draw.circle(effect_surf, (color[0], color[1], color[2], alpha), (radius, radius), radius)
+                game.screen.blit(effect_surf, (position.x - radius, position.y - radius))
+
 
 def _draw_hud(game: "Game"):
     player = game.player
