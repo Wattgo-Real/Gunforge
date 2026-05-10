@@ -9,7 +9,7 @@ import random
 
 class Player:
     def __init__(self, position : pygame.Vector2 = pygame.Vector2(0,0), radius : int = 10, color : tuple = (255, 255, 255),
-                        max_velocity : float = 300, max_acceleration : float = 10000):
+                        max_velocity : float = 300, max_acceleration : float = 10000, spatial_grid_dict : dict = None):
         self.pos2D : pygame.Vector2 = pygame.Vector2(position)
         self.vel2D : pygame.Vector2 = pygame.Vector2(0, 0)
         self.acc2D : pygame.Vector2 = pygame.Vector2(0, 0)
@@ -50,7 +50,10 @@ class Player:
             "card_list" : [Card(type = 0, bullet_type = 0)],
         }
 
-        self.weapon_list : list[Gun | None] = [Gun(basic_info), Gun(basic_info2), None, None]
+        self.spatial_grid_dict = spatial_grid_dict
+        self.weapon_list : list[Gun | None] = [Gun(basic_info, self.spatial_grid_dict), 
+                                               Gun(basic_info2, self.spatial_grid_dict), 
+                                               None, None]
         self.weapon_index : int = 0
 
         # This is for the player to record its trajectory

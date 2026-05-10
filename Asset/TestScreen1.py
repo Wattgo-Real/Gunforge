@@ -1,5 +1,6 @@
 
 
+import numpy
 from turtle import position
 import pygame
 
@@ -7,11 +8,13 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from Start import Game
 
-from Asset.GameSetting import UI_CONFIG, COLOR_CONFIG, GAME_CONFIG
+from Asset.GameSetting import UI_CONFIG, COLOR_CONFIG, GAME_CONFIG, GRID_CONFIG
+from Asset.GameSetting import ENTITY_TYPE
 from Asset.Enemies import EnemyManager
 from Asset.Pickups import WorldChunkManager, XPOrb
 from Asset.Weapons import Gun
 from Asset.Card import Card
+from Asset.Player import Player
 
 
 
@@ -19,32 +22,44 @@ def _ensure_runtime_state(game: "Game"):
     """Initialize gameplay state once when entering screen 1."""
     if getattr(game, "_screen1_initialised", False):
         return
-    game.enemy_manager = EnemyManager()
+    game.spatial_grid_dict = {i : {} for i in range(GRID_CONFIG["number_of_cells_w"] * GRID_CONFIG["number_of_cells_h"])}
+    game.enemy_manager = EnemyManager(spatial_grid_dict_pointer = game.spatial_grid_dict)
     game.world = WorldChunkManager(seed=42)
     game.xp_orbs = []
     game.run_start_time = game.now_time
     game.run_summary = None
     game.message_queue = []  # list of [text, timer_left, color]
     game.effects_queue = []  # list of [effect : {}, timer_left]
+    game.player = Player(position = pygame.Vector2(0,0), radius = 15, color = (0, 150, 255), spatial_grid_dict = game.spatial_grid_dict)
     game._screen1_initialised = True
 
 
 def reset_screen1(game: "Game"):
     """Reset gameplay state for a new run. Called by menu / game-over screen."""
+    if  hasattr(game, "spatial_grid_dict"):
+        for cell_key in game.spatial_grid_dict.keys():
+            game.spatial_grid_dict[cell_key].clear()
+    else:
+        game.spatial_grid_dict = {i : {} for i in range(GRID_CONFIG["number_of_cells_w"] * GRID_CONFIG["number_of_cells_h"])}
     if hasattr(game, "enemy_manager"):
         game.enemy_manager.reset()
     else:
-        game.enemy_manager = EnemyManager()
+        game.enemy_manager = EnemyManager(spatial_grid_dict_pointer = game.spatial_grid_dict)
     if hasattr(game, "world"):
         game.world.reset(seed=42)
     else:
         game.world = WorldChunkManager(seed=42)
+    
+    if hasattr(game, "player"):
+        game.player.reset_run(pygame.Vector2(0, 0))
+    else:
+        game.player = Player(position = pygame.Vector2(0,0), radius = 15, color = (0, 150, 255), spatial_grid_dict = game.spatial_grid_dict)
+
     game.xp_orbs = []
     game.run_start_time = game.now_time
     game.run_summary = None
     game.message_queue = []
     game.effects_queue = []
-    game.player.reset_run(pygame.Vector2(0, 0))
     game._screen1_initialised = True
 
 
@@ -86,28 +101,87 @@ def _handle_collisions(game: "Game"):
             elif e.is_boss:
                 player.take_damage(e.damage * 1.2)
 
+    # Enemy vs Enemy collision resolution
+    for e1 in game.enemy_manager.enemies:
+        # Spatial Partition Grid check
+        gx = int(e1.pos2D.x / GRID_CONFIG["cell_w"]) % GRID_CONFIG["number_of_cells_w"]
+        gy = int(e1.pos2D.y / GRID_CONFIG["cell_h"]) % GRID_CONFIG["number_of_cells_h"]
+        
+        for i in range(gx - 1, gx + 2):
+            for j in range(gy - 1, gy + 2):
+                nx = i % GRID_CONFIG["number_of_cells_w"]
+                ny = j % GRID_CONFIG["number_of_cells_h"]
+                grid_pos = nx + ny * GRID_CONFIG["number_of_cells_w"]
+                
+                # Iterate through neighbors in this cell
+                for e2 in game.spatial_grid_dict[grid_pos].values():
+                    if e2.entity_type != ENTITY_TYPE["enemy"] or e1.uuid == e2.uuid:
+                        continue
+                    
+                    dist = e1.pos2D.distance_to(e2.pos2D)
+                    min_dist = e1.radius + e2.radius
+                    if dist < min_dist:
+                        # Push them apart
+                        overlap = min_dist - dist
+                        if dist > 0:
+                            push_dir = (e1.pos2D - e2.pos2D).normalize()
+                        else:
+                            # Exact overlap, push in a random direction
+                            import random
+                            angle = random.uniform(0, 360)
+                            push_dir = pygame.Vector2(1, 0).rotate(angle)
+                        
+                        # Shift both enemies
+                        e1.pos2D += push_dir * (overlap * 0.5)
+                        e2.pos2D -= push_dir * (overlap * 0.5)
+
 
 def _handle_player_bullets(game: "Game"):
     player = game.player
 
     # Bullet vs enemy
+    # num_of_bullet = 0
+    # num_of_calculate = 0
     for weapon in player.weapon_list:
         if weapon is None:
             continue
         for bullet in list(weapon.bullets):
-            # Because the bullet need to do complex damage calculation to all enemies.
-            # enemy need to input to bullet.triger_hit() function.
-            # TODO : use the grid to find the nearest enemy in the area around the bullet, because of the performance issue.
+            # num_of_bullet += 1
+            # Spatial Partition Grid is used to find the nearest enemy in the area around the bullet.
+            bullet_grid_pos = [int(bullet.pos2D.x / GRID_CONFIG["cell_w"]) % GRID_CONFIG["number_of_cells_w"],
+                               int(bullet.pos2D.y / GRID_CONFIG["cell_h"]) % GRID_CONFIG["number_of_cells_h"]]
+            for i in range(bullet_grid_pos[0] - 1, bullet_grid_pos[0] + 2):
+                for j in range(bullet_grid_pos[1] - 1, bullet_grid_pos[1] + 2):
+                    grid_x = i % GRID_CONFIG["number_of_cells_w"]
+                    grid_y = j % GRID_CONFIG["number_of_cells_h"]
+                    grid_pos = grid_x + grid_y * GRID_CONFIG["number_of_cells_w"]
+                    for entity in game.spatial_grid_dict[grid_pos].values():
+                        if entity.entity_type != ENTITY_TYPE["enemy"]:
+                            continue
+                        #num_of_calculate += 1
+                        if entity.pos2D.distance_to(bullet.pos2D) < bullet.radius + entity.radius + 5:
+                            bullet.triger_hit(player, entity, effect_queue = game.effects_queue, spatial_grid_dict = game.spatial_grid_dict)
+                            if not entity.alive:
+                                game.xp_orbs.append(XPOrb(entity.pos2D.copy(), value=entity.xp_drop))
+                                player.add_kill()
+                                if entity.is_boss:
+                                    _drop_boss_reward(game)
+                            break
+
+            '''
+            v2
             for enemy in game.enemy_manager.enemies:
+                num_of_calculate += 1
                 if bullet.pos2D.distance_to(enemy.pos2D) < enemy.radius + 5: # Small buffer
-                    bullet.triger_hit(player, enemy, game.enemy_manager.enemies, effect_queue = game.effects_queue)
+                    bullet.triger_hit(player, enemy, effect_queue = game.effects_queue, spatial_grid_dict = game.spatial_grid_dict)
                     if not enemy.alive:
                         game.xp_orbs.append(XPOrb(enemy.pos2D.copy(), value=enemy.xp_drop))
                         player.add_kill()
                         if enemy.is_boss:
                             _drop_boss_reward(game)
                     break
-            '''
+            
+            v1
             for enemy in game.enemy_manager.enemies:
                 if bullet.pos2D.distance_to(enemy.pos2D) < enemy.radius:
                     dmg = (bullet.damage()) * player.damage_multiplier
@@ -121,14 +195,17 @@ def _handle_player_bullets(game: "Game"):
                             _drop_boss_reward(game)
                     break
             '''
-    
-    # Bullet lifetime
+
+    #print("num of bullet = ", num_of_bullet, "num of enemies = ", len(game.enemy_manager.enemies), "num of calculate", num_of_calculate)
+
+
+    # lifetime of the Bullets 
     for weapon in player.weapon_list:
         if weapon is None:
             continue
         for bullet in list(weapon.bullets):
             if bullet.timer > bullet.lifetime:
-                bullet.triger_lifetime(player, game.enemy_manager.enemies, effect_queue = game.effects_queue)
+                bullet.triger_lifetime(player, effect_queue = game.effects_queue, spatial_grid_dict = game.spatial_grid_dict)
 
 
 def _draw_effect(game: "Game"):
