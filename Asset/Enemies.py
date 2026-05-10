@@ -3,8 +3,9 @@ import random
 
 import pygame
 
-from Asset.GameSetting import BOSS_CONFIG, ENEMY_CONFIG, GAME_CONFIG
-
+from Asset.GameSetting import BOSS_CONFIG, ENEMY_CONFIG, GAME_CONFIG, GRID_CONFIG 
+from Asset.GameSetting import ENTITY_TYPE
+import uuid
 
 class DamageNumber:
     def __init__(self, damage, position, color=(255, 255, 100)):
@@ -31,6 +32,7 @@ class DamageNumber:
 
 class EnemyBullet:
     def __init__(self, pos2D, vel2D, damage, lifetime=4.0, radius=6, color=(255, 100, 100)):
+        self.uuid = uuid.uuid4()    # unique identifier of the spatial partitioning
         self.pos2D = pygame.Vector2(pos2D)
         self.vel2D = pygame.Vector2(vel2D)
         self.damage = damage
@@ -55,6 +57,9 @@ class EnemyBullet:
 class Enemy:
     def __init__(self, position, enemy_type=0, hp_mul=1.0, dmg_mul=1.0, is_boss=False):
         cfg = BOSS_CONFIG if is_boss else ENEMY_CONFIG[enemy_type]
+        self.uuid = uuid.uuid4()
+        self.entity_type = ENTITY_TYPE["enemy"]
+
         self.enemy_type = enemy_type
         self.cfg = cfg
         self.is_boss = is_boss
@@ -210,7 +215,7 @@ class Enemy:
 
 
 class EnemyManager:
-    def __init__(self):
+    def __init__(self, spatial_grid_dict_pointer = None):
         self.enemies = []
         self.spawn_timer = 1.0
         self.boss = None
@@ -220,6 +225,9 @@ class EnemyManager:
         self.boss_spawn_time = GAME_CONFIG["boss_spawn_time"]
         self.base_spawn_interval = GAME_CONFIG["spawn_base_interval"]
         self.min_spawn_interval = GAME_CONFIG["spawn_min_interval"]
+
+        # for spatial partitioning
+        self.spatial_grid_dict = spatial_grid_dict_pointer
 
     def reset(self):
         self.enemies.clear()
@@ -245,9 +253,22 @@ class EnemyManager:
 
         for e in self.enemies[:]:
             e.update(delta_time, player_pos)
+            if self.spatial_grid_dict is not None:
+                grid_x = (e.pos2D.x // GRID_CONFIG["cell_w"]) % GRID_CONFIG["number_of_cells_w"]
+                grid_y = (e.pos2D.y // GRID_CONFIG["cell_h"]) % GRID_CONFIG["number_of_cells_h"]
+                grid_pos = grid_y * GRID_CONFIG["number_of_cells_w"] + grid_x
+                if e.grid_pos != grid_pos:
+                    del self.spatial_grid_dict[e.grid_pos][e.uuid]
+                    e.grid_pos = grid_pos
+                    self.spatial_grid_dict[grid_pos][e.uuid] = e
+                
             if not e.alive:
                 if e.is_boss:
                     self.boss_defeated = True
+                if self.spatial_grid_dict is not None:
+                    grid_x = (e.pos2D.x // GRID_CONFIG["cell_w"]) % GRID_CONFIG["number_of_cells_w"]
+                    grid_y = (e.pos2D.y // GRID_CONFIG["cell_h"]) % GRID_CONFIG["number_of_cells_h"]
+                    del self.spatial_grid_dict[grid_y * GRID_CONFIG["number_of_cells_w"] + grid_x][e.uuid]
                 self.enemies.remove(e)
 
     def _spawn_enemy(self, player_pos):
@@ -266,7 +287,16 @@ class EnemyManager:
         angle = random.uniform(0, math.tau)
         dist = random.uniform(700, 900)
         spawn_pos = player_pos + pygame.Vector2(math.cos(angle), math.sin(angle)) * dist
-        self.enemies.append(Enemy(spawn_pos, enemy_type=enemy_type, hp_mul=hp_mul, dmg_mul=dmg_mul))
+        new_enemy = Enemy(spawn_pos, enemy_type=enemy_type, hp_mul=hp_mul, dmg_mul=dmg_mul)
+        self.enemies.append(new_enemy)
+
+        if self.spatial_grid_dict is not None:
+            grid_x = (new_enemy.pos2D.x // GRID_CONFIG["cell_w"]) % GRID_CONFIG["number_of_cells_w"]
+            grid_y = (new_enemy.pos2D.y // GRID_CONFIG["cell_h"]) % GRID_CONFIG["number_of_cells_h"]
+            grid_pos = grid_y * GRID_CONFIG["number_of_cells_w"] + grid_x
+            new_enemy.grid_pos = grid_pos
+            self.spatial_grid_dict[grid_pos][new_enemy.uuid] = new_enemy
+        
 
     def _spawn_boss(self, player_pos):
         self.boss_spawned = True
@@ -274,6 +304,13 @@ class EnemyManager:
         spawn_pos = player_pos + pygame.Vector2(math.cos(angle), math.sin(angle)) * 600
         self.boss = Enemy(spawn_pos, is_boss=True)
         self.enemies.append(self.boss)
+
+        if self.spatial_grid_dict is not None:
+            grid_x = (self.boss.pos2D.x // GRID_CONFIG["cell_w"]) % GRID_CONFIG["number_of_cells_w"]
+            grid_y = (self.boss.pos2D.y // GRID_CONFIG["cell_h"]) % GRID_CONFIG["number_of_cells_h"]
+            grid_pos = grid_y * GRID_CONFIG["number_of_cells_w"] + grid_x
+            self.boss.grid_pos = grid_pos
+            self.spatial_grid_dict[grid_pos][self.boss.uuid] = self.boss
 
     def all_enemy_bullets(self):
         for e in self.enemies:

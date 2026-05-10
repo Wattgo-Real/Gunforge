@@ -10,3 +10,8 @@
 ## 2026/05/05
 
 Simple Ui add and value Setting `GameSetting.py、Start.py TestScreen1.py TestScreen2.py`, and bastic Enemies and Boss designed `Enemies.py`
+
+### 2026/05/10
+- Add Spatial Partitioning Grid.
+- Add the enemy vs enemy collision detection (Based on Spatial Partitioning Grid).
+

@@ -1,6 +1,19 @@
 
 
 
+ENTITY_TYPE = {
+    "bullet" : 0,
+    "enemy" : 1,
+    "player" : 2,
+}
+
+GRID_CONFIG = {
+    "cell_w" : 40,
+    "cell_h" : 40,
+    "number_of_cells_w" : 50,
+    "number_of_cells_h" : 50,
+}
+
 COLOR_CONFIG = {
     "cooldown" : (100, 180, 255),
     "reload" : (255, 140, 40),
@@ -21,6 +34,7 @@ BULLET_CONFIG = {
         {
             "speed": 300,
             "physical_damage": 5,
+            "radius" : 3,
             "info" : "The most basic bullet, deal physical damage" ,
             "draw_info" : {"circle" : [{"radius" : 3, "color" : (255, 255, 255, 255)}]}
         },
@@ -33,6 +47,7 @@ BULLET_CONFIG = {
         {
             "speed": 150,
             "physical_damage": 3,
+            "radius" : 2,
             "capacity_modifier" : 20,
             "cooldown_modifier" : -0.1,
             "scatter_angel_modifier" : 5,
@@ -48,6 +63,7 @@ BULLET_CONFIG = {
         {
             "speed": 600,
             "physical_damage": 15,
+            "radius" : 4,
             "capacity_modifier" : -20,
             "cooldown_modifier" : 0.1,
             "scatter_angel_modifier" : -5,
@@ -63,7 +79,8 @@ BULLET_CONFIG = {
         {
             "speed": 100,
             "explosion_damage": 10,
-            "radius": 100,
+            "radius": 5,
+            "explosion_radius": 80,
             "capacity_modifier" : -20,
             "cooldown_modifier" : 0.5,
             "info" : "Deal explosion damage to enemies in an area. The explosion occurs either when its lifetime ends or when it collides with an enemy or an obstacle.",
@@ -81,6 +98,7 @@ BULLET_CONFIG = {
         {
             "speed": 300,
             "burn_damage": 2,
+            "radius": 2,
             "scatter_angel_modifier" : -10,
             "info" : "Deals burn damage to enemies in a straight line.",
             "draw_info" : {"line" : [{"width" : 2, "color" : (150, 255, 120, 255)}]}

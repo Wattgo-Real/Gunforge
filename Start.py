@@ -34,10 +34,6 @@ class Game():
 
         # Init camera position.
         self.camera_position : pygame.Vector2 = pygame.Vector2(0,0)
-
-        # Init player.
-        ball_color : tuple = (0, 150, 255)
-        self.player : Player = Player(position = pygame.Vector2(0,0), radius = 15, color = ball_color)
         
         # Background grid image.
         self.background : pygame.Surface = pygame.image.load("./Img/grid_1000x1000.png").convert_alpha()   # size: 1000 x 1000
