@@ -101,19 +101,17 @@ def _handle_collisions(game: "Game"):
             elif e.is_boss:
                 player.take_damage(e.damage * 1.2)
 
-    # Enemy vs Enemy collision resolution
+    # Enemy vs Enemy collision
     for e1 in game.enemy_manager.enemies:
-        # Spatial Partition Grid check
-        gx = int(e1.pos2D.x / GRID_CONFIG["cell_w"]) % GRID_CONFIG["number_of_cells_w"]
-        gy = int(e1.pos2D.y / GRID_CONFIG["cell_h"]) % GRID_CONFIG["number_of_cells_h"]
+        # Spatial Partition Grid
+        e1_grid_x = int(e1.pos2D.x / GRID_CONFIG["cell_w"]) % GRID_CONFIG["number_of_cells_w"]
+        e1_grid_y = int(e1.pos2D.y / GRID_CONFIG["cell_h"]) % GRID_CONFIG["number_of_cells_h"]
         
-        for i in range(gx - 1, gx + 2):
-            for j in range(gy - 1, gy + 2):
-                nx = i % GRID_CONFIG["number_of_cells_w"]
-                ny = j % GRID_CONFIG["number_of_cells_h"]
-                grid_pos = nx + ny * GRID_CONFIG["number_of_cells_w"]
-                
-                # Iterate through neighbors in this cell
+        for i in range(e1_grid_x - 1, e1_grid_x + 2):
+            for j in range(e1_grid_y - 1, e1_grid_y + 2):
+                e2_grid_x = i % GRID_CONFIG["number_of_cells_w"]
+                e2_grid_y = j % GRID_CONFIG["number_of_cells_h"]
+                grid_pos = e2_grid_x + e2_grid_y * GRID_CONFIG["number_of_cells_w"]
                 for e2 in game.spatial_grid_dict[grid_pos].values():
                     if e2.entity_type != ENTITY_TYPE["enemy"] or e1.uuid == e2.uuid:
                         continue
