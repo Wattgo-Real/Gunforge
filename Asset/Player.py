@@ -9,7 +9,7 @@ import random
 
 class Player:
     def __init__(self, position : pygame.Vector2 = pygame.Vector2(0,0), radius : int = 10, color : tuple = (255, 255, 255),
-                        max_velocity : float = 300, max_acceleration : float = 10000, spatial_grid_dict : dict = None):
+                        max_velocity : float = 300, max_acceleration : float = 10000, bullet_manager= None):
         self.pos2D : pygame.Vector2 = pygame.Vector2(position)
         self.vel2D : pygame.Vector2 = pygame.Vector2(0, 0)
         self.acc2D : pygame.Vector2 = pygame.Vector2(0, 0)
@@ -24,9 +24,12 @@ class Player:
         # The direction the player is facing, it should always be normalized
         self.face_direction : pygame.Vector2 = pygame.Vector2(1, 0)
         self.inventory : list[Card | None] = [Card(type = 0, bullet_type = i) for i in range(5)] + \
-                                            [Card(type = 2, effect_modifier_type = 0)] + \
-                                            [Card(type = 2, effect_modifier_type = 100)] + \
-                                            [None for i in range(20)]
+                                            [Card(type = 2, effect_modifier_type = 1)] + \
+                                            [Card(type = 1, attribute_modifier_type = 100),
+                                             Card(type = 2, effect_modifier_type = 2),
+                                             Card(type = 2, effect_modifier_type = 3)]
+        self.inventory.extend([None] * (40 - len(self.inventory)))
+                                            
 
         # weapon
         basic_info = {
@@ -36,10 +39,10 @@ class Player:
             "capacity" : 20,
             "max_slots" : 20,
             "card_list" : [Card(type = 1, attribute_modifier_type = 9)] + 
+                          [Card(type = 1, attribute_modifier_type = 100+i) for i in range(2)] + 
+                          [Card(type = 2, effect_modifier_type = 0)] + 
                           [Card(type = 0, bullet_type = 0)] + 
-                          [Card(type = 2, effect_modifier_type = i) for i in range(1)] + 
-                          [Card(type = 2, effect_modifier_type = 100)] + 
-                          [Card(type = 2, effect_modifier_type = 50), Card(type = 2, effect_modifier_type = 54)]
+                          [Card(type = 1, attribute_modifier_type = 50), Card(type = 1, attribute_modifier_type = 54)]
         }
         basic_info2 = {
             "cooldown" : 0.4,
@@ -50,9 +53,10 @@ class Player:
             "card_list" : [Card(type = 0, bullet_type = 0)],
         }
 
-        self.spatial_grid_dict = spatial_grid_dict
-        self.weapon_list : list[Gun | None] = [Gun(basic_info, self.spatial_grid_dict), 
-                                               Gun(basic_info2, self.spatial_grid_dict), 
+        self.bullet_manager = bullet_manager
+        self.bullet_manager.player = self
+        self.weapon_list : list[Gun | None] = [Gun(basic_info, self.bullet_manager), 
+                                               Gun(basic_info2, self.bullet_manager), 
                                                None, None]
         self.weapon_index : int = 0
 
@@ -154,7 +158,7 @@ class Player:
         
         return self.acc2D.as_polar()[1]
 
-    def Update(self, delta_time : float, acc_direction : pygame.Vector2 = None):
+    def Update(self, delta_time : float, keys):
         '''
         Update the position and velocity of the player, if acc_direction is None, 
         the player will stop with a reverse acceleration.
@@ -163,6 +167,19 @@ class Player:
             delta_time (float): The time step, e.g. 1/60
             acc_direction (pygame.Vector2): The direction of the acceleration
         '''
+
+        # Update position based on arrow key input
+        acc_direction = pygame.Vector2(0, 0)
+        if keys[pygame.K_LEFT] or keys[pygame.K_a]:
+            acc_direction.x -= 1
+        if keys[pygame.K_RIGHT] or keys[pygame.K_d]:
+            acc_direction.x += 1
+        if keys[pygame.K_UP] or keys[pygame.K_w]:
+            acc_direction.y += 1
+        if keys[pygame.K_DOWN] or keys[pygame.K_s]:
+            acc_direction.y -= 1
+
+
         # If the acceleration direction is not None and its length is greater than 0
         if acc_direction is not None and acc_direction.length_squared() > 0:
             acc_vector = acc_direction.normalize() * self.max_acceleration
@@ -215,6 +232,9 @@ class Player:
         if self.total_frame_passed % 10 == 0:
             self.history_position.append(pygame.Vector2(self.pos2D))
 
+        
+        self._update_timers(delta_time)
+
     def UpdateWeapon(self, delta_time : float, fire : bool = False, trigger_feedback : bool = False):
         '''
         Update the weapon.
@@ -253,7 +273,7 @@ class Player:
     def heal(self, amount : float):
         self.hp = min(self.max_hp, self.hp + amount)
 
-    def update_timers(self, delta_time : float):
+    def _update_timers(self, delta_time : float):
         if self.invincible_timer > 0:
             self.invincible_timer = max(0.0, self.invincible_timer - delta_time)
         

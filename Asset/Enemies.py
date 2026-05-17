@@ -215,7 +215,7 @@ class Enemy:
 
 
 class EnemyManager:
-    def __init__(self, spatial_grid_dict_pointer = None):
+    def __init__(self, spatial_grid_dict):
         self.enemies = []
         self.spawn_timer = 1.0
         self.boss = None
@@ -227,7 +227,7 @@ class EnemyManager:
         self.min_spawn_interval = GAME_CONFIG["spawn_min_interval"]
 
         # for spatial partitioning
-        self.spatial_grid_dict = spatial_grid_dict_pointer
+        self.spatial_grid_dict = spatial_grid_dict
 
     def reset(self):
         self.enemies.clear()
@@ -265,10 +265,11 @@ class EnemyManager:
             if not e.alive:
                 if e.is_boss:
                     self.boss_defeated = True
-                if self.spatial_grid_dict is not None:
-                    grid_x = (e.pos2D.x // GRID_CONFIG["cell_w"]) % GRID_CONFIG["number_of_cells_w"]
-                    grid_y = (e.pos2D.y // GRID_CONFIG["cell_h"]) % GRID_CONFIG["number_of_cells_h"]
-                    del self.spatial_grid_dict[grid_y * GRID_CONFIG["number_of_cells_w"] + grid_x][e.uuid]
+
+                grid_x = (e.pos2D.x // GRID_CONFIG["cell_w"]) % GRID_CONFIG["number_of_cells_w"]
+                grid_y = (e.pos2D.y // GRID_CONFIG["cell_h"]) % GRID_CONFIG["number_of_cells_h"]
+                del self.spatial_grid_dict[grid_y * GRID_CONFIG["number_of_cells_w"] + grid_x][e.uuid]
+
                 self.enemies.remove(e)
 
     def _spawn_enemy(self, player_pos):

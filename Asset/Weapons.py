@@ -3,6 +3,7 @@
 import pygame
 from collections import deque
 import random
+import copy
 
 from Asset.GameSetting import BULLET_CONFIG, ATTRIBUTE_MODIFIER_CONFIG, EFFECT_MODIFIER_CONFIG, COLOR_CONFIG, GRID_CONFIG
 from Asset.GameSetting import ENTITY_TYPE
@@ -14,7 +15,7 @@ if TYPE_CHECKING:
 import uuid
 
 class Gun():
-    def __init__(self, basic_info : dict, spatial_grid_dict = None):
+    def __init__(self, basic_info : dict, bullet_manager):
         '''
         Basic info of the gun
         '''
@@ -31,17 +32,14 @@ class Gun():
         self.capacity_left = self.basic_capacity
         self._refresh()
 
-        # Bullet's default attributes
-        self.bullet_lifetime = 1.5  # How long the bullet will stay alive
+        self.max_effect_count = 3
 
-        self.bullets = pygame.sprite.Group()
+
         self.cooldown_timer = 0     # Timer for bullet cooldown
         self.reload_timer = 0       # Timer for reload
 
-        # for spatial partitioning
-        self.spatial_grid_dict = spatial_grid_dict
+        self.bullet_manager = bullet_manager
 
-    
     def _refresh(self):
         self.cooldown = self.basic_cooldown
         self.reload= self.basic_reload
@@ -50,6 +48,7 @@ class Gun():
         for card in self.card_list:
             if card:
                 card.run_on_gun(self)
+
         if self.capacity_left > self.capacity:
             self.capacity_left = self.capacity
         if self.scatter_angel < 0:
@@ -59,7 +58,6 @@ class Gun():
         if self.cooldown < 0:
             self.cooldown = 0
         
-
     def edit_card(self, new_card, slot : int):
         if slot < len(self.card_list):
             self.card_list[slot] = new_card
@@ -71,13 +69,21 @@ class Gun():
     def fire(self, direction : pygame.Vector2, pos2D : pygame.Vector2): 
         cart_to_bullet = []
         bullet_type = -1
+        effect_card_count = 0
         for card in self.card_list:
             if card is None: continue
             if card.type == 0:  # bullet
                 bullet_type = card.bullet_type
-                break
-            if card.type == 2:  # attribute_modifier
+                continue
+            if card.type == 1:  # attribute
+                if card.attribute_modifier_type >= 50:
+                    cart_to_bullet.append(card)
+                continue
+            if card.type == 2:  # effect
+                if effect_card_count >= self.max_effect_count:
+                    continue
                 cart_to_bullet.append(card)
+                effect_card_count += 1
 
         if bullet_type == -1:
             return "No bullet card equipped!"
@@ -90,8 +96,7 @@ class Gun():
                 return "No bullet in clip!"
 
             direction = direction.rotate(random.uniform(-self.scatter_angel, self.scatter_angel))
-            new_bullet = Bullet(cart_to_bullet, bullet_type, self.bullet_lifetime, pos2D, direction)
-            self._add_bullet(new_bullet)
+            self.bullet_manager.add_bullet(cart_to_bullet, bullet_type, pos2D, direction)
             self.cooldown_timer = self.cooldown
 
             # Reduce ammo in clip
@@ -105,42 +110,119 @@ class Gun():
             else:
                 return ""
 
-    def _add_bullet(self, bullet):
-        self.bullets.add(bullet)
-        grid_x = (bullet.pos2D.x // GRID_CONFIG["cell_w"]) % GRID_CONFIG["number_of_cells_w"]
-        grid_y = (bullet.pos2D.y // GRID_CONFIG["cell_h"]) % GRID_CONFIG["number_of_cells_h"]
-        grid_pos = grid_y * GRID_CONFIG["number_of_cells_w"] + grid_x
-        bullet.grid_pos = grid_pos
-        self.spatial_grid_dict[grid_pos][bullet.uuid] = bullet
-        
-
     def update(self, delta_time):
         self.cooldown_timer = max(0, self.cooldown_timer - delta_time)
         self.reload_timer = max(0, self.reload_timer - delta_time)
 
+
+class BulletManager():
+    def __init__(self, spatial_grid_dict):
+        self.bullets = pygame.sprite.Group()
+        self.spatial_grid_dict = spatial_grid_dict
+        self.player = None
+
+    def add_bullet(self, cart_to_bullet, bullet_type, pos2D, direction):
+        new_bullet = Bullet(cart_to_bullet, bullet_type, self.player, self.spatial_grid_dict, pos2D, direction)
+        self.bullets.add(new_bullet)
+
+    def update(self, delta_time):
         for bullet in self.bullets:
             bullet.update(delta_time)
+            if bullet.status == 0:
+                self.check_card_status(bullet)
+                bullet.status = -1
 
-        # for spatial partitioning
-        if self.spatial_grid_dict is not None:
-            for bullet in self.bullets:
-                grid_x = (bullet.pos2D.x // GRID_CONFIG["cell_w"]) % GRID_CONFIG["number_of_cells_w"]
-                grid_y = (bullet.pos2D.y // GRID_CONFIG["cell_h"]) % GRID_CONFIG["number_of_cells_h"]
-                grid_pos = grid_y * GRID_CONFIG["number_of_cells_w"] + grid_x
-                if grid_pos != bullet.grid_pos:
-                    del self.spatial_grid_dict[bullet.grid_pos][bullet.uuid]
-                    bullet.grid_pos = grid_pos
-                    self.spatial_grid_dict[grid_pos][bullet.uuid] = bullet
+            if bullet.isKill == True:
+                del self.spatial_grid_dict[bullet.grid_pos][bullet.uuid]
+                bullet.kill()
+    
+    def check_card_status(self, bullet):
+        for card in bullet.card_list:
+            if card.type == 2:
+                bullet.isKill = True
+                if card.effect_modifier_type < 2:   # Split
+                    new_cards = bullet.card_list.copy()
+                    new_cards.remove(card)
+                    pos2D, vel2D, acc2D = bullet.pos2D, bullet.vel2D, bullet.acc2D
+                    hit_enemies = bullet.hit_enemies
+
+                    if card.effect_modifier_type == 0:
+                        vel2D_v1 = vel2D.rotate(45)
+                        vel2D_v2 = vel2D.rotate(-45)
+                    elif card.effect_modifier_type == 1:
+                        vel2D_v1 = vel2D.rotate(135)
+                        vel2D_v2 = vel2D.rotate(-135)
+
+                    new_bullet = Bullet(new_cards, bullet.bullet_type, self.player, self.spatial_grid_dict, pos2D, vel2D_v1, acc2D, hit_enemies = hit_enemies)
+                    new_bullet.multiplier = bullet.multiplier * 0.5
+                    self.bullets.add(new_bullet)
+
+                    new_bullet = Bullet(new_cards, bullet.bullet_type, self.player, self.spatial_grid_dict, pos2D, vel2D_v2, acc2D, hit_enemies = hit_enemies)
+                    new_bullet.multiplier = bullet.multiplier * 0.5
+                    self.bullets.add(new_bullet)
+
+                    break
+
+                elif card.effect_modifier_type == 2:    # Penetrate
+                    new_cards = bullet.card_list.copy()
+                    new_cards.remove(card)
+                    bullet.card_list = new_cards
+                    bullet.isKill = False
+
+                    break
+
+                elif card.effect_modifier_type == 3:  # Bounce
+                    new_cards = bullet.card_list.copy()
+                    new_cards.remove(card)
+                    bullet.card_list = new_cards
+                    bullet.isKill = False
+
+                    target = getattr(bullet, "last_hit_target", None)
+                    if target is not None:
+                        if target.entity_type == ENTITY_TYPE["enemy"]:
+                            # Bounce off enemy: reverse velocity or push away
+                            normal = (bullet.pos2D - target.pos2D)
+                            if normal.length_squared() > 0:
+                                normal = normal.normalize()
+                                dot = bullet.vel2D.dot(normal)
+                                bullet.vel2D = bullet.vel2D - 2 * dot * normal
+                                bullet.pos2D += normal * (bullet.radius + target.radius + 2)
+                        elif target.entity_type == ENTITY_TYPE["obstacle"]:
+                            # Bounce off obstacle (rectangle)
+                            half = target.size / 2
+                            local_pos = bullet.pos2D - target.pos2D
+
+                            overlap_x = half.x - abs(local_pos.x)
+                            overlap_y = half.y - abs(local_pos.y)
+                            
+                            normal = pygame.Vector2(0, 0)
+                            if overlap_x < overlap_y:
+                                normal.x = 1 if local_pos.x > 0 else -1
+                                bullet.pos2D.x = target.pos2D.x + normal.x * (half.x + bullet.radius + 2)
+                            else:
+                                normal.y = 1 if local_pos.y > 0 else -1
+                                bullet.pos2D.y = target.pos2D.y + normal.y * (half.y + bullet.radius + 2)
+
+                            if normal.length_squared() > 0:
+                                dot = bullet.vel2D.dot(normal)
+                                bullet.vel2D = bullet.vel2D - 2 * dot * normal
+
+                    break
+    
+                    
+
 
 
 class Bullet(pygame.sprite.Sprite):
     def __init__(self, card_list : list["Card"],
                 bullet_type : int,
-                lifetime : float,
+                player,
+                spatial_grid_dict : dict,
                 pos2D : pygame.Vector2 = pygame.math.Vector2(0,0),
                 vel2D : pygame.Vector2 = pygame.math.Vector2(0,0),
                 acc2D : pygame.Vector2 = pygame.math.Vector2(0,0),
-                basic_info : dict = {}):
+                basic_info : dict = {},
+                hit_enemies : set = set()):
         '''
         bullet_type:
             0, Normal Bullet
@@ -158,25 +240,49 @@ class Bullet(pygame.sprite.Sprite):
             acc2D (pygame.Vector2) : The acceleration of the bullet in 2D space
         '''
         super().__init__()
-
         self.uuid = uuid.uuid4()    # unique identifier of the spatial partitioning
         self.entity_type = ENTITY_TYPE["bullet"]
-
-        self.card_list = card_list  # List of cards attached to the bullet
-        self.lifetime = lifetime    # How long the bullet will stay alive
-        self.timer = 0              # Timer for bullet lifetime
         self.bullet_type = bullet_type  # The type of bullet
-        
+
         self.pos2D = pos2D        # The position of the bullet in 2D space
         self.vel2D = vel2D        # The velocity of the bullet in 2D space
         self.acc2D = acc2D        # The acceleration of the bullet in 2D space
+        self.hit_enemies = hit_enemies.copy()  # Track enemies already hit by this bullet
+        self.multiplier = 1
 
-        self.max_effect_count = 3
-    
-        self.hit_enemies = set()  # Track enemies already hit by this bullet
-        self.init_bullet()
 
-    def init_bullet(self):
+        self.card_list : list[Card] = card_list  # List of cards attached to the bullet
+        
+        self.lifetime = 2    # How long the bullet will stay alive
+        self.timer = 0              # Timer for bullet lifetime
+        self.status = -1     # -1 nothing, 0 hit, 1 lifetime, 2 time
+        
+
+        self.spatial_grid_dict = spatial_grid_dict
+        self.player = player
+
+        self._set_grid_pos()
+        self._init_bullet()
+
+        self.isKill = False
+
+    def _set_grid_pos(self):
+        self.grid_x = int(self.pos2D.x // GRID_CONFIG["cell_w"]) % GRID_CONFIG["number_of_cells_w"]
+        self.grid_y = int(self.pos2D.y // GRID_CONFIG["cell_h"]) % GRID_CONFIG["number_of_cells_h"]
+        self.grid_pos = self.grid_y * GRID_CONFIG["number_of_cells_w"] + self.grid_x
+        self.spatial_grid_dict[self.grid_pos][self.uuid] = self
+
+    def _update_grid_pos(self):
+        new_grid_x = int(self.pos2D.x // GRID_CONFIG["cell_w"]) % GRID_CONFIG["number_of_cells_w"]
+        new_grid_y = int(self.pos2D.y // GRID_CONFIG["cell_h"]) % GRID_CONFIG["number_of_cells_h"]
+        if new_grid_x != self.grid_x or new_grid_y != self.grid_y:
+            del self.spatial_grid_dict[self.grid_pos][self.uuid]
+            self.grid_x = new_grid_x
+            self.grid_y = new_grid_y
+            self.grid_pos = self.grid_y * GRID_CONFIG["number_of_cells_w"] + self.grid_x
+            self.spatial_grid_dict[self.grid_pos][self.uuid] = self
+
+    def _init_bullet(self):
         self.phy_damage = BULLET_CONFIG[self.bullet_type][1].get("physical_damage", 0)
         self.exp_damage = BULLET_CONFIG[self.bullet_type][1].get("explosion_damage", 0)
         self.bur_damage = BULLET_CONFIG[self.bullet_type][1].get("burn_damage", 0)
@@ -185,17 +291,12 @@ class Bullet(pygame.sprite.Sprite):
         self.lifetime = BULLET_CONFIG[self.bullet_type][1].get("lifetime", self.lifetime)
 
         self.explosion_radius = BULLET_CONFIG[self.bullet_type][1].get("explosion_radius", 0)
-
-        effect_count = 0
-        for card in self.card_list:
-            card.run_on_bullet(self)
-            if card.type == 2:
-                effect_count += 1
-                if effect_count >= self.max_effect_count:
-                    break
+        for get_card in self.card_list:
+            if get_card.type == 1:
+                get_card.run_on_bullet(self)
             
         if self.vel2D.length() != 0:
-            self.vel2D = self.vel2D.normalize() * self.speed
+            self.vel2D = self.vel2D.normalize() * self.speed * 30
         pass
     
     def draw(self, surface : pygame.Surface, to_screen : bool):
@@ -215,7 +316,7 @@ class Bullet(pygame.sprite.Sprite):
                     end_pos = to_screen(self.pos2D + self.vel2D * 0.1)
                     pygame.draw.line(surface, line["color"], start_pos, end_pos, int(line["width"]))
 
-    def damage(self, phy_multiplier : float = 1, exp_multiplier : float = 1, bur_multiplier : float = 1):
+    def get_damage(self, phy_multiplier : float = 1, exp_multiplier : float = 1, bur_multiplier : float = 1):
         return self.phy_damage * phy_multiplier + self.exp_damage * exp_multiplier + self.bur_damage * bur_multiplier
     
     def update(self, delta_time):
@@ -223,67 +324,80 @@ class Bullet(pygame.sprite.Sprite):
         self.vel2D = self.vel2D + self.acc2D * delta_time
         self.pos2D = self.pos2D + (old_vel + self.vel2D) * 0.5 * delta_time
 
+        self._update_grid_pos()
+
+        if self.timer > self.lifetime:
+            self.triger_lifetime()
+
         self.timer += delta_time
 
-    def apply_card_effects(self):
-        for card in self.card_list:
-            if card.type == 2:
-                pass
-
-    def _explode(self, player, spatial_grid_dict):
+    def _explode(self):
         total_damage = 0
-        radius_grid = int((self.explosion_radius // GRID_CONFIG["cell_w"]) % GRID_CONFIG["number_of_cells_w"]) + 1
-        bullet_grid_pos = [int(self.pos2D.x // GRID_CONFIG["cell_w"]) % GRID_CONFIG["number_of_cells_w"], 
-                            int(self.pos2D.y // GRID_CONFIG["cell_h"]) % GRID_CONFIG["number_of_cells_h"]]
+        radius = self.explosion_radius * self.multiplier
+        radius_grid = int((radius // GRID_CONFIG["cell_w"]) % GRID_CONFIG["number_of_cells_w"]) + 1
 
-        for i in range(bullet_grid_pos[0] - radius_grid, bullet_grid_pos[0] + radius_grid + 1):
-            for j in range(bullet_grid_pos[1] - radius_grid, bullet_grid_pos[1] + radius_grid + 1):
+        for i in range(self.grid_x - radius_grid, self.grid_x + radius_grid + 1):
+            for j in range(self.grid_y - radius_grid, self.grid_y + radius_grid + 1):
                 grid_x = i % GRID_CONFIG["number_of_cells_w"]
                 grid_y = j % GRID_CONFIG["number_of_cells_h"]
                 grid_pos = grid_y * GRID_CONFIG["number_of_cells_w"] + grid_x
-                for entity in spatial_grid_dict[grid_pos].values():
+                for entity in self.spatial_grid_dict[grid_pos].values():
                     if entity.entity_type != ENTITY_TYPE["enemy"]:
                         continue
-                    if self.pos2D.distance_to(entity.pos2D) - entity.radius < self.explosion_radius:
-                        damage = self.damage() * player.damage_multiplier
+                    if self.pos2D.distance_to(entity.pos2D) - entity.radius < radius:
+                        damage = self.get_damage() * self.player.damage_multiplier * self.multiplier
                         total_damage += damage
                         entity.take_damage(damage)
                         self.hit_enemies.add(entity.uuid)
-        player.add_damage_dealt(total_damage)
+        self.player.add_damage_dealt(total_damage)
 
-    def _hit(self, player, enemy):
-        damage = self.damage() * player.damage_multiplier
-        enemy.take_damage(damage)
-        player.add_damage_dealt(damage)
-        self.hit_enemies.add(enemy.uuid)
+    def _hit(self, entity):
+        if hasattr(entity, "take_damage"):
+            damage = self.get_damage() * self.player.damage_multiplier * self.multiplier
+            entity.take_damage(damage)
+            self.player.add_damage_dealt(damage)
+        if hasattr(entity, "uuid"):
+            self.hit_enemies.add(entity.uuid)
 
     def _explode_effect(self, draw_type, effect_queue = None):
+        radius = self.explosion_radius * self.multiplier
         if effect_queue is not None:
             if "explode" in draw_type:
-                effect_queue.append([{"disappearing_circle" : [{ "pos_2D" : self.pos2D, "radius" : self.explosion_radius, "color" : (255, 200, 0, 255), "total_time" : 0.5 }]}, 0.5])
+                effect_queue.append([{"disappearing_circle" : [{ "pos_2D" : self.pos2D, "radius" : radius, "color" : (255, 200, 0, 255), "total_time" : 0.5 }]}, 0.5])
 
-    def triger_hit(self, player, target_enemy, effect_queue = None, spatial_grid_dict = None):
+    def triger_hit(self, target_entity, effect_queue = None):
+        if self.isKill == True:
+            return
+
+        self.status = 0
+        self.last_hit_target = target_entity
+
+        info = {"bullet" : self, "state" : -1}
         if self.bullet_type == 0 or self.bullet_type == 1 or self.bullet_type == 2:
-            self._hit(player, target_enemy)
-            self.kill()
+            self._hit(target_entity)
+            self.isKill = True
         elif self.bullet_type == 3: # Grenade
-            self._explode(player, spatial_grid_dict)
+            self._explode()
             self._explode_effect("explode", effect_queue)
-            self.kill()
+            self.isKill = True
         elif self.bullet_type == 4: # Laser
-            if target_enemy.uuid not in self.hit_enemies:
-                self._hit(player, target_enemy)
-                
-    def triger_lifetime(self, player, effect_queue = None, spatial_grid_dict = None):
+            self._hit(target_entity)
+
+        
+
+    def triger_lifetime(self, effect_queue = None):
         if self.bullet_type == 3: # Grenade
-            self._explode(player, spatial_grid_dict)
+            self._explode()
             self._explode_effect("explode", effect_queue)
-            self.kill()
+            self.isKill = True
         else:
-            self.kill()
+            self.isKill = True
+        
+        self.status = 1
 
     def triger_time(self, ):
-        pass
+        self.status = 2
+
 
 '''
 -(Attribute Modifier) 屬性修正 ->
