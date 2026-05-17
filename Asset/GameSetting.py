@@ -5,6 +5,7 @@ ENTITY_TYPE = {
     "bullet" : 0,
     "enemy" : 1,
     "player" : 2,
+    "obstacle" : 3,
 }
 
 GRID_CONFIG = {
@@ -22,7 +23,9 @@ COLOR_CONFIG = {
     "phy_damage" : (255, 255, 255),
     "exp_damage" : (255, 100, 0),
     "bur_damage" : (255, 200, 0),
-    "speed" : (100, 255, 150)
+    "speed" : (100, 255, 150),
+    "normal_bullet" : (200, 200, 150, 255),
+    "enemy" : (255, 0, 0, 255),
 }
 
 # Bullet Type: "Type Name", {stats}, {draw_info}
@@ -32,52 +35,52 @@ BULLET_CONFIG = {
     0 : [
         "Normal Bullet",
         {
-            "speed": 300,
+            "speed": 10,
             "physical_damage": 5,
             "radius" : 3,
             "info" : "The most basic bullet, deal physical damage" ,
-            "draw_info" : {"circle" : [{"radius" : 3, "color" : (255, 255, 255, 255)}]}
+            "draw_info" : {"circle" : [{"radius" : 3, "color" : COLOR_CONFIG["normal_bullet"]}]}
         },
         {
-            "circle" : [{"pos_x" : 0.5, "pos_y" : 0.5, "size" : 0.4, "color" : (255, 255, 255, 255)}]
+            "circle" : [{"pos_x" : 0.5, "pos_y" : 0.5, "size" : 0.4, "color" : COLOR_CONFIG["normal_bullet"]}]
         }
     ],
     1 : [
         "Light Bullet",
         {
-            "speed": 150,
+            "speed": 5,
             "physical_damage": 3,
             "radius" : 2,
             "capacity_modifier" : 20,
             "cooldown_modifier" : -0.1,
             "scatter_angel_modifier" : 5,
             "info" : "Deal physical damage with high capacity, low speed, low damage and narrow scatter angle",
-            "draw_info" : {"circle" : [{"radius" : 2, "color" : (255, 255, 255, 255)}]}
+            "draw_info" : {"circle" : [{"radius" : 2, "color" : COLOR_CONFIG["normal_bullet"]}]}
         },
         {
-            "circle" : [{"pos_x" : 0.5, "pos_y" : 0.5, "size" : 0.3, "color" : (255, 255, 255, 255)}]
+            "circle" : [{"pos_x" : 0.5, "pos_y" : 0.5, "size" : 0.3, "color" : COLOR_CONFIG["normal_bullet"]}]
         }
     ],
     2 : [
         "Heavy Bullet",
         {
-            "speed": 600,
+            "speed": 20,
             "physical_damage": 15,
             "radius" : 4,
             "capacity_modifier" : -20,
             "cooldown_modifier" : 0.1,
             "scatter_angel_modifier" : -5,
             "info" : "Deal physical damage with low capacity, high speed, high damage and wide scatter angle",
-            "draw_info" : {"circle" : [{"radius" : 4, "color" : (255, 255, 255, 255)}]}
+            "draw_info" : {"circle" : [{"radius" : 4, "color" : COLOR_CONFIG["normal_bullet"]}]}
         },
         {
-            "circle" : [{"pos_x" : 0.5, "pos_y" : 0.5, "size" : 0.5, "color" : (255, 255, 255, 255)}]
+            "circle" : [{"pos_x" : 0.5, "pos_y" : 0.5, "size" : 0.5, "color" : COLOR_CONFIG["normal_bullet"]}]
         }
     ],
     3 : [
         "Grenades",
         {
-            "speed": 100,
+            "speed": 4,
             "explosion_damage": 10,
             "radius": 5,
             "explosion_radius": 80,
@@ -96,7 +99,7 @@ BULLET_CONFIG = {
     4 : [
         "Laser",
         {
-            "speed": 300,
+            "speed": 10,
             "burn_damage": 2,
             "radius": 2,
             "scatter_angel_modifier" : -10,
@@ -122,7 +125,6 @@ ATTRIBUTE_MODIFIER_CONFIG = {
             "line" : [{"start_x" : 0.50, "start_y" : 0.25, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.05, "color" : COLOR_CONFIG["cooldown"]},
                      {"start_x" : 0.40, "start_y" : 0.35, "end_x" : 0.50, "end_y" : 0.25, "width" : 0.05, "color" : COLOR_CONFIG["cooldown"]},
                      {"start_x" : 0.60, "start_y" : 0.35, "end_x" : 0.50, "end_y" : 0.25, "width" : 0.05, "color" : COLOR_CONFIG["cooldown"]}],
-            #"string" : [{"text" : "+", "font" : "Arial", "pos_x" : 0.3, "pos_y" : 0.3, "size" : 0.4, "color" : (255, 255, 255, 255)}],
         }
     ],
     1 : [
@@ -135,7 +137,6 @@ ATTRIBUTE_MODIFIER_CONFIG = {
             "line" : [{"start_x" : 0.50, "start_y" : 0.25, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.1, "color" : COLOR_CONFIG["cooldown"]},
                      {"start_x" : 0.40, "start_y" : 0.35, "end_x" : 0.50, "end_y" : 0.25, "width" : 0.1, "color" : COLOR_CONFIG["cooldown"]},
                      {"start_x" : 0.60, "start_y" : 0.35, "end_x" : 0.50, "end_y" : 0.25, "width" : 0.1, "color" : COLOR_CONFIG["cooldown"]}],
-            #"string" : [{"text" : "+", "font" : "Arial", "pos_x" : 0.3, "pos_y" : 0.3, "size" : 0.4, "color" : (255, 255, 255, 255)}],
         }
     ],
     2 : [
@@ -148,7 +149,6 @@ ATTRIBUTE_MODIFIER_CONFIG = {
             "line" : [{"start_x" : 0.50, "start_y" : 0.25, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.15, "color" : COLOR_CONFIG["cooldown"]},
                      {"start_x" : 0.40, "start_y" : 0.35, "end_x" : 0.50, "end_y" : 0.25, "width" : 0.15, "color" : COLOR_CONFIG["cooldown"]},
                      {"start_x" : 0.60, "start_y" : 0.35, "end_x" : 0.50, "end_y" : 0.25, "width" : 0.15, "color" : COLOR_CONFIG["cooldown"]}],
-            #"string" : [{"text" : "+", "font" : "Arial", "pos_x" : 0.3, "pos_y" : 0.3, "size" : 0.4, "color" : (255, 255, 255, 255)}],
         }
     ],
     3 : [
@@ -161,7 +161,6 @@ ATTRIBUTE_MODIFIER_CONFIG = {
             "line" : [{"start_x" : 0.50, "start_y" : 0.25, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.2, "color" : COLOR_CONFIG["cooldown"]},
                      {"start_x" : 0.40, "start_y" : 0.35, "end_x" : 0.50, "end_y" : 0.25, "width" : 0.2, "color" : COLOR_CONFIG["cooldown"]},
                      {"start_x" : 0.60, "start_y" : 0.35, "end_x" : 0.50, "end_y" : 0.25, "width" : 0.2, "color" : COLOR_CONFIG["cooldown"]}],
-            #"string" : [{"text" : "+", "font" : "Arial", "pos_x" : 0.3, "pos_y" : 0.3, "size" : 0.4, "color" : (255, 255, 255, 255)}],
         }
     ],
     4 : [
@@ -174,7 +173,6 @@ ATTRIBUTE_MODIFIER_CONFIG = {
             "line" : [{"start_x" : 0.50, "start_y" : 0.25, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.25, "color" : COLOR_CONFIG["cooldown"]},
                      {"start_x" : 0.40, "start_y" : 0.35, "end_x" : 0.50, "end_y" : 0.25, "width" : 0.25, "color" : COLOR_CONFIG["cooldown"]},
                      {"start_x" : 0.60, "start_y" : 0.35, "end_x" : 0.50, "end_y" : 0.25, "width" : 0.25, "color" : COLOR_CONFIG["cooldown"]}],
-            #"string" : [{"text" : "+", "font" : "Arial", "pos_x" : 0.3, "pos_y" : 0.3, "size" : 0.4, "color" : (255, 255, 255, 255)}],
         }
     ],
     5 : [
@@ -187,7 +185,6 @@ ATTRIBUTE_MODIFIER_CONFIG = {
             "line" : [{"start_x" : 0.50, "start_y" : 0.25, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.05, "color" : COLOR_CONFIG["cooldown"]},
                      {"start_x" : 0.40, "start_y" : 0.65, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.05, "color" : COLOR_CONFIG["cooldown"]},
                      {"start_x" : 0.60, "start_y" : 0.65, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.05, "color" : COLOR_CONFIG["cooldown"]}],
-            #"string" : [{"text" : "+", "font" : "Arial", "pos_x" : 0.3, "pos_y" : 0.3, "size" : 0.4, "color" : (255, 255, 255, 255)}],
         }
     ],
     6 : [
@@ -200,7 +197,6 @@ ATTRIBUTE_MODIFIER_CONFIG = {
             "line" : [{"start_x" : 0.50, "start_y" : 0.25, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.1, "color" : COLOR_CONFIG["cooldown"]},
                      {"start_x" : 0.40, "start_y" : 0.65, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.1, "color" : COLOR_CONFIG["cooldown"]},
                      {"start_x" : 0.60, "start_y" : 0.65, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.1, "color" : COLOR_CONFIG["cooldown"]}],
-            #"string" : [{"text" : "+", "font" : "Arial", "pos_x" : 0.3, "pos_y" : 0.3, "size" : 0.4, "color" : (255, 255, 255, 255)}],
         }
     ],
     7 : [
@@ -213,7 +209,6 @@ ATTRIBUTE_MODIFIER_CONFIG = {
             "line" : [{"start_x" : 0.50, "start_y" : 0.25, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.15, "color" : COLOR_CONFIG["cooldown"]},
                      {"start_x" : 0.40, "start_y" : 0.65, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.15, "color" : COLOR_CONFIG["cooldown"]},
                      {"start_x" : 0.60, "start_y" : 0.65, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.15, "color" : COLOR_CONFIG["cooldown"]}],
-            #"string" : [{"text" : "+", "font" : "Arial", "pos_x" : 0.3, "pos_y" : 0.3, "size" : 0.4, "color" : (255, 255, 255, 255)}],
         }
     ],
     8 : [
@@ -226,7 +221,6 @@ ATTRIBUTE_MODIFIER_CONFIG = {
             "line" : [{"start_x" : 0.50, "start_y" : 0.25, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.2, "color" : COLOR_CONFIG["cooldown"]},
                      {"start_x" : 0.40, "start_y" : 0.65, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.2, "color" : COLOR_CONFIG["cooldown"]},
                      {"start_x" : 0.60, "start_y" : 0.65, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.2, "color" : COLOR_CONFIG["cooldown"]}],
-            #"string" : [{"text" : "+", "font" : "Arial", "pos_x" : 0.3, "pos_y" : 0.3, "size" : 0.4, "color" : (255, 255, 255, 255)}],
         }
     ],
     9 : [
@@ -239,7 +233,6 @@ ATTRIBUTE_MODIFIER_CONFIG = {
             "line" : [{"start_x" : 0.50, "start_y" : 0.25, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.25, "color" : COLOR_CONFIG["cooldown"]},
                      {"start_x" : 0.40, "start_y" : 0.65, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.25, "color" : COLOR_CONFIG["cooldown"]},
                      {"start_x" : 0.60, "start_y" : 0.65, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.25, "color" : COLOR_CONFIG["cooldown"]}],
-            #"string" : [{"text" : "+", "font" : "Arial", "pos_x" : 0.3, "pos_y" : 0.3, "size" : 0.4, "color" : (255, 255, 255, 255)}],
         }
     ],
     10 : [
@@ -252,7 +245,6 @@ ATTRIBUTE_MODIFIER_CONFIG = {
             "line" : [{"start_x" : 0.50, "start_y" : 0.25, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.05, "color" : COLOR_CONFIG["reload"]},
                      {"start_x" : 0.40, "start_y" : 0.35, "end_x" : 0.50, "end_y" : 0.25, "width" : 0.05, "color" : COLOR_CONFIG["reload"]},
                      {"start_x" : 0.60, "start_y" : 0.35, "end_x" : 0.50, "end_y" : 0.25, "width" : 0.05, "color" : COLOR_CONFIG["reload"]},],
-            #"string" : [{"text" : "+", "font" : "Arial", "pos_x" : 0.3, "pos_y" : 0.3, "size" : 0.4, "color" : (255, 255, 255, 255)}],
         }
     ],
     11 : [
@@ -265,7 +257,6 @@ ATTRIBUTE_MODIFIER_CONFIG = {
             "line" : [{"start_x" : 0.50, "start_y" : 0.25, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.1, "color" : COLOR_CONFIG["reload"]},
                      {"start_x" : 0.40, "start_y" : 0.35, "end_x" : 0.50, "end_y" : 0.25, "width" : 0.1, "color" : COLOR_CONFIG["reload"]},
                      {"start_x" : 0.60, "start_y" : 0.35, "end_x" : 0.50, "end_y" : 0.25, "width" : 0.1, "color" : COLOR_CONFIG["reload"]},],
-            #"string" : [{"text" : "+", "font" : "Arial", "pos_x" : 0.3, "pos_y" : 0.3, "size" : 0.4, "color" : (255, 255, 255, 255)}],
         }
     ],
     12 : [
@@ -278,7 +269,6 @@ ATTRIBUTE_MODIFIER_CONFIG = {
             "line" : [{"start_x" : 0.50, "start_y" : 0.25, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.15, "color" : COLOR_CONFIG["reload"]},
                      {"start_x" : 0.40, "start_y" : 0.35, "end_x" : 0.50, "end_y" : 0.25, "width" : 0.15, "color" : COLOR_CONFIG["reload"]},
                      {"start_x" : 0.60, "start_y" : 0.35, "end_x" : 0.50, "end_y" : 0.25, "width" : 0.15, "color" : COLOR_CONFIG["reload"]},],
-            #"string" : [{"text" : "+", "font" : "Arial", "pos_x" : 0.3, "pos_y" : 0.3, "size" : 0.4, "color" : (255, 255, 255, 255)}],
         }
     ],
     13 : [
@@ -291,7 +281,6 @@ ATTRIBUTE_MODIFIER_CONFIG = {
             "line" : [{"start_x" : 0.50, "start_y" : 0.25, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.2, "color" : COLOR_CONFIG["reload"]},
                      {"start_x" : 0.40, "start_y" : 0.35, "end_x" : 0.50, "end_y" : 0.25, "width" : 0.2, "color" : COLOR_CONFIG["reload"]},
                      {"start_x" : 0.60, "start_y" : 0.35, "end_x" : 0.50, "end_y" : 0.25, "width" : 0.2, "color" : COLOR_CONFIG["reload"]},],
-            #"string" : [{"text" : "+", "font" : "Arial", "pos_x" : 0.3, "pos_y" : 0.3, "size" : 0.4, "color" : (255, 255, 255, 255)}],
         }
     ],
     14 : [
@@ -304,7 +293,6 @@ ATTRIBUTE_MODIFIER_CONFIG = {
             "line" : [{"start_x" : 0.50, "start_y" : 0.25, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.25, "color" : COLOR_CONFIG["reload"]},
                      {"start_x" : 0.40, "start_y" : 0.35, "end_x" : 0.50, "end_y" : 0.25, "width" : 0.25, "color" : COLOR_CONFIG["reload"]},
                      {"start_x" : 0.60, "start_y" : 0.35, "end_x" : 0.50, "end_y" : 0.25, "width" : 0.25, "color" : COLOR_CONFIG["reload"]},],
-            #"string" : [{"text" : "+", "font" : "Arial", "pos_x" : 0.3, "pos_y" : 0.3, "size" : 0.4, "color" : (255, 255, 255, 255)}],
         }
     ],
     15 : [
@@ -317,7 +305,6 @@ ATTRIBUTE_MODIFIER_CONFIG = {
             "line" : [{"start_x" : 0.50, "start_y" : 0.25, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.05, "color" : COLOR_CONFIG["reload"]},
                      {"start_x" : 0.40, "start_y" : 0.65, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.05, "color" : COLOR_CONFIG["reload"]},
                      {"start_x" : 0.60, "start_y" : 0.65, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.05, "color" : COLOR_CONFIG["reload"]}],
-            #"string" : [{"text" : "+", "font" : "Arial", "pos_x" : 0.3, "pos_y" : 0.3, "size" : 0.4, "color" : (255, 255, 255, 255)}],
         }
     ],
     16 : [
@@ -330,7 +317,6 @@ ATTRIBUTE_MODIFIER_CONFIG = {
             "line" : [{"start_x" : 0.50, "start_y" : 0.25, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.1, "color" : COLOR_CONFIG["reload"]},
                      {"start_x" : 0.40, "start_y" : 0.65, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.1, "color" : COLOR_CONFIG["reload"]},
                      {"start_x" : 0.60, "start_y" : 0.65, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.1, "color" : COLOR_CONFIG["reload"]}],
-            #"string" : [{"text" : "+", "font" : "Arial", "pos_x" : 0.3, "pos_y" : 0.3, "size" : 0.4, "color" : (255, 255, 255, 255)}],
         }
     ],
     17 : [
@@ -343,7 +329,6 @@ ATTRIBUTE_MODIFIER_CONFIG = {
             "line" : [{"start_x" : 0.50, "start_y" : 0.25, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.15, "color" : COLOR_CONFIG["reload"]},
                      {"start_x" : 0.40, "start_y" : 0.65, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.15, "color" : COLOR_CONFIG["reload"]},
                      {"start_x" : 0.60, "start_y" : 0.65, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.15, "color" : COLOR_CONFIG["reload"]}],
-            #"string" : [{"text" : "+", "font" : "Arial", "pos_x" : 0.3, "pos_y" : 0.3, "size" : 0.4, "color" : (255, 255, 255, 255)}],
         }
     ],
     18 : [
@@ -356,7 +341,6 @@ ATTRIBUTE_MODIFIER_CONFIG = {
             "line" : [{"start_x" : 0.50, "start_y" : 0.25, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.2, "color" : COLOR_CONFIG["reload"]},
                      {"start_x" : 0.40, "start_y" : 0.65, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.2, "color" : COLOR_CONFIG["reload"]},
                      {"start_x" : 0.60, "start_y" : 0.65, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.2, "color" : COLOR_CONFIG["reload"]}],
-            #"string" : [{"text" : "+", "font" : "Arial", "pos_x" : 0.3, "pos_y" : 0.3, "size" : 0.4, "color" : (255, 255, 255, 255)}],
         }
     ],
     19 : [
@@ -369,7 +353,6 @@ ATTRIBUTE_MODIFIER_CONFIG = {
             "line" : [{"start_x" : 0.50, "start_y" : 0.25, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.25, "color" : COLOR_CONFIG["reload"]},
                      {"start_x" : 0.40, "start_y" : 0.65, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.25, "color" : COLOR_CONFIG["reload"]},
                      {"start_x" : 0.60, "start_y" : 0.65, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.25, "color" : COLOR_CONFIG["reload"]}],
-            #"string" : [{"text" : "+", "font" : "Arial", "pos_x" : 0.3, "pos_y" : 0.3, "size" : 0.4, "color" : (255, 255, 255, 255)}],
         }
     ],
     20 : [
@@ -382,7 +365,6 @@ ATTRIBUTE_MODIFIER_CONFIG = {
             "line" : [{"start_x" : 0.50, "start_y" : 0.25, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.05, "color" : COLOR_CONFIG["scatter_angel"]},
                      {"start_x" : 0.40, "start_y" : 0.35, "end_x" : 0.50, "end_y" : 0.25, "width" : 0.05, "color" : COLOR_CONFIG["scatter_angel"]},
                      {"start_x" : 0.60, "start_y" : 0.35, "end_x" : 0.50, "end_y" : 0.25, "width" : 0.05, "color" : COLOR_CONFIG["scatter_angel"]},],
-            #"string" : [{"text" : "+", "font" : "Arial", "pos_x" : 0.3, "pos_y" : 0.3, "size" : 0.4, "color" : (255, 255, 255, 255)}],
         }
     ],
     21 : [
@@ -395,7 +377,6 @@ ATTRIBUTE_MODIFIER_CONFIG = {
             "line" : [{"start_x" : 0.50, "start_y" : 0.25, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.1, "color" : COLOR_CONFIG["scatter_angel"]},
                      {"start_x" : 0.40, "start_y" : 0.35, "end_x" : 0.50, "end_y" : 0.25, "width" : 0.1, "color" : COLOR_CONFIG["scatter_angel"]},
                      {"start_x" : 0.60, "start_y" : 0.35, "end_x" : 0.50, "end_y" : 0.25, "width" : 0.1, "color" : COLOR_CONFIG["scatter_angel"]},],
-            #"string" : [{"text" : "+", "font" : "Arial", "pos_x" : 0.3, "pos_y" : 0.3, "size" : 0.4, "color" : (255, 255, 255, 255)}],
         }
     ],
     22 : [
@@ -408,7 +389,6 @@ ATTRIBUTE_MODIFIER_CONFIG = {
             "line" : [{"start_x" : 0.50, "start_y" : 0.25, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.15, "color" : COLOR_CONFIG["scatter_angel"]},
                      {"start_x" : 0.40, "start_y" : 0.35, "end_x" : 0.50, "end_y" : 0.25, "width" : 0.15, "color" : COLOR_CONFIG["scatter_angel"]},
                      {"start_x" : 0.60, "start_y" : 0.35, "end_x" : 0.50, "end_y" : 0.25, "width" : 0.15, "color" : COLOR_CONFIG["scatter_angel"]},],
-            #"string" : [{"text" : "+", "font" : "Arial", "pos_x" : 0.3, "pos_y" : 0.3, "size" : 0.4, "color" : (255, 255, 255, 255)}],
         }
     ],
     23 : [
@@ -421,7 +401,6 @@ ATTRIBUTE_MODIFIER_CONFIG = {
             "line" : [{"start_x" : 0.50, "start_y" : 0.25, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.2, "color" : COLOR_CONFIG["scatter_angel"]},
                      {"start_x" : 0.40, "start_y" : 0.35, "end_x" : 0.50, "end_y" : 0.25, "width" : 0.2, "color" : COLOR_CONFIG["scatter_angel"]},
                      {"start_x" : 0.60, "start_y" : 0.35, "end_x" : 0.50, "end_y" : 0.25, "width" : 0.2, "color" : COLOR_CONFIG["scatter_angel"]},],
-            #"string" : [{"text" : "+", "font" : "Arial", "pos_x" : 0.3, "pos_y" : 0.3, "size" : 0.4, "color" : (255, 255, 255, 255)}],
         }
     ],
     24 : [
@@ -434,7 +413,6 @@ ATTRIBUTE_MODIFIER_CONFIG = {
             "line" : [{"start_x" : 0.50, "start_y" : 0.25, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.25, "color" : COLOR_CONFIG["scatter_angel"]},
                      {"start_x" : 0.40, "start_y" : 0.35, "end_x" : 0.50, "end_y" : 0.25, "width" : 0.25, "color" : COLOR_CONFIG["scatter_angel"]},
                      {"start_x" : 0.60, "start_y" : 0.35, "end_x" : 0.50, "end_y" : 0.25, "width" : 0.25, "color" : COLOR_CONFIG["scatter_angel"]},],
-            #"string" : [{"text" : "+", "font" : "Arial", "pos_x" : 0.3, "pos_y" : 0.3, "size" : 0.4, "color" : (255, 255, 255, 255)}],
         }
     ],
     25 : [
@@ -447,7 +425,6 @@ ATTRIBUTE_MODIFIER_CONFIG = {
             "line" : [{"start_x" : 0.50, "start_y" : 0.25, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.05, "color" : COLOR_CONFIG["scatter_angel"]},
                      {"start_x" : 0.40, "start_y" : 0.65, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.05, "color" : COLOR_CONFIG["scatter_angel"]},
                      {"start_x" : 0.60, "start_y" : 0.65, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.05, "color" : COLOR_CONFIG["scatter_angel"]}],
-            #"string" : [{"text" : "+", "font" : "Arial", "pos_x" : 0.3, "pos_y" : 0.3, "size" : 0.4, "color" : (255, 255, 255, 255)}],
         }
     ],
     26 : [
@@ -460,7 +437,6 @@ ATTRIBUTE_MODIFIER_CONFIG = {
             "line" : [{"start_x" : 0.50, "start_y" : 0.25, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.1, "color" : COLOR_CONFIG["scatter_angel"]},
                      {"start_x" : 0.40, "start_y" : 0.65, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.1, "color" : COLOR_CONFIG["scatter_angel"]},
                      {"start_x" : 0.60, "start_y" : 0.65, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.1, "color" : COLOR_CONFIG["scatter_angel"]}],
-            #"string" : [{"text" : "+", "font" : "Arial", "pos_x" : 0.3, "pos_y" : 0.3, "size" : 0.4, "color" : (255, 255, 255, 255)}],
         }
     ],
     27 : [
@@ -473,7 +449,6 @@ ATTRIBUTE_MODIFIER_CONFIG = {
             "line" : [{"start_x" : 0.50, "start_y" : 0.25, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.15, "color" : COLOR_CONFIG["scatter_angel"]},
                      {"start_x" : 0.40, "start_y" : 0.65, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.15, "color" : COLOR_CONFIG["scatter_angel"]},
                      {"start_x" : 0.60, "start_y" : 0.65, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.15, "color" : COLOR_CONFIG["scatter_angel"]}],
-            #"string" : [{"text" : "+", "font" : "Arial", "pos_x" : 0.3, "pos_y" : 0.3, "size" : 0.4, "color" : (255, 255, 255, 255)}],
         }
     ],
     28 : [
@@ -486,7 +461,6 @@ ATTRIBUTE_MODIFIER_CONFIG = {
             "line" : [{"start_x" : 0.50, "start_y" : 0.25, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.2, "color" : COLOR_CONFIG["scatter_angel"]},
                      {"start_x" : 0.40, "start_y" : 0.65, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.2, "color" : COLOR_CONFIG["scatter_angel"]},
                      {"start_x" : 0.60, "start_y" : 0.65, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.2, "color" : COLOR_CONFIG["scatter_angel"]}],
-            #"string" : [{"text" : "+", "font" : "Arial", "pos_x" : 0.3, "pos_y" : 0.3, "size" : 0.4, "color" : (255, 255, 255, 255)}],
         }
     ],
     29 : [
@@ -499,7 +473,6 @@ ATTRIBUTE_MODIFIER_CONFIG = {
             "line" : [{"start_x" : 0.50, "start_y" : 0.25, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.25, "color" : COLOR_CONFIG["scatter_angel"]},
                      {"start_x" : 0.40, "start_y" : 0.65, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.25, "color" : COLOR_CONFIG["scatter_angel"]},
                      {"start_x" : 0.60, "start_y" : 0.65, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.25, "color" : COLOR_CONFIG["scatter_angel"]}],
-            #"string" : [{"text" : "+", "font" : "Arial", "pos_x" : 0.3, "pos_y" : 0.3, "size" : 0.4, "color" : (255, 255, 255, 255)}],
         }
     ],
     30 : [
@@ -512,7 +485,6 @@ ATTRIBUTE_MODIFIER_CONFIG = {
             "line" : [{"start_x" : 0.50, "start_y" : 0.25, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.05, "color" : COLOR_CONFIG["capacity"]},
                      {"start_x" : 0.40, "start_y" : 0.35, "end_x" : 0.50, "end_y" : 0.25, "width" : 0.05, "color" : COLOR_CONFIG["capacity"]},
                      {"start_x" : 0.60, "start_y" : 0.35, "end_x" : 0.50, "end_y" : 0.25, "width" : 0.05, "color" : COLOR_CONFIG["capacity"]},],
-            #"string" : [{"text" : "+", "font" : "Arial", "pos_x" : 0.3, "pos_y" : 0.3, "size" : 0.4, "color" : (255, 255, 255, 255)}],
         }
     ],
     31 : [
@@ -525,7 +497,6 @@ ATTRIBUTE_MODIFIER_CONFIG = {
             "line" : [{"start_x" : 0.50, "start_y" : 0.25, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.1, "color" : COLOR_CONFIG["capacity"]},
                      {"start_x" : 0.40, "start_y" : 0.35, "end_x" : 0.50, "end_y" : 0.25, "width" : 0.1, "color" : COLOR_CONFIG["capacity"]},
                      {"start_x" : 0.60, "start_y" : 0.35, "end_x" : 0.50, "end_y" : 0.25, "width" : 0.1, "color" : COLOR_CONFIG["capacity"]},],
-            #"string" : [{"text" : "+", "font" : "Arial", "pos_x" : 0.3, "pos_y" : 0.3, "size" : 0.4, "color" : (255, 255, 255, 255)}],
         }
     ],
     32 : [
@@ -538,7 +509,6 @@ ATTRIBUTE_MODIFIER_CONFIG = {
             "line" : [{"start_x" : 0.50, "start_y" : 0.25, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.15, "color" : COLOR_CONFIG["capacity"]},
                      {"start_x" : 0.40, "start_y" : 0.35, "end_x" : 0.50, "end_y" : 0.25, "width" : 0.15, "color" : COLOR_CONFIG["capacity"]},
                      {"start_x" : 0.60, "start_y" : 0.35, "end_x" : 0.50, "end_y" : 0.25, "width" : 0.15, "color" : COLOR_CONFIG["capacity"]},],
-            #"string" : [{"text" : "+", "font" : "Arial", "pos_x" : 0.3, "pos_y" : 0.3, "size" : 0.4, "color" : (255, 255, 255, 255)}],
         }
     ],
     33 : [
@@ -551,7 +521,6 @@ ATTRIBUTE_MODIFIER_CONFIG = {
             "line" : [{"start_x" : 0.50, "start_y" : 0.25, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.2, "color" : COLOR_CONFIG["capacity"]},
                      {"start_x" : 0.40, "start_y" : 0.35, "end_x" : 0.50, "end_y" : 0.25, "width" : 0.2, "color" : COLOR_CONFIG["capacity"]},
                      {"start_x" : 0.60, "start_y" : 0.35, "end_x" : 0.50, "end_y" : 0.25, "width" : 0.2, "color" : COLOR_CONFIG["capacity"]},],
-            #"string" : [{"text" : "+", "font" : "Arial", "pos_x" : 0.3, "pos_y" : 0.3, "size" : 0.4, "color" : (255, 255, 255, 255)}],
         }
     ],
     34 : [
@@ -564,7 +533,6 @@ ATTRIBUTE_MODIFIER_CONFIG = {
             "line" : [{"start_x" : 0.50, "start_y" : 0.25, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.25, "color" : COLOR_CONFIG["capacity"]},
                      {"start_x" : 0.40, "start_y" : 0.35, "end_x" : 0.50, "end_y" : 0.25, "width" : 0.25, "color" : COLOR_CONFIG["capacity"]},
                      {"start_x" : 0.60, "start_y" : 0.35, "end_x" : 0.50, "end_y" : 0.25, "width" : 0.25, "color" : COLOR_CONFIG["capacity"]},],
-            #"string" : [{"text" : "+", "font" : "Arial", "pos_x" : 0.3, "pos_y" : 0.3, "size" : 0.4, "color" : (255, 255, 255, 255)}],
         }
     ],
     35 : [
@@ -577,7 +545,6 @@ ATTRIBUTE_MODIFIER_CONFIG = {
             "line" : [{"start_x" : 0.50, "start_y" : 0.25, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.05, "color" : COLOR_CONFIG["capacity"]},
                      {"start_x" : 0.40, "start_y" : 0.65, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.05, "color" : COLOR_CONFIG["capacity"]},
                      {"start_x" : 0.60, "start_y" : 0.65, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.05, "color" : COLOR_CONFIG["capacity"]}],
-            #"string" : [{"text" : "+", "font" : "Arial", "pos_x" : 0.3, "pos_y" : 0.3, "size" : 0.4, "color" : (255, 255, 255, 255)}],
         }
     ],
     36 : [
@@ -590,7 +557,6 @@ ATTRIBUTE_MODIFIER_CONFIG = {
             "line" : [{"start_x" : 0.50, "start_y" : 0.25, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.1, "color" : COLOR_CONFIG["capacity"]},
                      {"start_x" : 0.40, "start_y" : 0.65, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.1, "color" : COLOR_CONFIG["capacity"]},
                      {"start_x" : 0.60, "start_y" : 0.65, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.1, "color" : COLOR_CONFIG["capacity"]}],
-            #"string" : [{"text" : "+", "font" : "Arial", "pos_x" : 0.3, "pos_y" : 0.3, "size" : 0.4, "color" : (255, 255, 255, 255)}],
         }
     ],
     37 : [
@@ -603,7 +569,6 @@ ATTRIBUTE_MODIFIER_CONFIG = {
             "line" : [{"start_x" : 0.50, "start_y" : 0.25, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.15, "color" : COLOR_CONFIG["capacity"]},
                      {"start_x" : 0.40, "start_y" : 0.65, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.15, "color" : COLOR_CONFIG["capacity"]},
                      {"start_x" : 0.60, "start_y" : 0.65, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.15, "color" : COLOR_CONFIG["capacity"]}],
-            #"string" : [{"text" : "+", "font" : "Arial", "pos_x" : 0.3, "pos_y" : 0.3, "size" : 0.4, "color" : (255, 255, 255, 255)}],
         }
     ],
     38 : [
@@ -616,7 +581,6 @@ ATTRIBUTE_MODIFIER_CONFIG = {
             "line" : [{"start_x" : 0.50, "start_y" : 0.25, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.2, "color" : COLOR_CONFIG["capacity"]},
                      {"start_x" : 0.40, "start_y" : 0.65, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.2, "color" : COLOR_CONFIG["capacity"]},
                      {"start_x" : 0.60, "start_y" : 0.65, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.2, "color" : COLOR_CONFIG["capacity"]}],
-            #"string" : [{"text" : "+", "font" : "Arial", "pos_x" : 0.3, "pos_y" : 0.3, "size" : 0.4, "color" : (255, 255, 255, 255)}],
         }
     ],
     39 : [
@@ -629,33 +593,14 @@ ATTRIBUTE_MODIFIER_CONFIG = {
             "line" : [{"start_x" : 0.50, "start_y" : 0.25, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.25, "color" : COLOR_CONFIG["capacity"]},
                      {"start_x" : 0.40, "start_y" : 0.65, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.25, "color" : COLOR_CONFIG["capacity"]},
                      {"start_x" : 0.60, "start_y" : 0.65, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.25, "color" : COLOR_CONFIG["capacity"]}],
-            #"string" : [{"text" : "+", "font" : "Arial", "pos_x" : 0.3, "pos_y" : 0.3, "size" : 0.4, "color" : (255, 255, 255, 255)}],
         }
     ],
-}
 
-EFFECT_MODIFIER_CONFIG = {
-    0 : [
-        "Speed ​​damage bonus",
-        { 
-            "info" : "Physical damage is modified by adding half of the bullet’s final velocity value, and each bullet can only receive this bonus once."
-        },
-        {
-            "circle" : [{"pos_x" : 0.25, "pos_y" : 0.50, "size" : 0.20, "color" : (255,255,255,255)}],
-            "line" : [{"start_x" : 0.15, "start_y" : 0.40, "end_x" : 0.35, "end_y" : 0.60, "width" : 0.1, "color" : (255,255,255,255)},
-                     {"start_x" : 0.15, "start_y" : 0.60, "end_x" : 0.35, "end_y" : 0.40, "width" : 0.1, "color" : (255,255,255,255)},
-                     {"start_x" : 0.70, "start_y" : 0.30, "end_x" : 0.80, "end_y" : 0.50, "width" : 0.15, "color" : COLOR_CONFIG["speed"]},
-                     {"start_x" : 0.70, "start_y" : 0.70, "end_x" : 0.80, "end_y" : 0.50, "width" : 0.15, "color" : COLOR_CONFIG["speed"]},
 
-                     {"start_x" : 0.50, "start_y" : 0.25, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.025, "color" : (255,255,255,255)},
-                     {"start_x" : 0.40, "start_y" : 0.35, "end_x" : 0.50, "end_y" : 0.25, "width" : 0.025, "color" : (255,255,255,255)},
-                     {"start_x" : 0.60, "start_y" : 0.35, "end_x" : 0.50, "end_y" : 0.25, "width" : 0.025, "color" : (255,255,255,255)}],
-        }
-    ],
     50 : [
         "Add Speed I",
         {
-            "bullet_speed_modifier" : 100,
+            "bullet_speed_modifier" : 3,
             "info" : "Add bullet speed"
         },
         {
@@ -666,7 +611,7 @@ EFFECT_MODIFIER_CONFIG = {
     51 : [
         "Add Speed II",
         {
-            "bullet_speed_modifier" : 200,
+            "bullet_speed_modifier" : 6,
             "info" : "Add bullet speed"
         },
         {
@@ -677,7 +622,7 @@ EFFECT_MODIFIER_CONFIG = {
     52 : [
         "Add Speed III",
         {
-            "bullet_speed_modifier" : 300,
+            "bullet_speed_modifier" : 10,
             "info" : "Add bullet speed"
         },
         {
@@ -688,7 +633,7 @@ EFFECT_MODIFIER_CONFIG = {
     53 : [
         "Add Speed IV",
         {
-            "bullet_speed_modifier" : 450,
+            "bullet_speed_modifier" : 15,
             "info" : "Add bullet speed"
         },
         {
@@ -699,7 +644,7 @@ EFFECT_MODIFIER_CONFIG = {
     54 : [
         "Add Speed V",
         {
-            "bullet_speed_modifier" : 600,
+            "bullet_speed_modifier" : 25,
             "info" : "Add bullet speed"
         },
         {
@@ -710,7 +655,7 @@ EFFECT_MODIFIER_CONFIG = {
     55 : [
         "Sub Speed I",
         {
-            "bullet_speed_modifier" : -100,
+            "bullet_speed_modifier" : -3,
             "info" : "Subtract bullet speed"
         },
         {
@@ -721,7 +666,7 @@ EFFECT_MODIFIER_CONFIG = {
     56 : [
         "Sub Speed II",
         {
-            "bullet_speed_modifier" : -200,
+            "bullet_speed_modifier" : -6,
             "info" : "Subtract bullet speed"
         },
         {
@@ -732,7 +677,7 @@ EFFECT_MODIFIER_CONFIG = {
     57 : [
         "Sub Speed III",
         {
-            "bullet_speed_modifier" : -300,
+            "bullet_speed_modifier" : -10,
             "info" : "Subtract bullet speed"
         },
         {
@@ -743,7 +688,7 @@ EFFECT_MODIFIER_CONFIG = {
     58 : [
         "Sub Speed IV",
         {
-            "bullet_speed_modifier" : -450,
+            "bullet_speed_modifier" : -15,
             "info" : "Subtract bullet speed"
         },
         {
@@ -754,7 +699,7 @@ EFFECT_MODIFIER_CONFIG = {
     59 : [
         "Sub Speed V",
         {
-            "bullet_speed_modifier" : -600,
+            "bullet_speed_modifier" : -25,
             "info" : "Subtract bullet speed"
         },
         {
@@ -764,13 +709,54 @@ EFFECT_MODIFIER_CONFIG = {
     ],
 
     100 : [
-        "Split",
+        "Speed damage bonus",
         { 
-            "info" : "aa"
+            "reload_modifier" : 0.2,
+            "info" : "Bullet’s Physical damage is modified by adding half of the bullet’s speed value, and each bullet can only receive this bonus once."
         },
         {
-            "circle" : [{"pos_x" : 0.50, "pos_y" : 0.65, "size" : 0.3, "color" : (200, 200, 200, 255)}],
-            "line" : [{"start_x" : 0.50, "start_y" : 0.65, "end_x" : 0.25, "end_y" : 0.25, "width" : 0.05, "color" : (255, 255, 255, 255)},
+            "circle" : [{"pos_x" : 0.25, "pos_y" : 0.50, "size" : 0.20, "color" : COLOR_CONFIG["phy_damage"]}],
+            "line" : [{"start_x" : 0.15, "start_y" : 0.40, "end_x" : 0.35, "end_y" : 0.60, "width" : 0.1, "color" : COLOR_CONFIG["phy_damage"]},
+                     {"start_x" : 0.15, "start_y" : 0.60, "end_x" : 0.35, "end_y" : 0.40, "width" : 0.1, "color" : COLOR_CONFIG["phy_damage"]},
+                     {"start_x" : 0.70, "start_y" : 0.30, "end_x" : 0.80, "end_y" : 0.50, "width" : 0.1, "color" : COLOR_CONFIG["speed"]},
+                     {"start_x" : 0.70, "start_y" : 0.70, "end_x" : 0.80, "end_y" : 0.50, "width" : 0.1, "color" : COLOR_CONFIG["speed"]},
+
+                     {"start_x" : 0.50, "start_y" : 0.20, "end_x" : 0.50, "end_y" : 0.80, "width" : 0.05, "color" : (255,255,255,255)},
+                     {"start_x" : 0.40, "start_y" : 0.30, "end_x" : 0.50, "end_y" : 0.20, "width" : 0.05, "color" : (255,255,255,255)},
+                     {"start_x" : 0.60, "start_y" : 0.30, "end_x" : 0.50, "end_y" : 0.20, "width" : 0.05, "color" : (255,255,255,255)}],
+        }
+    ],
+    101 : [
+        "Damage Speed bonus",
+        {
+            "reload_modifier" : 0.2,
+            "info" : "Bullet’s speed is modified by adding half of the bullet’s Physical damage value, and each bullet can only receive this bonus once."
+        },
+        {
+            "circle" : [{"pos_x" : 0.75, "pos_y" : 0.50, "size" : 0.20, "color" : COLOR_CONFIG["phy_damage"]}],
+            "line" : [{"start_x" : 0.85, "start_y" : 0.40, "end_x" : 0.65, "end_y" : 0.60, "width" : 0.1, "color" : COLOR_CONFIG["phy_damage"]},
+                     {"start_x" : 0.85, "start_y" : 0.60, "end_x" : 0.65, "end_y" : 0.40, "width" : 0.1, "color" : COLOR_CONFIG["phy_damage"]},
+                     {"start_x" : 0.20, "start_y" : 0.30, "end_x" : 0.30, "end_y" : 0.50, "width" : 0.1, "color" : COLOR_CONFIG["speed"]},
+                     {"start_x" : 0.20, "start_y" : 0.70, "end_x" : 0.30, "end_y" : 0.50, "width" : 0.1, "color" : COLOR_CONFIG["speed"]},
+
+                     {"start_x" : 0.50, "start_y" : 0.20, "end_x" : 0.50, "end_y" : 0.80, "width" : 0.05, "color" : (255,255,255,255)},
+                     {"start_x" : 0.40, "start_y" : 0.30, "end_x" : 0.50, "end_y" : 0.20, "width" : 0.05, "color" : (255,255,255,255)},
+                     {"start_x" : 0.60, "start_y" : 0.30, "end_x" : 0.50, "end_y" : 0.20, "width" : 0.05, "color" : (255,255,255,255)}],
+        }
+    ],
+}
+
+EFFECT_MODIFIER_CONFIG = {
+    0 : [
+        "F Split",
+        { 
+            "info" : "After the condition is triggered, the bullet will split into 2 bullets (±45 degrees), dealing half damage.",
+            "default_trigger" : "hit"
+        },
+        {
+            "circle" : [{"pos_x" : 0.50, "pos_y" : 0.65, "size" : 0.3, "color" : COLOR_CONFIG["normal_bullet"]}],
+            "line" : [{"start_x" : 0.50, "start_y" : 0.75, "end_x" : 0.50, "end_y" : 0.95, "width" : 0.05, "color" : COLOR_CONFIG["normal_bullet"]},
+                     {"start_x" : 0.50, "start_y" : 0.65, "end_x" : 0.25, "end_y" : 0.25, "width" : 0.05, "color" : (255, 255, 255, 255)},
                      {"start_x" : 0.50, "start_y" : 0.65, "end_x" : 0.75, "end_y" : 0.25, "width" : 0.05, "color" : (255, 255, 255, 255)},
                      {"start_x" : 0.25, "start_y" : 0.25, "end_x" : 0.20, "end_y" : 0.40, "width" : 0.05, "color" : (200, 200, 200, 255)},
                      {"start_x" : 0.25, "start_y" : 0.25, "end_x" : 0.40, "end_y" : 0.30, "width" : 0.05, "color" : (200, 200, 200, 255)},
@@ -778,6 +764,65 @@ EFFECT_MODIFIER_CONFIG = {
                      {"start_x" : 0.75, "start_y" : 0.25, "end_x" : 0.60, "end_y" : 0.30, "width" : 0.05, "color" : (200, 200, 200, 255)}],
         }
     ],
+    1 : [
+        "B Split",
+        { 
+            "info" : "After the condition is triggered, the bullet will split into 2 bullets (±135 degrees), dealing half damage.",
+            "default_trigger" : "hit"
+        },
+        {
+            "circle" : [{"pos_x" : 0.50, "pos_y" : 0.35, "size" : 0.3, "color" : COLOR_CONFIG["normal_bullet"]}],
+            "line" : [{"start_x" : 0.50, "start_y" : 0.45, "end_x" : 0.50, "end_y" : 0.65, "width" : 0.05, "color" : COLOR_CONFIG["normal_bullet"]},
+                     {"start_x" : 0.50, "start_y" : 0.35, "end_x" : 0.25, "end_y" : 0.75, "width" : 0.05, "color" : (255, 255, 255, 255)},
+                     {"start_x" : 0.50, "start_y" : 0.35, "end_x" : 0.75, "end_y" : 0.75, "width" : 0.05, "color" : (255, 255, 255, 255)},
+                     {"start_x" : 0.25, "start_y" : 0.75, "end_x" : 0.20, "end_y" : 0.60, "width" : 0.05, "color" : (200, 200, 200, 255)},
+                     {"start_x" : 0.25, "start_y" : 0.75, "end_x" : 0.40, "end_y" : 0.70, "width" : 0.05, "color" : (200, 200, 200, 255)},
+                     {"start_x" : 0.75, "start_y" : 0.75, "end_x" : 0.80, "end_y" : 0.60, "width" : 0.05, "color" : (200, 200, 200, 255)},
+                     {"start_x" : 0.75, "start_y" : 0.75, "end_x" : 0.60, "end_y" : 0.70, "width" : 0.05, "color" : (200, 200, 200, 255)}],
+        }
+    ],
+    2 : [
+        "Penetrate",
+        { 
+            "info" : "The bullet can penetrate through enemies one additional time.",
+        },
+        {
+            "circle" : [{"pos_x" : 0.50, "pos_y" : 0.5, "size" : 0.3, "color" : COLOR_CONFIG["enemy"]}],
+            "line" : [{"start_x" : 0.20, "start_y" : 0.50, "end_x" : 0.80, "end_y" : 0.50, "width" : 0.05, "color" : COLOR_CONFIG["normal_bullet"]},
+                     {"start_x" : 0.70, "start_y" : 0.40, "end_x" : 0.80, "end_y" : 0.50, "width" : 0.05, "color" : COLOR_CONFIG["normal_bullet"]},
+                     {"start_x" : 0.70, "start_y" : 0.60, "end_x" : 0.80, "end_y" : 0.50, "width" : 0.05, "color" : COLOR_CONFIG["normal_bullet"]}]
+        }
+    ],
+    3 : [
+        "Bounce",
+        { 
+            "info" : "The bullet can bounce off enemies and walls one additional time.",
+        },
+        {
+            "circle" : [{"pos_x" : 0.50, "pos_y" : 0.70, "size" : 0.2, "color" : COLOR_CONFIG["normal_bullet"]}],
+            "line" : [{"start_x" : 0.15, "start_y" : 0.75, "end_x" : 0.85, "end_y" : 0.75, "width" : 0.08, "color" : (150, 150, 150, 255)},
+                      {"start_x" : 0.25, "start_y" : 0.35, "end_x" : 0.50, "end_y" : 0.70, "width" : 0.05, "color" : COLOR_CONFIG["normal_bullet"]},
+                      {"start_x" : 0.50, "start_y" : 0.70, "end_x" : 0.75, "end_y" : 0.35, "width" : 0.05, "color" : (255, 255, 255, 255)},
+                      {"start_x" : 0.75, "start_y" : 0.35, "end_x" : 0.80, "end_y" : 0.50, "width" : 0.05, "color" : (200, 200, 200, 255)},
+                      {"start_x" : 0.75, "start_y" : 0.35, "end_x" : 0.60, "end_y" : 0.40, "width" : 0.05, "color" : (200, 200, 200, 255)}]
+        }
+    ],
+}
+
+PROBABILITY_CONFIG = {
+    "T1" : {"weight" : 3,"items" : [
+        {"type" : 0, "id" : 0, "unlocked" : True},
+        {"type" : 0, "id" : 1, "unlocked" : True},
+        {"type" : 0, "id" : 2, "unlocked" : True},
+        {"type" : 0, "id" : 3, "unlocked" : True},
+        {"type" : 0, "id" : 4, "unlocked" : True},
+    ]},
+    "T2" : {"weight" : 5 ,"items" : [
+        {"type" : 1, "id" : i, "unlocked" : True} for i in ATTRIBUTE_MODIFIER_CONFIG.keys()
+    ]},
+    "T3" : {"weight" : 10 ,"items" : [
+        {"type" : 2, "id" : i, "unlocked" : True} for i in EFFECT_MODIFIER_CONFIG.keys()
+    ]},
 }
 
 UI_CONFIG = {
@@ -872,7 +917,7 @@ GAME_CONFIG = {
     "xp_attract_radius" : 130,
     "player_max_hp" : 100,
     "player_invincible_time" : 0.5,
-    "xp_per_level_base" : 10,
+    "xp_per_level_base" : 1,
     "card_slot_levels" : [10, 20, 30, 40, 50],
 }
 

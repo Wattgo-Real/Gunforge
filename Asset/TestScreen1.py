@@ -8,11 +8,12 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from Start import Game
 
-from Asset.GameSetting import UI_CONFIG, COLOR_CONFIG, GAME_CONFIG, GRID_CONFIG
+from Asset.GameSetting import UI_CONFIG, COLOR_CONFIG, GAME_CONFIG, GRID_CONFIG, PROBABILITY_CONFIG
 from Asset.GameSetting import ENTITY_TYPE
+import random
 from Asset.Enemies import EnemyManager
-from Asset.Pickups import WorldChunkManager, XPOrb
-from Asset.Weapons import Gun
+from Asset.Pickups import WorldChunkManager, XPOrb, Obstacle
+from Asset.Weapons import Gun, BulletManager
 from Asset.Card import Card
 from Asset.Player import Player
 
@@ -23,14 +24,19 @@ def _ensure_runtime_state(game: "Game"):
     if getattr(game, "_screen1_initialised", False):
         return
     game.spatial_grid_dict = {i : {} for i in range(GRID_CONFIG["number_of_cells_w"] * GRID_CONFIG["number_of_cells_h"])}
-    game.enemy_manager = EnemyManager(spatial_grid_dict_pointer = game.spatial_grid_dict)
-    game.world = WorldChunkManager(seed=42)
+    game.enemy_manager = EnemyManager(spatial_grid_dict = game.spatial_grid_dict)
+    game.bullet_manager = BulletManager(spatial_grid_dict = game.spatial_grid_dict)
+    game.world = WorldChunkManager(spatial_grid_dict = game.spatial_grid_dict, seed=42)
     game.xp_orbs = []
     game.run_start_time = game.now_time
     game.run_summary = None
     game.message_queue = []  # list of [text, timer_left, color]
     game.effects_queue = []  # list of [effect : {}, timer_left]
-    game.player = Player(position = pygame.Vector2(0,0), radius = 15, color = (0, 150, 255), spatial_grid_dict = game.spatial_grid_dict)
+    game.player = Player(position = pygame.Vector2(0,0), radius = 15, color = (0, 150, 255), 
+                         bullet_manager = game.bullet_manager)
+    game.leveling_up = False
+    game.level_up_options = []
+    game.level_up_scroll_offsets = [0, 0, 0]
     game._screen1_initialised = True
 
 
@@ -41,25 +47,37 @@ def reset_screen1(game: "Game"):
             game.spatial_grid_dict[cell_key].clear()
     else:
         game.spatial_grid_dict = {i : {} for i in range(GRID_CONFIG["number_of_cells_w"] * GRID_CONFIG["number_of_cells_h"])}
+
+    if hasattr(game, "bullet_manager"):
+        game.bullet_manager.reset()
+    else:
+        game.bullet_manager = BulletManager(spatial_grid_dict = game.spatial_grid_dict)
+        
     if hasattr(game, "enemy_manager"):
         game.enemy_manager.reset()
     else:
-        game.enemy_manager = EnemyManager(spatial_grid_dict_pointer = game.spatial_grid_dict)
+        game.enemy_manager = EnemyManager(spatial_grid_dict = game.spatial_grid_dict)
+
     if hasattr(game, "world"):
+        game.world.spatial_grid_dict = game.spatial_grid_dict
         game.world.reset(seed=42)
     else:
-        game.world = WorldChunkManager(seed=42)
+        game.world = WorldChunkManager(spatial_grid_dict = game.spatial_grid_dict, seed=42)
     
     if hasattr(game, "player"):
         game.player.reset_run(pygame.Vector2(0, 0))
     else:
-        game.player = Player(position = pygame.Vector2(0,0), radius = 15, color = (0, 150, 255), spatial_grid_dict = game.spatial_grid_dict)
+        game.player = Player(position = pygame.Vector2(0,0), radius = 15, color = (0, 150, 255), 
+                             bullet_manager = game.bullet_manager)
 
     game.xp_orbs = []
     game.run_start_time = game.now_time
     game.run_summary = None
     game.message_queue = []
     game.effects_queue = []
+    game.leveling_up = False
+    game.level_up_options = []
+    game.level_up_scroll_offsets = [0, 0, 0]
     game._screen1_initialised = True
 
 
@@ -81,6 +99,142 @@ def _drop_boss_reward(game: "Game"):
             game.message_queue.append(["BOSS DOWN — new gun acquired!", 5.0, (255, 220, 120)])
             return
     game.message_queue.append(["BOSS DOWN!", 5.0, (255, 220, 120)])
+
+
+def _get_random_cards(game: "Game", count=3):
+    """Pick cards based on inverse weights in PROBABILITY_CONFIG."""
+    tiers = list(PROBABILITY_CONFIG.keys())
+    # weights: higher weight = lower probability (score = 1/weight)
+    scores = [1.0 / PROBABILITY_CONFIG[tier]["weight"] for tier in tiers]
+    
+    selected_cards = []
+    for _ in range(count):
+        chosen_tier_name = random.choices(tiers, weights=scores, k=1)[0]
+        tier_data = PROBABILITY_CONFIG[chosen_tier_name]
+        item_config = random.choice(tier_data["items"])
+        
+        card = Card(
+            type=item_config["type"],
+            bullet_type=item_config["id"] if item_config["type"] == 0 else -1,
+            attribute_modifier_type=item_config["id"] if item_config["type"] == 1 else -1,
+            effect_modifier_type=item_config["id"] if item_config["type"] == 2 else -1
+        )
+        selected_cards.append(card)
+    return selected_cards
+
+
+def _draw_level_up_screen(game: "Game", events):
+    """Draw the card selection screen when leveling up."""
+    # Dark overlay
+    overlay = pygame.Surface((game.screen_width, game.screen_height), pygame.SRCALPHA)
+    overlay.fill((0, 0, 0, 200))
+    game.screen.blit(overlay, (0, 0))
+    
+    title_font = pygame.font.SysFont("Arial", 54, bold=True)
+    title_text = title_font.render("LEVEL UP! CHOOSE A CARD", True, (255, 255, 255))
+    game.screen.blit(title_text, (game.screen_width // 2 - title_text.get_width() // 2, 80))
+    
+    card_w, card_h = 260, 400
+    spacing = 50
+    total_w = 3 * card_w + 2 * spacing
+    start_x = (game.screen_width - total_w) // 2
+    start_y = (game.screen_height - card_h) // 2 + 40
+    
+    mouse_pos = pygame.mouse.get_pos()
+    mouse_clicked = False
+    
+    hovered_card_idx = -1
+    for i in range(len(game.level_up_options)):
+        card_x = start_x + i * (card_w + spacing)
+        card_y = start_y
+        if pygame.Rect(card_x, card_y, card_w, card_h).collidepoint(mouse_pos):
+            hovered_card_idx = i
+            break
+
+    for event in events:
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            if event.button == 1:
+                mouse_clicked = True
+            elif event.button == 4 and hovered_card_idx != -1: # Scroll Up
+                game.level_up_scroll_offsets[hovered_card_idx] = max(0, game.level_up_scroll_offsets[hovered_card_idx] - 20)
+            elif event.button == 5 and hovered_card_idx != -1: # Scroll Down
+                game.level_up_scroll_offsets[hovered_card_idx] += 20
+    
+    for i, card in enumerate(game.level_up_options):
+        x = start_x + i * (card_w + spacing)
+        y = start_y
+        rect = pygame.Rect(x, y, card_w, card_h)
+        
+        is_hovered = rect.collidepoint(mouse_pos)
+        border_color = (255, 255, 100) if is_hovered else (200, 200, 200)
+        bg_color = (60, 60, 60, 255) if is_hovered else (40, 40, 40, 255)
+        
+        # Card Background
+        pygame.draw.rect(game.screen, bg_color, rect)
+        pygame.draw.rect(game.screen, border_color, rect, 3)
+        
+        name, info = card.get_info()
+        
+        # 1. Name
+        name_surf = game.mid_font.render(name, True, (255, 255, 255))
+        game.screen.blit(name_surf, (x + (card_w - name_surf.get_width()) // 2, y + 20))
+        
+        # 2. Icon area
+        icon_rect = pygame.Rect(x + 40, y + 50, 180, 140)
+        pygame.draw.rect(game.screen, (30, 30, 30), icon_rect)
+        card.draw(game.screen, icon_rect)
+        pygame.draw.rect(game.screen, (100, 100, 100), icon_rect, 1)
+        
+        # 3. Description
+        def draw_wrapped_text(surface, text, font, color, draw_rect, card_idx):
+            words = text.split(' ')
+            lines = []
+            curr = []
+            for ws in words:
+                for idx, w in enumerate(ws.split("\n")):
+                    if not w: continue
+                    test = ' '.join(curr + [w])
+                    if font.size(test)[0] <= draw_rect.width and idx == 0:
+                        curr.append(w)
+                    else:
+                        lines.append(' '.join(curr))
+                        curr = [w]
+            lines.append(' '.join(curr))
+            
+            total_h = len(lines) * font.get_linesize()
+            max_scroll = max(0, total_h - draw_rect.height)
+            if game.level_up_scroll_offsets[card_idx] > max_scroll:
+                game.level_up_scroll_offsets[card_idx] = max_scroll
+            
+            old_clip = surface.get_clip()
+            surface.set_clip(draw_rect)
+            
+            line_y = draw_rect.top - game.level_up_scroll_offsets[card_idx]
+            for line in lines:
+                if not line: continue
+                if line_y + font.get_linesize() > draw_rect.top and line_y < draw_rect.bottom:
+                    s = font.render(line, True, color)
+                    surface.blit(s, (draw_rect.left , line_y))
+                line_y += font.get_linesize()
+            
+            surface.set_clip(old_clip)
+
+        desc_rect = pygame.Rect(x + 20, y + 200, card_w - 40, 160)
+        draw_wrapped_text(game.screen, info, game.HUD_font, (230, 230, 230), desc_rect, i)
+        
+        if is_hovered and mouse_clicked:
+            # Selection logic
+            for idx in range(len(game.player.inventory)):
+                if game.player.inventory[idx] is None:
+                    game.player.inventory[idx] = card
+                    break
+            else:
+                game.player.inventory.append(card)
+            
+            game.leveling_up = False
+            game.level_up_options = []
+            game.message_queue.append([f"Acquired: {name}", 2.5, (100, 255, 120)])
+            return
 
 
 def _handle_collisions(game: "Game"):
@@ -137,73 +291,48 @@ def _handle_collisions(game: "Game"):
 def _handle_player_bullets(game: "Game"):
     player = game.player
 
-    # Bullet vs enemy
-    # num_of_bullet = 0
-    # num_of_calculate = 0
-    for weapon in player.weapon_list:
-        if weapon is None:
+    # Bullet vs enemy & obstacle
+    for bullet in game.bullet_manager.bullets:
+        if bullet.isKill:
             continue
-        for bullet in list(weapon.bullets):
-            # num_of_bullet += 1
-            # Spatial Partition Grid is used to find the nearest enemy in the area around the bullet.
-            bullet_grid_pos = [int(bullet.pos2D.x / GRID_CONFIG["cell_w"]) % GRID_CONFIG["number_of_cells_w"],
-                               int(bullet.pos2D.y / GRID_CONFIG["cell_h"]) % GRID_CONFIG["number_of_cells_h"]]
-            for i in range(bullet_grid_pos[0] - 1, bullet_grid_pos[0] + 2):
-                for j in range(bullet_grid_pos[1] - 1, bullet_grid_pos[1] + 2):
-                    grid_x = i % GRID_CONFIG["number_of_cells_w"]
-                    grid_y = j % GRID_CONFIG["number_of_cells_h"]
-                    grid_pos = grid_x + grid_y * GRID_CONFIG["number_of_cells_w"]
-                    for entity in game.spatial_grid_dict[grid_pos].values():
+
+        # Bullet vs obstacle
+        hit_obstacle = False
+        for obs in Obstacle.get_nearby_obstacles(bullet.pos2D, game.spatial_grid_dict):
+            if obs.collides_circle(bullet.pos2D, bullet.radius):
+                bullet.triger_hit(obs, effect_queue = game.effects_queue)
+                hit_obstacle = True
+                break
+
+        if hit_obstacle:
+            continue
+
+        # Bullet vs enemy
+        # Spatial Partition Grid is used to find the nearest enemy in the area around the bullet.
+        for i in range(bullet.grid_x - 1, bullet.grid_x + 2):
+            for j in range(bullet.grid_y - 1, bullet.grid_y + 2):
+                grid_x = i % GRID_CONFIG["number_of_cells_w"]
+                grid_y = j % GRID_CONFIG["number_of_cells_h"]
+                grid_pos = grid_y * GRID_CONFIG["number_of_cells_w"] + grid_x
+                for entity in game.spatial_grid_dict[grid_pos].values():
+                    if entity.entity_type != ENTITY_TYPE["enemy"]:
+                        continue
+                    if entity.uuid in bullet.hit_enemies:
                         if entity.entity_type != ENTITY_TYPE["enemy"]:
                             continue
-                        #num_of_calculate += 1
-                        if entity.pos2D.distance_to(bullet.pos2D) < bullet.radius + entity.radius + 5:
-                            bullet.triger_hit(player, entity, effect_queue = game.effects_queue, spatial_grid_dict = game.spatial_grid_dict)
-                            if not entity.alive:
-                                game.xp_orbs.append(XPOrb(entity.pos2D.copy(), value=entity.xp_drop))
-                                player.add_kill()
-                                if entity.is_boss:
-                                    _drop_boss_reward(game)
-                            break
 
-            '''
-            v2
-            for enemy in game.enemy_manager.enemies:
-                num_of_calculate += 1
-                if bullet.pos2D.distance_to(enemy.pos2D) < enemy.radius + 5: # Small buffer
-                    bullet.triger_hit(player, enemy, effect_queue = game.effects_queue, spatial_grid_dict = game.spatial_grid_dict)
-                    if not enemy.alive:
-                        game.xp_orbs.append(XPOrb(enemy.pos2D.copy(), value=enemy.xp_drop))
-                        player.add_kill()
-                        if enemy.is_boss:
-                            _drop_boss_reward(game)
+                    if entity.pos2D.distance_to(bullet.pos2D) < bullet.radius + entity.radius + 5:
+                        bullet.triger_hit(entity, effect_queue = game.effects_queue)
+                        if not entity.alive:
+                            game.xp_orbs.append(XPOrb(entity.pos2D.copy(), value=entity.xp_drop))
+                            player.add_kill()
+                            if entity.is_boss:
+                                _drop_boss_reward(game)
+                        break
+                if bullet.isKill:
                     break
-            
-            v1
-            for enemy in game.enemy_manager.enemies:
-                if bullet.pos2D.distance_to(enemy.pos2D) < enemy.radius:
-                    dmg = (bullet.damage()) * player.damage_multiplier
-                    enemy.take_damage(dmg)
-                    player.add_damage_dealt(dmg)
-                    bullet.triger_hit()
-                    if not enemy.alive:
-                        game.xp_orbs.append(XPOrb(enemy.pos2D.copy(), value=enemy.xp_drop))
-                        player.add_kill()
-                        if enemy.is_boss:
-                            _drop_boss_reward(game)
-                    break
-            '''
-
-    #print("num of bullet = ", num_of_bullet, "num of enemies = ", len(game.enemy_manager.enemies), "num of calculate", num_of_calculate)
-
-
-    # lifetime of the Bullets 
-    for weapon in player.weapon_list:
-        if weapon is None:
-            continue
-        for bullet in list(weapon.bullets):
-            if bullet.timer > bullet.lifetime:
-                bullet.triger_lifetime(player, effect_queue = game.effects_queue, spatial_grid_dict = game.spatial_grid_dict)
+            if bullet.isKill:
+                break
 
 
 def _draw_effect(game: "Game"):
@@ -323,7 +452,6 @@ def _draw_player_invuln_flash(game: "Game"):
 
 
 def _draw_gun_info_overlay(game: "Game", events, selected_slot: bool):
-    """Wattgo's existing gun-info inventory overlay."""
     box_w = UI_CONFIG["gun_box_w"]
     box_h = UI_CONFIG["gun_box_h"]
     slot_size = UI_CONFIG["slot_size"]
@@ -618,71 +746,89 @@ def test_screen1(game: "Game", events):
                 selected_slot = True
             else:
                 mouse_clicked = True
+    # Get current keyboard state (continuous input)
+    keys = pygame.key.get_pressed()
 
-    mouse_pos_world = game.to_world(pygame.mouse.get_pos())
-    diff = pygame.Vector2(mouse_pos_world) - game.player.pos2D
-    if diff.length_squared() > 0:
-        game.player.face_direction = diff.normalize()
-
-    # ---- 1. World streaming ----
-    game.world.ensure_around(game.player.pos2D)
-
-    # ---- 2. Player ----
-    game.PlayerUpdate(mouse_clicked)
-    game.player.update_timers(game.delta_time)
-    for obs in game.world.obstacles:
-        if obs.collides_circle(game.player.pos2D, game.player.radius):
-            obs.push_out(game.player.pos2D, game.player.radius)
-
-    # ---- 3. Enemies ----
-    game.enemy_manager.update(game.delta_time, game.player.pos2D)
-    for e in game.enemy_manager.enemies:
-        for obs in game.world.obstacles:
-            if obs.collides_circle(e.pos2D, e.radius):
-                obs.push_out(e.pos2D, e.radius)
-
-    # ---- 4. Altars ----
-    for altar in game.world.altars:
-        result = altar.update(game.delta_time, game.player.pos2D)
-        if result:
-            game.player.apply_altar_buff(result)
-            label = {"hp": "+25 MAX HP", "damage": "+15% DAMAGE", "speed": "+30 SPEED"}.get(result, result)
-            game.message_queue.append([f"Altar: {label}", 2.5, (255, 230, 120)])
-
-    # ---- 5. Combat ----
-    _handle_player_bullets(game)
-    _handle_collisions(game)
+    # Get current mouse state
+    mouse_buttons = pygame.mouse.get_pressed()
     
 
-    # ---- 6. XP orbs ----
-    for orb in list(game.xp_orbs):
-        picked = orb.update(game.delta_time, game.player.pos2D)
-        if picked:
-            leveled = game.player.gain_xp(orb.value)
-            game.player.points += orb.value
-            if leveled:
-                game.message_queue.append([f"LEVEL UP!  Lv {game.player.level}", 2.0, (140, 220, 255)])
-        if not orb.alive:
-            try:
-                game.xp_orbs.remove(orb)
-            except ValueError:
-                pass
+    mouse_pos_world = game.to_world(pygame.mouse.get_pos())
+    if not game.leveling_up:
+        # ---- 1. World streaming ----
+        game.world.ensure_around(game.player.pos2D)
 
-    # ---- 7. Death check ----
-    if not game.player.alive:
-        game.run_summary = {
-            "kills": game.player.kills,
-            "time": game.now_time - game.run_start_time,
-            "damage": int(game.player.damage_dealt),
-            "level": game.player.level,
-            "points": game.player.points,
-        }
-        game.test_screen = 2
-        return
+        # ---- 1.5 Bullets update ----
+        game.bullet_manager.update(game.delta_time)
 
-    # Periodic cull (every ~2 seconds)
-    if game.total_frame_passed % 120 == 0:
-        game.world.cull_far(game.player.pos2D)
+        # ---- 2. Player ----
+        game.player.UpdateWeapon(game.delta_time, mouse_buttons[0], mouse_clicked)
+        game.player.Update(game.delta_time, keys)
+        game.camera_position = game.player.pos2D
+        
+        # Player vs Obstacle collision (spatial grid optimized)
+        for obs in Obstacle.get_nearby_obstacles(game.player.pos2D, game.spatial_grid_dict):
+            if obs.collides_circle(game.player.pos2D, game.player.radius):
+                obs.push_out(game.player.pos2D, game.player.radius)
+
+        # Set player's face direction
+        diff = pygame.Vector2(mouse_pos_world) - game.player.pos2D
+        if diff.length_squared() > 0:
+            game.player.face_direction = diff.normalize()
+
+        # ---- 3. Enemies ----
+        game.enemy_manager.update(game.delta_time, game.player.pos2D)
+        for e in game.enemy_manager.enemies:
+            # Enemy vs Obstacle collision (spatial grid optimized)
+            for obs in Obstacle.get_nearby_obstacles(e.pos2D, game.spatial_grid_dict):
+                if obs.collides_circle(e.pos2D, e.radius):
+                    obs.push_out(e.pos2D, e.radius)
+
+        # ---- 4. Altars ----
+        for altar in game.world.altars:
+            result = altar.update(game.delta_time, game.player.pos2D)
+            if result:
+                game.player.apply_altar_buff(result)
+                label = {"hp": "+25 MAX HP", "damage": "+15% DAMAGE", "speed": "+30 SPEED"}.get(result, result)
+                game.message_queue.append([f"Altar: {label}", 2.5, (255, 230, 120)])
+
+        # ---- 5. Combat ----
+        _handle_player_bullets(game)
+        _handle_collisions(game)
+        
+
+        # ---- 6. XP orbs ----
+        for orb in list(game.xp_orbs):
+            picked = orb.update(game.delta_time, game.player.pos2D)
+            if picked:
+                leveled = game.player.gain_xp(orb.value)
+                game.player.points += orb.value
+                if leveled:
+                    game.message_queue.append([f"LEVEL UP!  Lv {game.player.level}", 2.0, (140, 220, 255)])
+                    game.leveling_up = True
+                    game.level_up_options = _get_random_cards(game, 3)
+                    game.level_up_scroll_offsets = [0, 0, 0]
+            if not orb.alive:
+                try:
+                    game.xp_orbs.remove(orb)
+                except ValueError:
+                    pass
+
+        # ---- 7. Death check ----
+        if not game.player.alive:
+            game.run_summary = {
+                "kills": game.player.kills,
+                "time": game.now_time - game.run_start_time,
+                "damage": int(game.player.damage_dealt),
+                "level": game.player.level,
+                "points": game.player.points,
+            }
+            game.test_screen = 2
+            return
+
+        # Periodic cull (every ~2 seconds)
+        if game.total_frame_passed % 120 == 0:
+            game.world.cull_far(game.player.pos2D)
 
     # ---- 8. Draw ----
     game.DrawBackground()
@@ -706,3 +852,6 @@ def test_screen1(game: "Game", events):
 
     if game.gun_info:
         _draw_gun_info_overlay(game, events, selected_slot)
+
+    if game.leveling_up:
+        _draw_level_up_screen(game, events)

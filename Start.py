@@ -30,6 +30,7 @@ class Game():
 
         # Create a font object for rendering text
         self.font : pygame.font.SysFont = pygame.font.SysFont(["consolas", "monaco", "monospace"], 24)
+        self.mid_font : pygame.font.SysFont = pygame.font.SysFont(["consolas", "monaco", "monospace"], 20)
         self.HUD_font : pygame.font.SysFont = pygame.font.SysFont(["consolas", "monaco", "monospace"], 16)
 
         # Init camera position.
@@ -139,9 +140,6 @@ class Game():
         return pos - self.screen_center + self.camera_position
     
     def DrawBackground(self):
-        """
-        Fill the screen, 這裡直接幫我替換到你想設計的地圖背景
-        """
         self.screen.fill((30, 30, 30))
             
         LD = self.camera_position - self.screen_center
@@ -157,11 +155,10 @@ class Game():
         Draw Layer 1.
         """
         # --- 1. Draw bullet. ---
-        for weapon in self.player.weapon_list:
-            if weapon is None:
+        for bullet in self.bullet_manager.bullets:
+            if bullet.isKill:
                 continue
-            for bullet in weapon.bullets:
-                bullet.draw(self.screen, self.to_screen)
+            bullet.draw(self.screen, self.to_screen)
 
         # --- 2. Draw player. ---
         # Draw Trajectory Trail

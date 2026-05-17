@@ -1,8 +1,9 @@
 import random
+import uuid
 
 import pygame
 
-from Asset.GameSetting import GAME_CONFIG
+from Asset.GameSetting import GAME_CONFIG, ENTITY_TYPE, GRID_CONFIG
 
 
 class XPOrb:
@@ -82,9 +83,51 @@ class Altar:
 
 class Obstacle:
     def __init__(self, position, size):
+        self.uuid = uuid.uuid4()
+        self.entity_type = ENTITY_TYPE["obstacle"]
         self.pos2D = pygame.Vector2(position)
         self.size = pygame.Vector2(size)
         self.color = (90, 90, 100)
+        self.registered_cells = []
+
+    def add_to_grid(self, spatial_grid_dict):
+        half = self.size / 2
+        min_gx = int((self.pos2D.x - half.x) // GRID_CONFIG["cell_w"])
+        max_gx = int((self.pos2D.x + half.x) // GRID_CONFIG["cell_w"])
+        min_gy = int((self.pos2D.y - half.y) // GRID_CONFIG["cell_h"])
+        max_gy = int((self.pos2D.y + half.y) // GRID_CONFIG["cell_h"])
+        
+        self.registered_cells = []
+        for gx in range(min_gx, max_gx + 1):
+            for gy in range(min_gy, max_gy + 1):
+                wrapped_gx = gx % GRID_CONFIG["number_of_cells_w"]
+                wrapped_gy = gy % GRID_CONFIG["number_of_cells_h"]
+                grid_pos = wrapped_gy * GRID_CONFIG["number_of_cells_w"] + wrapped_gx
+                if self.uuid not in spatial_grid_dict[grid_pos]:
+                    spatial_grid_dict[grid_pos][self.uuid] = self
+                self.registered_cells.append(grid_pos)
+
+    def remove_from_grid(self, spatial_grid_dict):
+        for grid_pos in self.registered_cells:
+            if self.uuid in spatial_grid_dict[grid_pos]:
+                del spatial_grid_dict[grid_pos][self.uuid]
+        self.registered_cells = []
+
+    @staticmethod
+    def get_nearby_obstacles(pos, spatial_grid_dict):
+        grid_x = int(pos.x // GRID_CONFIG["cell_w"]) % GRID_CONFIG["number_of_cells_w"]
+        grid_y = int(pos.y // GRID_CONFIG["cell_h"]) % GRID_CONFIG["number_of_cells_h"]
+        
+        nearby = {}
+        for i in range(grid_x - 1, grid_x + 2):
+            for j in range(grid_y - 1, grid_y + 2):
+                gx = i % GRID_CONFIG["number_of_cells_w"]
+                gy = j % GRID_CONFIG["number_of_cells_h"]
+                grid_pos = gy * GRID_CONFIG["number_of_cells_w"] + gx
+                for entity in spatial_grid_dict[grid_pos].values():
+                    if entity.entity_type == ENTITY_TYPE["obstacle"]:
+                        nearby[entity.uuid] = entity
+        return list(nearby.values())
 
     def _nearest_point(self, point):
         half = self.size / 2
@@ -126,7 +169,8 @@ class Obstacle:
 class WorldChunkManager:
     CHUNK_SIZE = 1000
 
-    def __init__(self, seed=42):
+    def __init__(self, spatial_grid_dict=None, seed=42):
+        self.spatial_grid_dict = spatial_grid_dict
         self.seed = seed
         self.generated = set()
         self.altars = []
@@ -161,7 +205,10 @@ class WorldChunkManager:
             h = rng.uniform(60, 180)
             if abs(x) < 220 and abs(y) < 220:
                 continue
-            self.obstacles.append(Obstacle((x, y), (w, h)))
+            obs = Obstacle((x, y), (w, h))
+            self.obstacles.append(obs)
+            if self.spatial_grid_dict is not None:
+                obs.add_to_grid(self.spatial_grid_dict)
 
         if rng.random() < 0.18 and key != (0, 0):
             x = cx * self.CHUNK_SIZE + rng.uniform(150, self.CHUNK_SIZE - 150)
@@ -170,5 +217,12 @@ class WorldChunkManager:
 
     def cull_far(self, player_pos, max_distance=2500):
         max_sq = max_distance * max_distance
-        self.obstacles = [o for o in self.obstacles if (o.pos2D - player_pos).length_squared() <= max_sq]
+        new_obstacles = []
+        for o in self.obstacles:
+            if (o.pos2D - player_pos).length_squared() <= max_sq:
+                new_obstacles.append(o)
+            else:
+                if self.spatial_grid_dict is not None:
+                    o.remove_from_grid(self.spatial_grid_dict)
+        self.obstacles = new_obstacles
         self.altars = [a for a in self.altars if a.used or (a.pos2D - player_pos).length_squared() <= max_sq]

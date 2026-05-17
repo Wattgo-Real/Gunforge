@@ -15,3 +15,9 @@ Simple Ui add and value Setting `GameSetting.py、Start.py TestScreen1.py TestSc
 - Add Spatial Partitioning Grid.
 - Add the enemy vs enemy collision detection (Based on Spatial Partitioning Grid).
 
+### 2026/05/17
+- Adjust the obstacle detection logic (Based on Spatial Partitioning Grid).
+- Add the obstacle vs bullet collision detection (Based on Spatial Partitioning Grid).
+- Add levelup 3 random cards selection system.
+- Adjust Gun and Bullet System.
+- Add more cards.
