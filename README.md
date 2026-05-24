@@ -21,3 +21,8 @@ Simple Ui add and value Setting `GameSetting.py、Start.py TestScreen1.py TestSc
 - Add levelup 3 random cards selection system.
 - Adjust Gun and Bullet System.
 - Add more cards.
+
+### 2026/05/24
+- Add Quadtree and No Partitioning.
+- Adjust Gun and Bullet System.
+- Add more cards.
