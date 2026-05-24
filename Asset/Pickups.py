@@ -4,6 +4,7 @@ import uuid
 import pygame
 
 from Asset.GameSetting import GAME_CONFIG, ENTITY_TYPE, GRID_CONFIG
+from Asset.SpatialGrid import SpatialGrid
 
 
 class XPOrb:
@@ -90,44 +91,15 @@ class Obstacle:
         self.color = (90, 90, 100)
         self.registered_cells = []
 
-    def add_to_grid(self, spatial_grid_dict):
-        half = self.size / 2
-        min_gx = int((self.pos2D.x - half.x) // GRID_CONFIG["cell_w"])
-        max_gx = int((self.pos2D.x + half.x) // GRID_CONFIG["cell_w"])
-        min_gy = int((self.pos2D.y - half.y) // GRID_CONFIG["cell_h"])
-        max_gy = int((self.pos2D.y + half.y) // GRID_CONFIG["cell_h"])
-        
-        self.registered_cells = []
-        for gx in range(min_gx, max_gx + 1):
-            for gy in range(min_gy, max_gy + 1):
-                wrapped_gx = gx % GRID_CONFIG["number_of_cells_w"]
-                wrapped_gy = gy % GRID_CONFIG["number_of_cells_h"]
-                grid_pos = wrapped_gy * GRID_CONFIG["number_of_cells_w"] + wrapped_gx
-                if self.uuid not in spatial_grid_dict[grid_pos]:
-                    spatial_grid_dict[grid_pos][self.uuid] = self
-                self.registered_cells.append(grid_pos)
+    def add_to_grid(self, spatial_grid_dict : SpatialGrid):
+        spatial_grid_dict.register_obstacle(self)
 
-    def remove_from_grid(self, spatial_grid_dict):
-        for grid_pos in self.registered_cells:
-            if self.uuid in spatial_grid_dict[grid_pos]:
-                del spatial_grid_dict[grid_pos][self.uuid]
-        self.registered_cells = []
+    def remove_from_grid(self, spatial_grid_dict : SpatialGrid):
+        spatial_grid_dict.remove_obstacle(self)
 
     @staticmethod
-    def get_nearby_obstacles(pos, spatial_grid_dict):
-        grid_x = int(pos.x // GRID_CONFIG["cell_w"]) % GRID_CONFIG["number_of_cells_w"]
-        grid_y = int(pos.y // GRID_CONFIG["cell_h"]) % GRID_CONFIG["number_of_cells_h"]
-        
-        nearby = {}
-        for i in range(grid_x - 1, grid_x + 2):
-            for j in range(grid_y - 1, grid_y + 2):
-                gx = i % GRID_CONFIG["number_of_cells_w"]
-                gy = j % GRID_CONFIG["number_of_cells_h"]
-                grid_pos = gy * GRID_CONFIG["number_of_cells_w"] + gx
-                for entity in spatial_grid_dict[grid_pos].values():
-                    if entity.entity_type == ENTITY_TYPE["obstacle"]:
-                        nearby[entity.uuid] = entity
-        return list(nearby.values())
+    def get_nearby_obstacles(pos, spatial_grid_dict : SpatialGrid):
+        return spatial_grid_dict.get_entities_near_by_type(pos, ENTITY_TYPE["obstacle"], range_cells=1)
 
     def _nearest_point(self, point):
         half = self.size / 2
@@ -169,7 +141,7 @@ class Obstacle:
 class WorldChunkManager:
     CHUNK_SIZE = 1000
 
-    def __init__(self, spatial_grid_dict=None, seed=42):
+    def __init__(self, spatial_grid_dict : SpatialGrid = None, seed=42):
         self.spatial_grid_dict = spatial_grid_dict
         self.seed = seed
         self.generated = set()

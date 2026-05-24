@@ -52,6 +52,9 @@ class Game():
         self.selected_slot_info = None
         self.gun_info = False
 
+        # Using SpatialGrid for spatial partitioning.
+        self.partition_method = "SpatialGrid"   # "NoneGrid" or "Quadtree" or "SpatialGrid"
+
         # Persistent meta-progression
         self.best_record = {"kills": 0, "time": 0.0, "damage": 0, "level": 1, "points": 0}
         self.total_points = 0

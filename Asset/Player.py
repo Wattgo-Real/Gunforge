@@ -23,14 +23,15 @@ class Player:
 
         # The direction the player is facing, it should always be normalized
         self.face_direction : pygame.Vector2 = pygame.Vector2(1, 0)
-        self.inventory : list[Card | None] = [Card(type = 0, bullet_type = i) for i in range(5)] + \
-                                            [Card(type = 2, effect_modifier_type = 1)] + \
-                                            [Card(type = 1, attribute_modifier_type = 100),
-                                             Card(type = 2, effect_modifier_type = 2),
-                                             Card(type = 2, effect_modifier_type = 3)]
+        self.inventory : list[Card | None] = [Card(type = 0, inter_type = i) for i in range(5)] + \
+                                            [Card(type = 2, inter_type = i) for i in range(5)] + \
+                                            [Card(type = 1, inter_type = 100), 
+                                             Card(type = 1, inter_type = 59),
+                                             Card(type = 1, inter_type = 64)] + \
+                                             [Card(type = 3, inter_type = i) for i in range(6)] + \
+                                             [Card(type = 4, inter_type = i) for i in range(1)]
         self.inventory.extend([None] * (40 - len(self.inventory)))
                                             
-
         # weapon
         basic_info = {
             "cooldown" : 0.4,
@@ -38,11 +39,12 @@ class Player:
             "scatter_angel" : 5,
             "capacity" : 20,
             "max_slots" : 20,
-            "card_list" : [Card(type = 1, attribute_modifier_type = 9)] + 
-                          [Card(type = 1, attribute_modifier_type = 100+i) for i in range(2)] + 
-                          [Card(type = 2, effect_modifier_type = 0)] + 
-                          [Card(type = 0, bullet_type = 0)] + 
-                          [Card(type = 1, attribute_modifier_type = 50), Card(type = 1, attribute_modifier_type = 54)]
+            "card_list" : [Card(type = 1, inter_type = 9)] + 
+                          [Card(type = 1, inter_type = 100+i) for i in range(2)] + 
+                          [Card(type = 3, inter_type = 1)] +
+                          #[Card(type = 2, inter_type = 5)] +
+                          [Card(type = 2, inter_type = 4)] + 
+                          [Card(type = 0, inter_type = 0)]
         }
         basic_info2 = {
             "cooldown" : 0.4,
@@ -50,7 +52,7 @@ class Player:
             "scatter_angel" : 5,
             "capacity" : 20,
             "max_slots" : 20,
-            "card_list" : [Card(type = 0, bullet_type = 0)],
+            "card_list" : [Card(type = 0, inter_type = 0)],
         }
 
         self.bullet_manager = bullet_manager

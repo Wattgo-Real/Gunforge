@@ -653,60 +653,176 @@ ATTRIBUTE_MODIFIER_CONFIG = {
         }
     ],
     55 : [
-        "Sub Speed I",
+        "Add Physical Damage I",
         {
-            "bullet_speed_modifier" : -3,
-            "info" : "Subtract bullet speed"
+            "physical_damage_modifier" : 3,
+            "info" : "Add physical damage"
         },
         {
-            "line" : [{"start_x" : 0.40, "start_y" : 0.30, "end_x" : 0.60, "end_y" : 0.50, "width" : 0.05, "color" : COLOR_CONFIG["speed"]},
-                     {"start_x" : 0.40, "start_y" : 0.70, "end_x" : 0.60, "end_y" : 0.50, "width" : 0.05, "color" : COLOR_CONFIG["speed"]}],
+            "circle" : [{"pos_x" : 0.30, "pos_y" : 0.50, "size" : 0.20, "color" : COLOR_CONFIG["phy_damage"]}],
+            "line" : [{"start_x" : 0.20, "start_y" : 0.40, "end_x" : 0.40, "end_y" : 0.60, "width" : 0.1, "color" : COLOR_CONFIG["phy_damage"]},
+                     {"start_x" : 0.20, "start_y" : 0.60, "end_x" : 0.40, "end_y" : 0.40, "width" : 0.1, "color" : COLOR_CONFIG["phy_damage"]},
+
+                     {"start_x" : 0.70, "start_y" : 0.20, "end_x" : 0.70, "end_y" : 0.80, "width" : 0.05, "color" : (255,255,255,255)},
+                     {"start_x" : 0.60, "start_y" : 0.30, "end_x" : 0.70, "end_y" : 0.20, "width" : 0.05, "color" : (255,255,255,255)},
+                     {"start_x" : 0.80, "start_y" : 0.30, "end_x" : 0.70, "end_y" : 0.20, "width" : 0.05, "color" : (255,255,255,255)}],
         }
     ],
     56 : [
-        "Sub Speed II",
+        "Add Physical Damage II",
         {
-            "bullet_speed_modifier" : -6,
-            "info" : "Subtract bullet speed"
+            "physical_damage_modifier" : 6,
+            "info" : "Add physical damage"
         },
         {
-            "line" : [{"start_x" : 0.40, "start_y" : 0.30, "end_x" : 0.60, "end_y" : 0.50, "width" : 0.1, "color" : COLOR_CONFIG["speed"]},
-                     {"start_x" : 0.40, "start_y" : 0.70, "end_x" : 0.60, "end_y" : 0.50, "width" : 0.1, "color" : COLOR_CONFIG["speed"]}],
+            "circle" : [{"pos_x" : 0.30, "pos_y" : 0.50, "size" : 0.20, "color" : COLOR_CONFIG["phy_damage"]}],
+            "line" : [{"start_x" : 0.20, "start_y" : 0.40, "end_x" : 0.40, "end_y" : 0.60, "width" : 0.1, "color" : COLOR_CONFIG["phy_damage"]},
+                     {"start_x" : 0.20, "start_y" : 0.60, "end_x" : 0.40, "end_y" : 0.40, "width" : 0.1, "color" : COLOR_CONFIG["phy_damage"]},
+
+                     {"start_x" : 0.70, "start_y" : 0.20, "end_x" : 0.70, "end_y" : 0.80, "width" : 0.1, "color" : (255,255,255,255)},
+                     {"start_x" : 0.60, "start_y" : 0.30, "end_x" : 0.70, "end_y" : 0.20, "width" : 0.1, "color" : (255,255,255,255)},
+                     {"start_x" : 0.80, "start_y" : 0.30, "end_x" : 0.70, "end_y" : 0.20, "width" : 0.1, "color" : (255,255,255,255)}],
         }
     ],
     57 : [
-        "Sub Speed III",
+        "Add Physical Damage III",
         {
-            "bullet_speed_modifier" : -10,
-            "info" : "Subtract bullet speed"
+            "physical_damage_modifier" : 10,
+            "info" : "Add physical damage"
         },
         {
-            "line" : [{"start_x" : 0.40, "start_y" : 0.30, "end_x" : 0.60, "end_y" : 0.50, "width" : 0.15, "color" : COLOR_CONFIG["speed"]},
-                     {"start_x" : 0.40, "start_y" : 0.70, "end_x" : 0.60, "end_y" : 0.50, "width" : 0.15, "color" : COLOR_CONFIG["speed"]}],
+            "circle" : [{"pos_x" : 0.30, "pos_y" : 0.50, "size" : 0.20, "color" : COLOR_CONFIG["phy_damage"]}],
+            "line" : [{"start_x" : 0.20, "start_y" : 0.40, "end_x" : 0.40, "end_y" : 0.60, "width" : 0.1, "color" : COLOR_CONFIG["phy_damage"]},
+                     {"start_x" : 0.20, "start_y" : 0.60, "end_x" : 0.40, "end_y" : 0.40, "width" : 0.1, "color" : COLOR_CONFIG["phy_damage"]},
+
+                     {"start_x" : 0.70, "start_y" : 0.20, "end_x" : 0.70, "end_y" : 0.80, "width" : 0.15, "color" : (255,255,255,255)},
+                     {"start_x" : 0.60, "start_y" : 0.30, "end_x" : 0.70, "end_y" : 0.20, "width" : 0.15, "color" : (255,255,255,255)},
+                     {"start_x" : 0.80, "start_y" : 0.30, "end_x" : 0.70, "end_y" : 0.20, "width" : 0.15, "color" : (255,255,255,255)}],
         }
     ],
     58 : [
-        "Sub Speed IV",
+        "Add Physical Damage IV",
         {
-            "bullet_speed_modifier" : -15,
-            "info" : "Subtract bullet speed"
+            "physical_damage_modifier" : 18,
+            "info" : "Add physical damage"
         },
         {
-            "line" : [{"start_x" : 0.40, "start_y" : 0.30, "end_x" : 0.60, "end_y" : 0.50, "width" : 0.2, "color" : COLOR_CONFIG["speed"]},
-                     {"start_x" : 0.40, "start_y" : 0.70, "end_x" : 0.60, "end_y" : 0.50, "width" : 0.2, "color" : COLOR_CONFIG["speed"]}],
+            "circle" : [{"pos_x" : 0.30, "pos_y" : 0.50, "size" : 0.20, "color" : COLOR_CONFIG["phy_damage"]}],
+            "line" : [{"start_x" : 0.20, "start_y" : 0.40, "end_x" : 0.40, "end_y" : 0.60, "width" : 0.1, "color" : COLOR_CONFIG["phy_damage"]},
+                     {"start_x" : 0.20, "start_y" : 0.60, "end_x" : 0.40, "end_y" : 0.40, "width" : 0.1, "color" : COLOR_CONFIG["phy_damage"]},
+
+                     {"start_x" : 0.70, "start_y" : 0.20, "end_x" : 0.70, "end_y" : 0.80, "width" : 0.2, "color" : (255,255,255,255)},
+                     {"start_x" : 0.60, "start_y" : 0.30, "end_x" : 0.70, "end_y" : 0.20, "width" : 0.2, "color" : (255,255,255,255)},
+                     {"start_x" : 0.80, "start_y" : 0.30, "end_x" : 0.70, "end_y" : 0.20, "width" : 0.2, "color" : (255,255,255,255)}],
         }
     ],
     59 : [
-        "Sub Speed V",
+        "Add Physical Damage IV",
         {
-            "bullet_speed_modifier" : -25,
-            "info" : "Subtract bullet speed"
+            "physical_damage_modifier" : 30,
+            "info" : "Add physical damage"
         },
         {
-            "line" : [{"start_x" : 0.40, "start_y" : 0.30, "end_x" : 0.60, "end_y" : 0.50, "width" : 0.25, "color" : COLOR_CONFIG["speed"]},
-                     {"start_x" : 0.40, "start_y" : 0.70, "end_x" : 0.60, "end_y" : 0.50, "width" : 0.25, "color" : COLOR_CONFIG["speed"]}],
+            "circle" : [{"pos_x" : 0.30, "pos_y" : 0.50, "size" : 0.20, "color" : COLOR_CONFIG["phy_damage"]}],
+            "line" : [{"start_x" : 0.20, "start_y" : 0.40, "end_x" : 0.40, "end_y" : 0.60, "width" : 0.1, "color" : COLOR_CONFIG["phy_damage"]},
+                     {"start_x" : 0.20, "start_y" : 0.60, "end_x" : 0.40, "end_y" : 0.40, "width" : 0.1, "color" : COLOR_CONFIG["phy_damage"]},
+
+                     {"start_x" : 0.70, "start_y" : 0.20, "end_x" : 0.70, "end_y" : 0.80, "width" : 0.25, "color" : (255,255,255,255)},
+                     {"start_x" : 0.60, "start_y" : 0.30, "end_x" : 0.70, "end_y" : 0.20, "width" : 0.25, "color" : (255,255,255,255)},
+                     {"start_x" : 0.80, "start_y" : 0.30, "end_x" : 0.70, "end_y" : 0.20, "width" : 0.25, "color" : (255,255,255,255)}],
         }
     ],
+    60 : [
+        "Add Explosion Damage I",
+        {
+            "explosion_damage_modifier" : 2,
+            "info" : "Add explosion damage"
+        },
+        {
+            "circle" : [{"pos_x" : 0.30, "pos_y" : 0.50, "size" : 0.20, "color" : COLOR_CONFIG["exp_damage"]}],
+            "line" : [{"start_x" : 0.30, "start_y" : 0.40, "end_x" : 0.30, "end_y" : 0.30, "width" : 0.06, "color" : COLOR_CONFIG["exp_damage"]},
+                      {"start_x" : 0.30, "start_y" : 0.60, "end_x" : 0.30, "end_y" : 0.70, "width" : 0.06, "color" : COLOR_CONFIG["exp_damage"]},
+                      {"start_x" : 0.10, "start_y" : 0.50, "end_x" : 0.20, "end_y" : 0.50, "width" : 0.06, "color" : COLOR_CONFIG["exp_damage"]},
+                      {"start_x" : 0.40, "start_y" : 0.50, "end_x" : 0.50, "end_y" : 0.50, "width" : 0.06, "color" : COLOR_CONFIG["exp_damage"]},
+
+                     {"start_x" : 0.70, "start_y" : 0.20, "end_x" : 0.70, "end_y" : 0.80, "width" : 0.05, "color" : (255,255,255,255)},
+                     {"start_x" : 0.60, "start_y" : 0.30, "end_x" : 0.70, "end_y" : 0.20, "width" : 0.05, "color" : (255,255,255,255)},
+                     {"start_x" : 0.80, "start_y" : 0.30, "end_x" : 0.70, "end_y" : 0.20, "width" : 0.05, "color" : (255,255,255,255)}]
+        }
+    ],
+    61 : [
+        "Add Explosion Damage II",
+        {
+            "explosion_damage_modifier" : 4,
+            "info" : "Add explosion damage"
+        },
+        {
+            "circle" : [{"pos_x" : 0.30, "pos_y" : 0.50, "size" : 0.20, "color" : COLOR_CONFIG["exp_damage"]}],
+            "line" : [{"start_x" : 0.30, "start_y" : 0.40, "end_x" : 0.30, "end_y" : 0.30, "width" : 0.06, "color" : COLOR_CONFIG["exp_damage"]},
+                      {"start_x" : 0.30, "start_y" : 0.60, "end_x" : 0.30, "end_y" : 0.70, "width" : 0.06, "color" : COLOR_CONFIG["exp_damage"]},
+                      {"start_x" : 0.10, "start_y" : 0.50, "end_x" : 0.20, "end_y" : 0.50, "width" : 0.06, "color" : COLOR_CONFIG["exp_damage"]},
+                      {"start_x" : 0.40, "start_y" : 0.50, "end_x" : 0.50, "end_y" : 0.50, "width" : 0.06, "color" : COLOR_CONFIG["exp_damage"]},
+
+                     {"start_x" : 0.70, "start_y" : 0.20, "end_x" : 0.70, "end_y" : 0.80, "width" : 0.1, "color" : (255,255,255,255)},
+                     {"start_x" : 0.60, "start_y" : 0.30, "end_x" : 0.70, "end_y" : 0.20, "width" : 0.1, "color" : (255,255,255,255)},
+                     {"start_x" : 0.80, "start_y" : 0.30, "end_x" : 0.70, "end_y" : 0.20, "width" : 0.1, "color" : (255,255,255,255)}]
+        }
+    ],
+    62 : [
+        "Add Explosion Damage III",
+        {
+            "explosion_damage_modifier" : 7,
+            "info" : "Add explosion damage"
+        },
+        {
+            "circle" : [{"pos_x" : 0.30, "pos_y" : 0.50, "size" : 0.20, "color" : COLOR_CONFIG["exp_damage"]}],
+            "line" : [{"start_x" : 0.30, "start_y" : 0.40, "end_x" : 0.30, "end_y" : 0.30, "width" : 0.06, "color" : COLOR_CONFIG["exp_damage"]},
+                      {"start_x" : 0.30, "start_y" : 0.60, "end_x" : 0.30, "end_y" : 0.70, "width" : 0.06, "color" : COLOR_CONFIG["exp_damage"]},
+                      {"start_x" : 0.10, "start_y" : 0.50, "end_x" : 0.20, "end_y" : 0.50, "width" : 0.06, "color" : COLOR_CONFIG["exp_damage"]},
+                      {"start_x" : 0.40, "start_y" : 0.50, "end_x" : 0.50, "end_y" : 0.50, "width" : 0.06, "color" : COLOR_CONFIG["exp_damage"]},
+
+                     {"start_x" : 0.70, "start_y" : 0.20, "end_x" : 0.70, "end_y" : 0.80, "width" : 0.15, "color" : (255,255,255,255)},
+                     {"start_x" : 0.60, "start_y" : 0.30, "end_x" : 0.70, "end_y" : 0.20, "width" : 0.15, "color" : (255,255,255,255)},
+                     {"start_x" : 0.80, "start_y" : 0.30, "end_x" : 0.70, "end_y" : 0.20, "width" : 0.15, "color" : (255,255,255,255)}]
+        }
+    ],
+    63 : [
+        "Add Explosion Damage IV",
+        {
+            "explosion_damage_modifier" : 12,
+            "info" : "Add explosion damage"
+        },
+        {
+            "circle" : [{"pos_x" : 0.30, "pos_y" : 0.50, "size" : 0.20, "color" : COLOR_CONFIG["exp_damage"]}],
+            "line" : [{"start_x" : 0.30, "start_y" : 0.40, "end_x" : 0.30, "end_y" : 0.30, "width" : 0.06, "color" : COLOR_CONFIG["exp_damage"]},
+                      {"start_x" : 0.30, "start_y" : 0.60, "end_x" : 0.30, "end_y" : 0.70, "width" : 0.06, "color" : COLOR_CONFIG["exp_damage"]},
+                      {"start_x" : 0.10, "start_y" : 0.50, "end_x" : 0.20, "end_y" : 0.50, "width" : 0.06, "color" : COLOR_CONFIG["exp_damage"]},
+                      {"start_x" : 0.40, "start_y" : 0.50, "end_x" : 0.50, "end_y" : 0.50, "width" : 0.06, "color" : COLOR_CONFIG["exp_damage"]},
+
+                     {"start_x" : 0.70, "start_y" : 0.20, "end_x" : 0.70, "end_y" : 0.80, "width" : 0.2, "color" : (255,255,255,255)},
+                     {"start_x" : 0.60, "start_y" : 0.30, "end_x" : 0.70, "end_y" : 0.20, "width" : 0.2, "color" : (255,255,255,255)},
+                     {"start_x" : 0.80, "start_y" : 0.30, "end_x" : 0.70, "end_y" : 0.20, "width" : 0.2, "color" : (255,255,255,255)}]
+        }
+    ],
+    64 : [
+        "Add Explosion Damage V",
+        {
+            "explosion_damage_modifier" : 20,
+            "info" : "Add explosion damage"
+        },
+        {
+            "circle" : [{"pos_x" : 0.30, "pos_y" : 0.50, "size" : 0.20, "color" : COLOR_CONFIG["exp_damage"]}],
+            "line" : [{"start_x" : 0.30, "start_y" : 0.40, "end_x" : 0.30, "end_y" : 0.30, "width" : 0.06, "color" : COLOR_CONFIG["exp_damage"]},
+                      {"start_x" : 0.30, "start_y" : 0.60, "end_x" : 0.30, "end_y" : 0.70, "width" : 0.06, "color" : COLOR_CONFIG["exp_damage"]},
+                      {"start_x" : 0.10, "start_y" : 0.50, "end_x" : 0.20, "end_y" : 0.50, "width" : 0.06, "color" : COLOR_CONFIG["exp_damage"]},
+                      {"start_x" : 0.40, "start_y" : 0.50, "end_x" : 0.50, "end_y" : 0.50, "width" : 0.06, "color" : COLOR_CONFIG["exp_damage"]},
+
+                     {"start_x" : 0.70, "start_y" : 0.20, "end_x" : 0.70, "end_y" : 0.80, "width" : 0.25, "color" : (255,255,255,255)},
+                     {"start_x" : 0.60, "start_y" : 0.30, "end_x" : 0.70, "end_y" : 0.20, "width" : 0.25, "color" : (255,255,255,255)},
+                     {"start_x" : 0.80, "start_y" : 0.30, "end_x" : 0.70, "end_y" : 0.20, "width" : 0.25, "color" : (255,255,255,255)}]
+        }
+    ],
+    
 
     100 : [
         "Speed damage bonus",
@@ -746,11 +862,11 @@ ATTRIBUTE_MODIFIER_CONFIG = {
     ],
 }
 
-EFFECT_MODIFIER_CONFIG = {
+PROJECTILE_MODIFIER_CONFIG = {
     0 : [
         "F Split",
         { 
-            "info" : "After the condition is triggered, the bullet will split into 2 bullets (±45 degrees), dealing half damage.",
+            "info" : "After the condition is triggered, the bullet will split into 2 bullets (-45~45 degrees), dealing half damage.",
             "default_trigger" : "hit"
         },
         {
@@ -767,7 +883,7 @@ EFFECT_MODIFIER_CONFIG = {
     1 : [
         "B Split",
         { 
-            "info" : "After the condition is triggered, the bullet will split into 2 bullets (±135 degrees), dealing half damage.",
+            "info" : "After the condition is triggered, the bullet will split into 2 bullets (135~225 degrees), dealing half damage.",
             "default_trigger" : "hit"
         },
         {
@@ -807,6 +923,123 @@ EFFECT_MODIFIER_CONFIG = {
                       {"start_x" : 0.75, "start_y" : 0.35, "end_x" : 0.60, "end_y" : 0.40, "width" : 0.05, "color" : (200, 200, 200, 255)}]
         }
     ],
+    4 : [
+        "Explosive",
+        { 
+            "info" : "The bullet will explosion dealing damage to enemies in a 40 radius, dealing explosive damage equal to half of the final total(phy + exp + bur) damage.",
+            "default_trigger" : "hit"
+        },
+        {
+            "circle" : [{"pos_x" : 0.50, "pos_y" : 0.50, "size" : 0.30, "color" : COLOR_CONFIG["exp_damage"]},
+                        {"pos_x" : 0.30, "pos_y" : 0.70, "size" : 0.10, "color" : COLOR_CONFIG["normal_bullet"]},
+                        {"pos_x" : 0.15, "pos_y" : 0.85, "size" : 0.10, "color" : COLOR_CONFIG["normal_bullet"]}],
+            "line" : [{"start_x" : 0.50, "start_y" : 0.35, "end_x" : 0.50, "end_y" : 0.20, "width" : 0.08, "color" : COLOR_CONFIG["exp_damage"]},
+                      {"start_x" : 0.50, "start_y" : 0.65, "end_x" : 0.50, "end_y" : 0.80, "width" : 0.08, "color" : COLOR_CONFIG["exp_damage"]},
+                      {"start_x" : 0.35, "start_y" : 0.50, "end_x" : 0.20, "end_y" : 0.50, "width" : 0.08, "color" : COLOR_CONFIG["exp_damage"]},
+                      {"start_x" : 0.65, "start_y" : 0.50, "end_x" : 0.80, "end_y" : 0.50, "width" : 0.08, "color" : COLOR_CONFIG["exp_damage"]}]
+        }
+    ],
+}
+
+TRIGGER_MODIFIER_CONFIG = {
+    0 : [
+        "Hit",
+        { 
+            "info" : "Switch trigger to hit.",
+            "default_trigger" : "hit"
+        },
+        {
+            "circle" : [{"pos_x" : 0.60, "pos_y" : 0.50, "size" : 0.20, "color" : COLOR_CONFIG["normal_bullet"]}],
+            "line" : [{"start_x" : 0.65, "start_y" : 0.25, "end_x" : 0.65, "end_y" : 0.75, "width" : 0.08, "color" : (150, 150, 150, 255)},
+                      {"start_x" : 0.20, "start_y" : 0.50, "end_x" : 0.60, "end_y" : 0.50, "width" : 0.05, "color" : COLOR_CONFIG["normal_bullet"]},
+                      {"start_x" : 0.60, "start_y" : 0.50, "end_x" : 0.45, "end_y" : 0.35, "width" : 0.05, "color" : COLOR_CONFIG["bur_damage"]},
+                      {"start_x" : 0.60, "start_y" : 0.50, "end_x" : 0.45, "end_y" : 0.65, "width" : 0.05, "color" : COLOR_CONFIG["bur_damage"]}]
+        }
+    ],    
+    1 : [
+        "Lifetime",
+        { 
+            "info" : "Switch trigger to lifetime."
+        },
+        {
+            "circle" : [{"pos_x" : 0.25, "pos_y" : 0.50, "size" : 0.20, "color" : COLOR_CONFIG["normal_bullet"]}],
+            "line" : [{"start_x" : 0.25, "start_y" : 0.50, "end_x" : 0.40, "end_y" : 0.50, "width" : 0.05, "color" : (180, 180, 180, 255)},
+                      {"start_x" : 0.45, "start_y" : 0.50, "end_x" : 0.55, "end_y" : 0.50, "width" : 0.04, "color" : (130, 130, 130, 255)},
+                      {"start_x" : 0.60, "start_y" : 0.50, "end_x" : 0.66, "end_y" : 0.50, "width" : 0.03, "color" : (90, 90, 90, 255)},
+                      {"start_x" : 0.68, "start_y" : 0.38, "end_x" : 0.82, "end_y" : 0.62, "width" : 0.06, "color" : (220, 80, 80, 255)},
+                      {"start_x" : 0.68, "start_y" : 0.62, "end_x" : 0.82, "end_y" : 0.38, "width" : 0.06, "color" : (220, 80, 80, 255)}]
+        }
+    ],    
+    2 : [
+        "Time 0.1s",
+        { 
+            "info" : "Switch trigger to 0.1s time elapsed."
+        },
+        {
+            "circle" : [{"pos_x" : 0.50, "pos_y" : 0.16, "size" : 0.12, "color" : (200, 200, 200, 255)},
+                        {"pos_x" : 0.50, "pos_y" : 0.50, "size" : 0.60, "color" : (200, 200, 200, 255)},
+                        {"pos_x" : 0.50, "pos_y" : 0.50, "size" : 0.50, "color" : (30, 30, 30, 255)},
+                        {"pos_x" : 0.50, "pos_y" : 0.50, "size" : 0.10, "color" : (200, 200, 200, 255)}],
+            "line" : [{"start_x" : 0.50, "start_y" : 0.50, "end_x" : 0.615, "end_y" : 0.385, "width" : 0.04, "color" : COLOR_CONFIG["cooldown"]},
+                      {"start_x" : 0.50, "start_y" : 0.50, "end_x" : 0.50, "end_y" : 0.32, "width" : 0.05, "color" : COLOR_CONFIG["cooldown"]}]
+        }
+    ],    
+    3 : [
+        "Time 0.2s",
+        { 
+            "info" : "Switch trigger to 0.2s time elapsed."
+        },
+        {
+            "circle" : [{"pos_x" : 0.50, "pos_y" : 0.16, "size" : 0.12, "color" : (200, 200, 200, 255)},
+                        {"pos_x" : 0.50, "pos_y" : 0.50, "size" : 0.60, "color" : (200, 200, 200, 255)},
+                        {"pos_x" : 0.50, "pos_y" : 0.50, "size" : 0.50, "color" : (30, 30, 30, 255)},
+                        {"pos_x" : 0.50, "pos_y" : 0.50, "size" : 0.10, "color" : (200, 200, 200, 255)}],
+            "line" : [{"start_x" : 0.50, "start_y" : 0.50, "end_x" : 0.64, "end_y" : 0.50, "width" : 0.04, "color" : COLOR_CONFIG["cooldown"]},
+                      {"start_x" : 0.50, "start_y" : 0.50, "end_x" : 0.50, "end_y" : 0.32, "width" : 0.05, "color" : COLOR_CONFIG["cooldown"]}]
+        }
+    ],
+    4 : [
+        "Time 0.5s",
+        { 
+            "info" : "Switch trigger to 0.5s time elapsed."
+        },
+        {
+            "circle" : [{"pos_x" : 0.50, "pos_y" : 0.16, "size" : 0.12, "color" : (200, 200, 200, 255)},
+                        {"pos_x" : 0.50, "pos_y" : 0.50, "size" : 0.60, "color" : (200, 200, 200, 255)},
+                        {"pos_x" : 0.50, "pos_y" : 0.50, "size" : 0.50, "color" : (30, 30, 30, 255)},
+                        {"pos_x" : 0.50, "pos_y" : 0.50, "size" : 0.10, "color" : (200, 200, 200, 255)}],
+            "line" : [{"start_x" : 0.50, "start_y" : 0.50, "end_x" : 0.50, "end_y" : 0.64, "width" : 0.04, "color" : COLOR_CONFIG["cooldown"]},
+                      {"start_x" : 0.50, "start_y" : 0.50, "end_x" : 0.50, "end_y" : 0.32, "width" : 0.05, "color" : COLOR_CONFIG["cooldown"]}]
+        }
+    ],
+    5 : [
+        "Time 1.0s",
+        { 
+            "info" : "Switch trigger to 1.0s time elapsed."
+        },
+        {
+            "circle" : [{"pos_x" : 0.50, "pos_y" : 0.16, "size" : 0.12, "color" : (200, 200, 200, 255)},
+                        {"pos_x" : 0.50, "pos_y" : 0.50, "size" : 0.60, "color" : (200, 200, 200, 255)},
+                        {"pos_x" : 0.50, "pos_y" : 0.50, "size" : 0.50, "color" : (30, 30, 30, 255)},
+                        {"pos_x" : 0.50, "pos_y" : 0.50, "size" : 0.10, "color" : (200, 200, 200, 255)}],
+            "line" : [{"start_x" : 0.50, "start_y" : 0.50, "end_x" : 0.36, "end_y" : 0.50, "width" : 0.04, "color" : COLOR_CONFIG["cooldown"]},
+                      {"start_x" : 0.50, "start_y" : 0.50, "end_x" : 0.50, "end_y" : 0.32, "width" : 0.05, "color" : COLOR_CONFIG["cooldown"]}]
+        }
+    ]
+}
+
+MULTIBULLET_MODIFIER_CONFIG = {
+    0 : [
+        "Package",
+        {
+            "info" : "When trigger condition is met, target bullet will summon another bullet from the card slot behind it.",
+            "default_trigger" : "hit"
+        },
+        {
+            "circle" : [{"pos_x" : 0.50, "pos_y" : 0.50, "size" : 0.5, "color" : COLOR_CONFIG["normal_bullet"]},
+                        {"pos_x" : 0.50, "pos_y" : 0.50, "size" : 0.3, "color" : (100, 100, 100, 255)}],
+        }
+    ],
 }
 
 PROBABILITY_CONFIG = {
@@ -821,7 +1054,7 @@ PROBABILITY_CONFIG = {
         {"type" : 1, "id" : i, "unlocked" : True} for i in ATTRIBUTE_MODIFIER_CONFIG.keys()
     ]},
     "T3" : {"weight" : 10 ,"items" : [
-        {"type" : 2, "id" : i, "unlocked" : True} for i in EFFECT_MODIFIER_CONFIG.keys()
+        {"type" : 2, "id" : i, "unlocked" : True} for i in PROJECTILE_MODIFIER_CONFIG.keys()
     ]},
 }
 
@@ -917,7 +1150,7 @@ GAME_CONFIG = {
     "xp_attract_radius" : 130,
     "player_max_hp" : 100,
     "player_invincible_time" : 0.5,
-    "xp_per_level_base" : 1,
+    "xp_per_level_base" : 10,
     "card_slot_levels" : [10, 20, 30, 40, 50],
 }
 

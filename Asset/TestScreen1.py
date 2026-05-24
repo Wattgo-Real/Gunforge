@@ -14,6 +14,7 @@ import random
 from Asset.Enemies import EnemyManager
 from Asset.Pickups import WorldChunkManager, XPOrb, Obstacle
 from Asset.Weapons import Gun, BulletManager
+from Asset.SpatialGrid import SpatialGrid, NoneGrid, Quadtree
 from Asset.Card import Card
 from Asset.Player import Player
 
@@ -23,7 +24,14 @@ def _ensure_runtime_state(game: "Game"):
     """Initialize gameplay state once when entering screen 1."""
     if getattr(game, "_screen1_initialised", False):
         return
-    game.spatial_grid_dict = {i : {} for i in range(GRID_CONFIG["number_of_cells_w"] * GRID_CONFIG["number_of_cells_h"])}
+          
+    if game.partition_method == "Quadtree":
+        game.spatial_grid_dict = Quadtree()
+    elif game.partition_method == "NoneGrid":
+        game.spatial_grid_dict = NoneGrid()
+    elif game.partition_method == "SpatialGrid":
+        game.spatial_grid_dict = SpatialGrid()
+
     game.enemy_manager = EnemyManager(spatial_grid_dict = game.spatial_grid_dict)
     game.bullet_manager = BulletManager(spatial_grid_dict = game.spatial_grid_dict)
     game.world = WorldChunkManager(spatial_grid_dict = game.spatial_grid_dict, seed=42)
@@ -42,18 +50,20 @@ def _ensure_runtime_state(game: "Game"):
 
 def reset_screen1(game: "Game"):
     """Reset gameplay state for a new run. Called by menu / game-over screen."""
-    if  hasattr(game, "spatial_grid_dict"):
-        for cell_key in game.spatial_grid_dict.keys():
-            game.spatial_grid_dict[cell_key].clear()
-    else:
-        game.spatial_grid_dict = {i : {} for i in range(GRID_CONFIG["number_of_cells_w"] * GRID_CONFIG["number_of_cells_h"])}
-
+    if game.partition_method == "Quadtree":
+        game.spatial_grid_dict = Quadtree()
+    elif game.partition_method == "NoneGrid":
+        game.spatial_grid_dict = NoneGrid()
+    elif game.partition_method == "SpatialGrid":
+        game.spatial_grid_dict = SpatialGrid()
+ 
     if hasattr(game, "bullet_manager"):
-        game.bullet_manager.reset()
+        game.bullet_manager.reset(spatial_grid_dict = game.spatial_grid_dict)
     else:
         game.bullet_manager = BulletManager(spatial_grid_dict = game.spatial_grid_dict)
         
     if hasattr(game, "enemy_manager"):
+        game.enemy_manager.spatial_grid_dict = game.spatial_grid_dict
         game.enemy_manager.reset()
     else:
         game.enemy_manager = EnemyManager(spatial_grid_dict = game.spatial_grid_dict)
@@ -90,9 +100,9 @@ def _drop_boss_reward(game: "Game"):
                 "scatter_angel": 8,
                 "capacity": 30,
                 "card_list": [
-                    Card(type=0, bullet_type=2),
-                    Card(type=1, attribute_modifier_type=1),
-                    Card(type=1, attribute_modifier_type=3),
+                    Card(type=0, inter_type=2),
+                    Card(type=1, inter_type=1),
+                    Card(type=1, inter_type=3),
                 ],
             }
             game.player.weapon_list[i] = Gun(new_info)
@@ -115,9 +125,7 @@ def _get_random_cards(game: "Game", count=3):
         
         card = Card(
             type=item_config["type"],
-            bullet_type=item_config["id"] if item_config["type"] == 0 else -1,
-            attribute_modifier_type=item_config["id"] if item_config["type"] == 1 else -1,
-            effect_modifier_type=item_config["id"] if item_config["type"] == 2 else -1
+            inter_type=item_config["id"]
         )
         selected_cards.append(card)
     return selected_cards
@@ -258,34 +266,26 @@ def _handle_collisions(game: "Game"):
     # Enemy vs Enemy collision
     for e1 in game.enemy_manager.enemies:
         # Spatial Partition Grid
-        e1_grid_x = int(e1.pos2D.x / GRID_CONFIG["cell_w"]) % GRID_CONFIG["number_of_cells_w"]
-        e1_grid_y = int(e1.pos2D.y / GRID_CONFIG["cell_h"]) % GRID_CONFIG["number_of_cells_h"]
-        
-        for i in range(e1_grid_x - 1, e1_grid_x + 2):
-            for j in range(e1_grid_y - 1, e1_grid_y + 2):
-                e2_grid_x = i % GRID_CONFIG["number_of_cells_w"]
-                e2_grid_y = j % GRID_CONFIG["number_of_cells_h"]
-                grid_pos = e2_grid_x + e2_grid_y * GRID_CONFIG["number_of_cells_w"]
-                for e2 in game.spatial_grid_dict[grid_pos].values():
-                    if e2.entity_type != ENTITY_TYPE["enemy"] or e1.uuid == e2.uuid:
-                        continue
-                    
-                    dist = e1.pos2D.distance_to(e2.pos2D)
-                    min_dist = e1.radius + e2.radius
-                    if dist < min_dist:
-                        # Push them apart
-                        overlap = min_dist - dist
-                        if dist > 0:
-                            push_dir = (e1.pos2D - e2.pos2D).normalize()
-                        else:
-                            # Exact overlap, push in a random direction
-                            import random
-                            angle = random.uniform(0, 360)
-                            push_dir = pygame.Vector2(1, 0).rotate(angle)
-                        
-                        # Shift both enemies
-                        e1.pos2D += push_dir * (overlap * 0.5)
-                        e2.pos2D -= push_dir * (overlap * 0.5)
+        for e2 in game.spatial_grid_dict.get_entities_near_by_type(e1.pos2D, ENTITY_TYPE["enemy"], range_cells=1):
+            if e1.uuid == e2.uuid:
+                continue
+            
+            dist = e1.pos2D.distance_to(e2.pos2D)
+            min_dist = e1.radius + e2.radius
+            if dist < min_dist:
+                # Push them apart
+                overlap = min_dist - dist
+                if dist > 0:
+                    push_dir = (e1.pos2D - e2.pos2D).normalize()
+                else:
+                    # Exact overlap, push in a random direction
+                    import random
+                    angle = random.uniform(0, 360)
+                    push_dir = pygame.Vector2(1, 0).rotate(angle)
+                
+                # Shift both enemies
+                e1.pos2D += push_dir * (overlap * 0.5)
+                e2.pos2D -= push_dir * (overlap * 0.5)
 
 
 def _handle_player_bullets(game: "Game"):
@@ -306,32 +306,19 @@ def _handle_player_bullets(game: "Game"):
 
         if hit_obstacle:
             continue
-
         # Bullet vs enemy
         # Spatial Partition Grid is used to find the nearest enemy in the area around the bullet.
-        for i in range(bullet.grid_x - 1, bullet.grid_x + 2):
-            for j in range(bullet.grid_y - 1, bullet.grid_y + 2):
-                grid_x = i % GRID_CONFIG["number_of_cells_w"]
-                grid_y = j % GRID_CONFIG["number_of_cells_h"]
-                grid_pos = grid_y * GRID_CONFIG["number_of_cells_w"] + grid_x
-                for entity in game.spatial_grid_dict[grid_pos].values():
-                    if entity.entity_type != ENTITY_TYPE["enemy"]:
-                        continue
-                    if entity.uuid in bullet.hit_enemies:
-                        if entity.entity_type != ENTITY_TYPE["enemy"]:
-                            continue
+        for entity in game.spatial_grid_dict.get_entities_near_by_type(bullet.pos2D, ENTITY_TYPE["enemy"], range_cells=1):
+            if entity.uuid in bullet.hit_enemies:
+                continue
 
-                    if entity.pos2D.distance_to(bullet.pos2D) < bullet.radius + entity.radius + 5:
-                        bullet.triger_hit(entity, effect_queue = game.effects_queue)
-                        if not entity.alive:
-                            game.xp_orbs.append(XPOrb(entity.pos2D.copy(), value=entity.xp_drop))
-                            player.add_kill()
-                            if entity.is_boss:
-                                _drop_boss_reward(game)
-                        break
-                if bullet.isKill:
-                    break
-            if bullet.isKill:
+            if entity.pos2D.distance_to(bullet.pos2D) < bullet.radius + entity.radius + 5:
+                bullet.triger_hit(entity, effect_queue = game.effects_queue)
+                if not entity.alive:
+                    game.xp_orbs.append(XPOrb(entity.pos2D.copy(), value=entity.xp_drop))
+                    player.add_kill()
+                    if entity.is_boss:
+                        _drop_boss_reward(game)
                 break
 
 
@@ -759,7 +746,7 @@ def test_screen1(game: "Game", events):
         game.world.ensure_around(game.player.pos2D)
 
         # ---- 1.5 Bullets update ----
-        game.bullet_manager.update(game.delta_time)
+        game.bullet_manager.update(game.delta_time, game.effects_queue)
 
         # ---- 2. Player ----
         game.player.UpdateWeapon(game.delta_time, mouse_buttons[0], mouse_clicked)
