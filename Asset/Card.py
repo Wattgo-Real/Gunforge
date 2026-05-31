@@ -1,8 +1,11 @@
 
 import pygame
 
-from Asset.GameSetting import BULLET_CONFIG, ATTRIBUTE_MODIFIER_CONFIG, PROJECTILE_MODIFIER_CONFIG, TRIGGER_MODIFIER_CONFIG, MULTIBULLET_MODIFIER_CONFIG
+from Asset.GameSetting import BULLET_CONFIG, ATTRIBUTE_MODIFIER_CONFIG, PROJECTILE_MODIFIER_CONFIG, TRIGGER_MODIFIER_CONFIG
+from Asset.GameSetting import MULTIBULLET_MODIFIER_CONFIG, TRAJECTORY_MODIFIER_CONFIG
 from typing import TYPE_CHECKING
+import random
+import math
 if TYPE_CHECKING:
     from Asset.Weapons import Bullet
     from Asset.Player import Gun
@@ -17,8 +20,7 @@ class Card(pygame.sprite.Sprite):
         '''
         self.type = type
         self.inter_type = inter_type
-        
-
+    
     def run_on_gun(self, target : "Gun"):
         if self.type == 0:  # bullet
             info = BULLET_CONFIG[self.inter_type][1]
@@ -30,7 +32,16 @@ class Card(pygame.sprite.Sprite):
             info = TRIGGER_MODIFIER_CONFIG[self.inter_type][1]
         elif self.type == 4:    # multibullet
             info = MULTIBULLET_MODIFIER_CONFIG[self.inter_type][1]
-
+            if self.inter_type == 0:
+                target.package = 0
+            elif self.inter_type == 1:
+                target.multi_num += 1
+            elif self.inter_type == 2:
+                target.multi_num += 2
+            elif self.inter_type == 3:
+                target.multi_num += 3
+        elif self.type == 5:
+            info = TRAJECTORY_MODIFIER_CONFIG[self.inter_type][1]
         target.cooldown += info.get("cooldown_modifier", 0) 
         target.reload += info.get("reload_modifier", 0) 
         target.scatter_angel += info.get("scatter_angel_modifier", 0) 
@@ -42,7 +53,7 @@ class Card(pygame.sprite.Sprite):
             info = ATTRIBUTE_MODIFIER_CONFIG[self.inter_type][1]
             if self.inter_type >= 100:
                 if self.inter_type == 100:
-                    target.phy_damage += target.speed / 2
+                    target.sd_card = True
                 elif self.inter_type == 101:
                     target.speed += target.phy_damage / 2
             elif self.inter_type >= 50 and self.inter_type < 100:
@@ -62,7 +73,10 @@ class Card(pygame.sprite.Sprite):
                 target.trigger_time = 0.5
             elif self.inter_type == 5:
                 target.trigger_time = 1.0
-            
+
+        elif self.type == 5:    # trajectory_modifier
+            target.trajectory_modifier_list.append(TModifierIT(self.inter_type))
+
     def draw(self, surface : pygame.Surface, rect : pygame.Rect):
         if self.type == 0:
             draw_info = BULLET_CONFIG[self.inter_type][2]
@@ -74,6 +88,8 @@ class Card(pygame.sprite.Sprite):
             draw_info = TRIGGER_MODIFIER_CONFIG[self.inter_type][2]
         elif self.type == 4:
             draw_info = MULTIBULLET_MODIFIER_CONFIG[self.inter_type][2]
+        elif self.type == 5:
+            draw_info = TRAJECTORY_MODIFIER_CONFIG[self.inter_type][2]
 
         start_w = rect.left
         start_h = rect.top
@@ -133,6 +149,12 @@ class Card(pygame.sprite.Sprite):
                name = MULTIBULLET_MODIFIER_CONFIG[self.inter_type][0]
                info = MULTIBULLET_MODIFIER_CONFIG[self.inter_type][1].get("info", "")
                CONFIG = MULTIBULLET_MODIFIER_CONFIG[self.inter_type][1] 
+        
+        elif self.type == 5:    # trajectory_modifier
+            if self.inter_type in TRAJECTORY_MODIFIER_CONFIG:
+                name = TRAJECTORY_MODIFIER_CONFIG[self.inter_type][0]
+                info = TRAJECTORY_MODIFIER_CONFIG[self.inter_type][1].get("info", "")
+                CONFIG = TRAJECTORY_MODIFIER_CONFIG[self.inter_type][1] 
 
         if info != "":
             if len(CONFIG) > 1:
@@ -167,3 +189,99 @@ class Card(pygame.sprite.Sprite):
             return name, info
 
         return "Unknown Card", ""
+
+
+class TModifierIT():
+    def __init__(self, inter_type = 0):
+        self.inter_type = inter_type
+        self.time = 0
+        if inter_type == 3:
+            self.p_times = 0
+            self.c = True
+        elif inter_type == 4:
+            self.init_speed = 0
+        elif inter_type == 7:
+            self.player = None
+            self.player_old_pos2D = None
+            
+    def run(self, pos2D : pygame.math.Vector2, vel2D : pygame.math.Vector2, acc2D : pygame.math.Vector2, time):
+        if self.inter_type == 0:
+            if time > self.time + 0.2:
+                vel2D = vel2D.rotate(random.randint(1,360))
+                self.time = time
+        elif self.inter_type == 1:
+            if self.time == 0:
+                self.time = 1
+                rotate = math.atan2(vel2D.y, vel2D.x) * 180 / math.pi
+                if rotate > 90 or rotate < -90:
+                    vel2D = vel2D.rotate(180-rotate)
+                else:
+                    vel2D = vel2D.rotate(-rotate)
+        elif self.inter_type == 2:
+            if self.time == 0:
+                self.time = 1
+                rotate = math.atan2(vel2D.y, vel2D.x) * 180 / math.pi
+                if rotate > 0:
+                    vel2D = vel2D.rotate(90-rotate)
+                else:
+                    vel2D = vel2D.rotate(-90-rotate)
+
+        elif self.inter_type == 3:
+            c = int(time / 0.2)
+            if c >= 2:
+                if c % 2 == 0:
+                    if self.c == False:
+                        self.c = True
+                        self.p_times = 0
+                    if self.p_times <= 3:
+                        vel2D = vel2D.rotate(45)
+                        self.p_times  += 1
+                else:
+                    if self.c == True:
+                        self.c = False
+                        self.p_times = 0
+                    if self.p_times <= 3:
+                        vel2D = vel2D.rotate(-45)
+                        self.p_times  += 1
+            if c == 1:
+                if self.p_times < 2:
+                    vel2D = vel2D.rotate(-45)
+                    self.p_times += 1
+                    self.c = False
+
+        elif self.inter_type == 4:
+            acc2D = self.init_speed.rotate(time * 720)
+            pass
+
+        elif self.inter_type == 5:  # T
+            if time > 0.3 and self.time == 0:
+                self.time = time
+                vel2D = vel2D.rotate(random.choice([90, -90]))
+        
+        elif self.inter_type == 6:  # V
+            if time > 0.3 and self.time == 0:
+                self.time = time
+                vel2D = vel2D.rotate(180)
+        
+        elif self.inter_type == 7: 
+            if time >= 0.3:
+                if self.time == 0:
+                    vel2D = vel2D.rotate(90)
+                    self.time = time
+                else:
+                    pos2D = pos2D + (self.player.pos2D.copy() - self.player_old_pos2D.copy())
+                    to_player = self.player.pos2D - pos2D
+                    radius = to_player.length()
+                    if radius > 100:
+                        heading_to_player = to_player.normalize()
+                        speed = vel2D.length()
+                        acc2D = heading_to_player * (speed ** 2) / radius / 2
+                self.player_old_pos2D = self.player.pos2D.copy()
+        elif self.inter_type == 8:
+            acc2D = vel2D.normalize() * 150
+        elif self.inter_type == 9:
+            acc2D = -vel2D.normalize() * min(150, vel2D.length())
+
+
+        return pos2D, vel2D, acc2D
+    

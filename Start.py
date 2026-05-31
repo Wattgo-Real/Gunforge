@@ -6,6 +6,9 @@ np.random.seed(42)
 import Asset.Function as GF
 import Asset.TestScreen1 as TS1
 import Asset.TestScreen2 as TS2
+import Asset.Evaluation1 as EV1
+import Asset.Evaluation2 as EV2
+import Asset.Evaluation3 as EV3 
 
 from Asset.Player import Player
 
@@ -71,8 +74,9 @@ class Game():
         self.screen.blit(sub_surf, ((self.screen_width - sub_surf.get_width()) // 2, 240))
 
         cx = self.screen_width // 2
-        play_btn = pygame.Rect(cx - 150, 360, 300, 70)
-        quit_btn = pygame.Rect(cx - 150, 460, 300, 70)
+        play_btn = pygame.Rect(cx - 150, 320, 300, 70)
+        eval_btn = pygame.Rect(cx - 150, 410, 300, 70)
+        quit_btn = pygame.Rect(cx - 150, 500, 300, 70)
         info_lines = [
             "WASD to move   |   Left click to fire   |   TAB to open gun/inventory",
             "Survive, kill enemies, collect XP orbs, stand on altars for buffs.",
@@ -80,9 +84,10 @@ class Game():
         ]
 
         GF.draw_button(self.screen, play_btn, "Play", font=self.font)
+        GF.draw_button(self.screen, eval_btn, "Evaluation Mode", font=self.font)
         GF.draw_button(self.screen, quit_btn, "Quit", font=self.font)
 
-        info_y = 580
+        info_y = 600
         for line in info_lines:
             line_surf = self.HUD_font.render(line, True, (200, 200, 200))
             self.screen.blit(line_surf, ((self.screen_width - line_surf.get_width()) // 2, info_y))
@@ -94,8 +99,39 @@ class Game():
                     self.gun_info = False
                     TS1.reset_screen1(self)
                     self.test_screen = 1
+                elif eval_btn.collidepoint(event.pos):
+                    self.test_screen = 4
                 elif quit_btn.collidepoint(event.pos):
                     pygame.event.post(pygame.event.Event(pygame.QUIT))
+
+    def _draw_evaluation_menu(self, events):
+        self.screen.fill((20, 20, 30))
+
+        title_font = pygame.font.SysFont(["consolas", "monaco", "monospace"], 64, bold=True)
+        title_surf = title_font.render("EVALUATION MODE", True, (100, 180, 255))
+        self.screen.blit(title_surf, ((self.screen_width - title_surf.get_width()) // 2, 140))
+
+        cx = self.screen_width // 2
+        btn_eval1 = pygame.Rect(cx - 150, 260, 300, 70)
+        btn_eval2 = pygame.Rect(cx - 150, 360, 300, 70)
+        btn_eval3 = pygame.Rect(cx - 150, 460, 300, 70)
+        btn_back = pygame.Rect(cx - 150, 560, 300, 70)
+
+        GF.draw_button(self.screen, btn_eval1, "Evaluation 1", font=self.font)
+        GF.draw_button(self.screen, btn_eval2, "Evaluation 2", font=self.font)
+        GF.draw_button(self.screen, btn_eval3, "Evaluation 3", font=self.font)
+        GF.draw_button(self.screen, btn_back, "Back", font=self.font)
+
+        for event in events:
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                if btn_eval1.collidepoint(event.pos):
+                    self.test_screen = 5
+                elif btn_eval2.collidepoint(event.pos):
+                    self.test_screen = 6
+                elif btn_eval3.collidepoint(event.pos):
+                    self.test_screen = 3
+                elif btn_back.collidepoint(event.pos):
+                    self.test_screen = 0
 
     def Start(self):
         # Control variable for the main loop
@@ -114,6 +150,14 @@ class Game():
                 TS1.test_screen1(self, events)
             elif self.test_screen == 2:
                 TS2.test_screen2(self, events)
+            elif self.test_screen == 3:
+                EV3.test_screen3(self, events)
+            elif self.test_screen == 4:
+                self._draw_evaluation_menu(events)
+            elif self.test_screen == 5:
+                EV1.test_screen_eval1(self, events)
+            elif self.test_screen == 6:
+                EV2.test_screen_eval2(self, events)
 
 
             # Update the display (render everything to the screen)
@@ -154,9 +198,6 @@ class Game():
             self.screen.blit(self.background, self.to_screen(1000 * grid_points[i]) - pygame.Vector2(0, 1000))
 
     def DrawLayer1(self):
-        """
-        Draw Layer 1.
-        """
         # --- 1. Draw bullet. ---
         for bullet in self.bullet_manager.bullets:
             if bullet.isKill:
@@ -194,35 +235,6 @@ class Game():
             
             text_rect = error_surf.get_rect(center=(screen_pos.x, screen_pos.y))
             self.screen.blit(error_surf, text_rect)
-
-    def PlayerUpdate(self, mouse_clicked : bool = False):
-        """
-        If self.KeyBoardControl is True, the target position can be controlled by arrow keys, and the camera will follow the target. \n
-        If self.KeyBoardControl is False, the camera will follow the Main Agent.
-        """
-        # Get current keyboard state (continuous input)
-        keys = pygame.key.get_pressed()
-
-        # Get current mouse state
-        mouse_buttons = pygame.mouse.get_pressed()
-        
-        # Update weapon
-        self.player.UpdateWeapon(self.delta_time, fire = mouse_buttons[0], trigger_feedback = mouse_clicked)
-
-        # Update position based on arrow key input
-        acc_dir = pygame.Vector2(0, 0)
-        if keys[pygame.K_LEFT] or keys[pygame.K_a]:
-            acc_dir.x -= 1
-        if keys[pygame.K_RIGHT] or keys[pygame.K_d]:
-            acc_dir.x += 1
-        if keys[pygame.K_UP] or keys[pygame.K_w]:
-            acc_dir.y += 1
-        if keys[pygame.K_DOWN] or keys[pygame.K_s]:
-            acc_dir.y -= 1
-        self.player.Update(self.delta_time, acc_dir)
-
-        # Set the camera position to follow the target
-        self.camera_position = self.player.pos2D
 
 
 if __name__ == '__main__':
