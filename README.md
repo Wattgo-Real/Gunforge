@@ -26,3 +26,7 @@ Simple Ui add and value Setting `GameSetting.py、Start.py TestScreen1.py TestSc
 - Add Quadtree and No Partitioning.
 - Adjust Gun and Bullet System.
 - Add more cards.
+
+### 2026/05/31
+- Add more cards
+- Add Evaluation3.py to compare the efficiency of different spatial partitioning methods.
