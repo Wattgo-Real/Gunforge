@@ -9,7 +9,7 @@ import random
 
 class Player:
     def __init__(self, position : pygame.Vector2 = pygame.Vector2(0,0), radius : int = 10, color : tuple = (255, 255, 255),
-                        max_velocity : float = 300, max_acceleration : float = 10000, bullet_manager= None):
+                        max_velocity : float = 150, max_acceleration : float = 10000, bullet_manager= None):
         self.pos2D : pygame.Vector2 = pygame.Vector2(position)
         self.vel2D : pygame.Vector2 = pygame.Vector2(0, 0)
         self.acc2D : pygame.Vector2 = pygame.Vector2(0, 0)
@@ -29,7 +29,8 @@ class Player:
                                              Card(type = 1, inter_type = 59),
                                              Card(type = 1, inter_type = 64)] + \
                                              [Card(type = 3, inter_type = i) for i in range(6)] + \
-                                             [Card(type = 4, inter_type = i) for i in range(1)]
+                                             [Card(type = 4, inter_type = i//2) for i in range(6)] + \
+                                             [Card(type = 5, inter_type = i) for i in range(10)]
         self.inventory.extend([None] * (40 - len(self.inventory)))
                                             
         # weapon
@@ -42,7 +43,7 @@ class Player:
             "card_list" : [Card(type = 1, inter_type = 9)] + 
                           [Card(type = 1, inter_type = 100+i) for i in range(2)] + 
                           [Card(type = 3, inter_type = 1)] +
-                          #[Card(type = 2, inter_type = 5)] +
+                          [Card(type = 1, inter_type = 19)] +
                           [Card(type = 2, inter_type = 4)] + 
                           [Card(type = 0, inter_type = 0)]
         }

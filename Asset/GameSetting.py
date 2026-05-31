@@ -48,7 +48,7 @@ BULLET_CONFIG = {
     1 : [
         "Light Bullet",
         {
-            "speed": 5,
+            "speed": 6,
             "physical_damage": 3,
             "radius" : 2,
             "capacity_modifier" : 20,
@@ -64,10 +64,10 @@ BULLET_CONFIG = {
     2 : [
         "Heavy Bullet",
         {
-            "speed": 20,
+            "speed": 16,
             "physical_damage": 15,
             "radius" : 4,
-            "capacity_modifier" : -20,
+            "capacity_modifier" : -15,
             "cooldown_modifier" : 0.1,
             "scatter_angel_modifier" : -5,
             "info" : "Deal physical damage with low capacity, high speed, high damage and wide scatter angle",
@@ -112,7 +112,6 @@ BULLET_CONFIG = {
         }
     ]
 }
-
 
 ATTRIBUTE_MODIFIER_CONFIG = {
     0 : [
@@ -1040,6 +1039,251 @@ MULTIBULLET_MODIFIER_CONFIG = {
                         {"pos_x" : 0.50, "pos_y" : 0.50, "size" : 0.3, "color" : (100, 100, 100, 255)}],
         }
     ],
+    1 : [
+        "Double Bullet",
+        {
+            "info" : "Simultaneously activate 2 bullets or multi-bullet card after this card"
+        },
+        {
+            "circle" : [
+                {"pos_x" : 0.35, "pos_y" : 0.35, "size" : 0.22, "color" : (255, 200, 80, 255)},
+                {"pos_x" : 0.65, "pos_y" : 0.35, "size" : 0.22, "color" : (255, 200, 80, 255)}
+            ],
+            "line" : [
+                # x
+                {"start_x" : 0.30, "start_y" : 0.60, "end_x" : 0.42, "end_y" : 0.72, "width" : 0.05, "color" : (255, 255, 255, 255)},
+                {"start_x" : 0.42, "start_y" : 0.60, "end_x" : 0.30, "end_y" : 0.72, "width" : 0.05, "color" : (255, 255, 255, 255)},
+                # 2
+                {"start_x" : 0.55, "start_y" : 0.58, "end_x" : 0.70, "end_y" : 0.58, "width" : 0.05, "color" : (255, 255, 255, 255)},
+                {"start_x" : 0.70, "start_y" : 0.58, "end_x" : 0.70, "end_y" : 0.66, "width" : 0.05, "color" : (255, 255, 255, 255)},
+                {"start_x" : 0.70, "start_y" : 0.66, "end_x" : 0.55, "end_y" : 0.74, "width" : 0.05, "color" : (255, 255, 255, 255)},
+                {"start_x" : 0.55, "start_y" : 0.74, "end_x" : 0.70, "end_y" : 0.74, "width" : 0.05, "color" : (255, 255, 255, 255)}
+            ]
+        }
+    ],
+    2 : [
+        "Triple Bullet",
+        {
+            "info" : "Simultaneously activate 3 bullets or multi-bullet card after this card."
+        },
+        {
+            "circle" : [
+                {"pos_x" : 0.50, "pos_y" : 0.25, "size" : 0.22, "color" : (255, 200, 80, 255)},
+                {"pos_x" : 0.30, "pos_y" : 0.50, "size" : 0.22, "color" : (255, 200, 80, 255)},
+                {"pos_x" : 0.70, "pos_y" : 0.50, "size" : 0.22, "color" : (255, 200, 80, 255)}
+            ],
+            "line" : [
+                # x
+                {"start_x" : 0.30, "start_y" : 0.68, "end_x" : 0.42, "end_y" : 0.80, "width" : 0.05, "color" : (255, 255, 255, 255)},
+                {"start_x" : 0.42, "start_y" : 0.68, "end_x" : 0.30, "end_y" : 0.80, "width" : 0.05, "color" : (255, 255, 255, 255)},
+                # 3
+                {"start_x" : 0.55, "start_y" : 0.66, "end_x" : 0.70, "end_y" : 0.66, "width" : 0.05, "color" : (255, 255, 255, 255)},
+                {"start_x" : 0.70, "start_y" : 0.66, "end_x" : 0.70, "end_y" : 0.73, "width" : 0.05, "color" : (255, 255, 255, 255)},
+                {"start_x" : 0.55, "start_y" : 0.73, "end_x" : 0.70, "end_y" : 0.73, "width" : 0.05, "color" : (255, 255, 255, 255)},
+                {"start_x" : 0.70, "start_y" : 0.73, "end_x" : 0.70, "end_y" : 0.80, "width" : 0.05, "color" : (255, 255, 255, 255)},
+                {"start_x" : 0.55, "start_y" : 0.80, "end_x" : 0.70, "end_y" : 0.80, "width" : 0.05, "color" : (255, 255, 255, 255)}
+            ]
+        }
+    ],
+    3 : [
+        "Quadruple Bullet",
+        {
+            "info" : "Simultaneously activate 4 bullets or multi-bullet card after this card."
+        },
+        {
+            "circle" : [
+                {"pos_x" : 0.35, "pos_y" : 0.28, "size" : 0.20, "color" : (255, 200, 80, 255)},
+                {"pos_x" : 0.65, "pos_y" : 0.28, "size" : 0.20, "color" : (255, 200, 80, 255)},
+                {"pos_x" : 0.35, "pos_y" : 0.50, "size" : 0.20, "color" : (255, 200, 80, 255)},
+                {"pos_x" : 0.65, "pos_y" : 0.50, "size" : 0.20, "color" : (255, 200, 80, 255)}
+            ],
+            "line" : [
+                # x
+                {"start_x" : 0.30, "start_y" : 0.68, "end_x" : 0.42, "end_y" : 0.80, "width" : 0.05, "color" : (255, 255, 255, 255)},
+                {"start_x" : 0.42, "start_y" : 0.68, "end_x" : 0.30, "end_y" : 0.80, "width" : 0.05, "color" : (255, 255, 255, 255)},
+                # 4
+                {"start_x" : 0.55, "start_y" : 0.66, "end_x" : 0.55, "end_y" : 0.73, "width" : 0.05, "color" : (255, 255, 255, 255)},
+                {"start_x" : 0.55, "start_y" : 0.73, "end_x" : 0.70, "end_y" : 0.73, "width" : 0.05, "color" : (255, 255, 255, 255)},
+                {"start_x" : 0.70, "start_y" : 0.66, "end_x" : 0.70, "end_y" : 0.80, "width" : 0.05, "color" : (255, 255, 255, 255)}
+            ]
+        }
+    ]
+}
+
+TRAJECTORY_MODIFIER_CONFIG = {
+    0 : [
+        "Chaotic Trajectory",
+        {
+            "info" : "The velocity of bullet will randomly change every 0.2 second.",
+            "physical_damage" : 5
+        },
+        {
+            "line" : [
+                {"start_x" : 0.25, "start_y" : 0.70, "end_x" : 0.40, "end_y" : 0.40, "width" : 0.05, "color" : (180, 100, 255, 255)},
+                {"start_x" : 0.40, "start_y" : 0.40, "end_x" : 0.50, "end_y" : 0.60, "width" : 0.05, "color" : (180, 100, 255, 255)},
+                {"start_x" : 0.50, "start_y" : 0.60, "end_x" : 0.65, "end_y" : 0.30, "width" : 0.05, "color" : (180, 100, 255, 255)},
+                {"start_x" : 0.65, "start_y" : 0.30, "end_x" : 0.80, "end_y" : 0.50, "width" : 0.05, "color" : (180, 100, 255, 255)},
+                {"start_x" : 0.80, "start_y" : 0.50, "end_x" : 0.70, "end_y" : 0.45, "width" : 0.05, "color" : (180, 100, 255, 255)},
+                {"start_x" : 0.80, "start_y" : 0.50, "end_x" : 0.80, "end_y" : 0.40, "width" : 0.05, "color" : (180, 100, 255, 255)}
+            ]
+        }
+    ],
+    1 : [
+        "Horizontal Trajectory",
+        {
+            "info" : "The velocity only available in x-axis.",
+            "physical_damage" : 5
+        },
+        {
+            "line" : [
+                {"start_x" : 0.20, "start_y" : 0.50, "end_x" : 0.80, "end_y" : 0.50, "width" : 0.06, "color" : (100, 200, 255, 255)},
+                {"start_x" : 0.20, "start_y" : 0.50, "end_x" : 0.35, "end_y" : 0.35, "width" : 0.06, "color" : (100, 200, 255, 255)},
+                {"start_x" : 0.20, "start_y" : 0.50, "end_x" : 0.35, "end_y" : 0.65, "width" : 0.06, "color" : (100, 200, 255, 255)},
+                {"start_x" : 0.80, "start_y" : 0.50, "end_x" : 0.65, "end_y" : 0.35, "width" : 0.06, "color" : (100, 200, 255, 255)},
+                {"start_x" : 0.80, "start_y" : 0.50, "end_x" : 0.65, "end_y" : 0.65, "width" : 0.06, "color" : (100, 200, 255, 255)}
+            ]
+        }
+    ],
+    2 : [
+        "Vertical Trajectory",
+        {
+            "info" : "The velocity only available in y-axis.",
+            "physical_damage" : 5
+        },
+        {
+            "line" : [
+                {"start_x" : 0.50, "start_y" : 0.20, "end_x" : 0.50, "end_y" : 0.80, "width" : 0.06, "color" : (100, 200, 255, 255)},
+                {"start_x" : 0.50, "start_y" : 0.20, "end_x" : 0.35, "end_y" : 0.35, "width" : 0.06, "color" : (100, 200, 255, 255)},
+                {"start_x" : 0.50, "start_y" : 0.20, "end_x" : 0.65, "end_y" : 0.35, "width" : 0.06, "color" : (100, 200, 255, 255)},
+                {"start_x" : 0.50, "start_y" : 0.80, "end_x" : 0.35, "end_y" : 0.65, "width" : 0.06, "color" : (100, 200, 255, 255)},
+                {"start_x" : 0.50, "start_y" : 0.80, "end_x" : 0.65, "end_y" : 0.65, "width" : 0.06, "color" : (100, 200, 255, 255)}
+            ]
+        }
+    ],
+    3 : [
+        "S Shape Trajectory",
+        {
+            "info" : "The bullet will move in S shape.",
+            "physical_damage" : 5
+        },
+        {
+            "line" : [
+                {"start_x" : 0.65, "start_y" : 0.25, "end_x" : 0.35, "end_y" : 0.25, "width" : 0.05, "color" : (100, 255, 180, 255)},
+                {"start_x" : 0.35, "start_y" : 0.25, "end_x" : 0.35, "end_y" : 0.50, "width" : 0.05, "color" : (100, 255, 180, 255)},
+                {"start_x" : 0.35, "start_y" : 0.50, "end_x" : 0.65, "end_y" : 0.50, "width" : 0.05, "color" : (100, 255, 180, 255)},
+                {"start_x" : 0.65, "start_y" : 0.50, "end_x" : 0.65, "end_y" : 0.75, "width" : 0.05, "color" : (100, 255, 180, 255)},
+                {"start_x" : 0.65, "start_y" : 0.75, "end_x" : 0.35, "end_y" : 0.75, "width" : 0.05, "color" : (100, 255, 180, 255)},
+                {"start_x" : 0.70, "start_y" : 0.25, "end_x" : 0.58, "end_y" : 0.15, "width" : 0.05, "color" : (100, 255, 180, 255)},
+                {"start_x" : 0.70, "start_y" : 0.25, "end_x" : 0.58, "end_y" : 0.35, "width" : 0.05, "color" : (100, 255, 180, 255)}
+            ]
+        }
+    ],
+    4 : [
+        "O Shape Trajectory",
+        {
+            "info" : "The bullet will move in O shape.",
+            "physical_damage" : 5
+        },
+        {
+            "circle" : [
+                {"pos_x" : 0.50, "pos_y" : 0.50, "size" : 0.60, "color" : (100, 255, 180, 255)},
+                {"pos_x" : 0.50, "pos_y" : 0.50, "size" : 0.50, "color" : (30, 30, 30, 255)}
+            ],
+            "line" : [
+                {"start_x" : 0.75, "start_y" : 0.50, "end_x" : 0.90, "end_y" : 0.60, "width" : 0.05, "color" : (100, 255, 180, 255)},
+                {"start_x" : 0.75, "start_y" : 0.50, "end_x" : 0.60, "end_y" : 0.55, "width" : 0.05, "color" : (100, 255, 180, 255)}
+            ]
+        }
+    ],
+    5 : [
+        "T Shape Trajectory",
+        {
+            "info" : "The bullet will turn left or right after moving 0.3 second",
+            "physical_damage" : 5
+        },
+        {
+            "line" : [
+                {"start_x" : 0.50, "start_y" : 0.80, "end_x" : 0.50, "end_y" : 0.50, "width" : 0.05, "color" : (255, 120, 120, 255)},
+                {"start_x" : 0.50, "start_y" : 0.50, "end_x" : 0.25, "end_y" : 0.30, "width" : 0.05, "color" : (255, 120, 120, 255)},
+                {"start_x" : 0.50, "start_y" : 0.50, "end_x" : 0.75, "end_y" : 0.30, "width" : 0.05, "color" : (255, 120, 120, 255)},
+                {"start_x" : 0.25, "start_y" : 0.30, "end_x" : 0.38, "end_y" : 0.30, "width" : 0.05, "color" : (255, 120, 120, 255)},
+                {"start_x" : 0.25, "start_y" : 0.30, "end_x" : 0.28, "end_y" : 0.43, "width" : 0.05, "color" : (255, 120, 120, 255)},
+                {"start_x" : 0.75, "start_y" : 0.30, "end_x" : 0.62, "end_y" : 0.30, "width" : 0.05, "color" : (255, 120, 120, 255)},
+                {"start_x" : 0.75, "start_y" : 0.30, "end_x" : 0.72, "end_y" : 0.43, "width" : 0.05, "color" : (255, 120, 120, 255)}
+            ]
+        }
+    ],
+    6 : [
+        "V Shape Trajectory",
+        {
+            "info" : "The bullet will turn back after moving 0.3 second",
+            "physical_damage" : 5
+        },
+        {
+            "line" : [
+                {"start_x" : 0.50, "start_y" : 0.85, "end_x" : 0.50, "end_y" : 0.40, "width" : 0.05, "color" : (255, 120, 120, 255)},
+                {"start_x" : 0.50, "start_y" : 0.40, "end_x" : 0.25, "end_y" : 0.65, "width" : 0.05, "color" : (255, 120, 120, 255)},
+                {"start_x" : 0.50, "start_y" : 0.40, "end_x" : 0.75, "end_y" : 0.65, "width" : 0.05, "color" : (255, 120, 120, 255)},
+                {"start_x" : 0.25, "start_y" : 0.65, "end_x" : 0.38, "end_y" : 0.65, "width" : 0.05, "color" : (255, 120, 120, 255)},
+                {"start_x" : 0.25, "start_y" : 0.65, "end_x" : 0.25, "end_y" : 0.52, "width" : 0.05, "color" : (255, 120, 120, 255)},
+                {"start_x" : 0.75, "start_y" : 0.65, "end_x" : 0.75, "end_y" : 0.52, "width" : 0.05, "color" : (255, 120, 120, 255)},
+                {"start_x" : 0.75, "start_y" : 0.65, "end_x" : 0.62, "end_y" : 0.65, "width" : 0.05, "color" : (255, 120, 120, 255)}
+            ]
+        }
+    ],
+    7 : [
+        "Circle",
+        {
+            "info" : "The bullet will surround the player in a circle.",
+            "physical_damage" : 5
+        },
+        {
+            "circle" : [
+                {"pos_x" : 0.50, "pos_y" : 0.50, "size" : 0.20, "color" : (0, 150, 255, 255)},
+                {"pos_x" : 0.50, "pos_y" : 0.50, "size" : 0.65, "color" : (255, 220, 100, 150)},
+                {"pos_x" : 0.50, "pos_y" : 0.50, "size" : 0.61, "color" : (30, 30, 30, 255)},
+                {"pos_x" : 0.80, "pos_y" : 0.50, "size" : 0.15, "color" : (255, 200, 80, 255)}
+            ]
+        }
+    ],
+    8 : [
+        "Accelerate",
+        {
+            "info" : "The bullet will accelerate in a same direction it shoots.",
+            "physical_damage" : 5
+        },
+        {
+            "line" : [
+                {"start_x" : 0.50, "start_y" : 0.75, "end_x" : 0.50, "end_y" : 0.65, "width" : 0.04, "color" : (150, 255, 100, 120)},
+                {"start_x" : 0.50, "start_y" : 0.65, "end_x" : 0.45, "end_y" : 0.70, "width" : 0.04, "color" : (150, 255, 100, 120)},
+                {"start_x" : 0.50, "start_y" : 0.65, "end_x" : 0.55, "end_y" : 0.70, "width" : 0.04, "color" : (150, 255, 100, 120)},
+                {"start_x" : 0.50, "start_y" : 0.55, "end_x" : 0.50, "end_y" : 0.40, "width" : 0.06, "color" : (150, 255, 100, 180)},
+                {"start_x" : 0.50, "start_y" : 0.40, "end_x" : 0.43, "end_y" : 0.47, "width" : 0.06, "color" : (150, 255, 100, 180)},
+                {"start_x" : 0.50, "start_y" : 0.40, "end_x" : 0.57, "end_y" : 0.47, "width" : 0.06, "color" : (150, 255, 100, 180)},
+                {"start_x" : 0.50, "start_y" : 0.30, "end_x" : 0.50, "end_y" : 0.10, "width" : 0.08, "color" : (150, 255, 100, 255)},
+                {"start_x" : 0.50, "start_y" : 0.10, "end_x" : 0.40, "end_y" : 0.20, "width" : 0.08, "color" : (150, 255, 100, 255)},
+                {"start_x" : 0.50, "start_y" : 0.10, "end_x" : 0.60, "end_y" : 0.20, "width" : 0.08, "color" : (150, 255, 100, 255)}
+            ]
+        }
+    ],
+    9 : [
+        "Decelerate",
+        {
+            "info" : "The bullet will decelerate until stop.",
+            "physical_damage" : 5
+        },
+        {
+            "line" : [
+                {"start_x" : 0.50, "start_y" : 0.85, "end_x" : 0.50, "end_y" : 0.60, "width" : 0.08, "color" : (255, 150, 100, 255)},
+                {"start_x" : 0.50, "start_y" : 0.60, "end_x" : 0.40, "end_y" : 0.70, "width" : 0.08, "color" : (255, 150, 100, 255)},
+                {"start_x" : 0.50, "start_y" : 0.60, "end_x" : 0.60, "end_y" : 0.70, "width" : 0.08, "color" : (255, 150, 100, 255)},
+                {"start_x" : 0.50, "start_y" : 0.50, "end_x" : 0.50, "end_y" : 0.35, "width" : 0.05, "color" : (255, 150, 100, 180)},
+                {"start_x" : 0.50, "start_y" : 0.35, "end_x" : 0.44, "end_y" : 0.41, "width" : 0.05, "color" : (255, 150, 100, 180)},
+                {"start_x" : 0.50, "start_y" : 0.35, "end_x" : 0.56, "end_y" : 0.41, "width" : 0.05, "color" : (255, 150, 100, 180)},
+                {"start_x" : 0.35, "start_y" : 0.25, "end_x" : 0.65, "end_y" : 0.25, "width" : 0.08, "color" : (255, 100, 100, 255)}
+            ]
+        }
+    ]
 }
 
 PROBABILITY_CONFIG = {
@@ -1075,10 +1319,10 @@ UI_CONFIG = {
 ENEMY_CONFIG = {
     0 : {
         "name" : "Chaser",
-        "radius" : 18,
+        "radius" : 10,
         "color" : (220, 80, 80),
         "max_hp" : 30,
-        "speed" : 110,
+        "speed" : 55,
         "damage" : 10,
         "attack_cooldown" : 0.8,
         "xp_drop" : 1,
@@ -1089,7 +1333,7 @@ ENEMY_CONFIG = {
         "radius" : 12,
         "color" : (220, 220, 80),
         "max_hp" : 15,
-        "speed" : 170,
+        "speed" : 85,
         "damage" : 6,
         "attack_cooldown" : 0.5,
         "xp_drop" : 1,
@@ -1100,7 +1344,7 @@ ENEMY_CONFIG = {
         "radius" : 30,
         "color" : (140, 60, 200),
         "max_hp" : 200,
-        "speed" : 60,
+        "speed" : 40,
         "damage" : 25,
         "attack_cooldown" : 1.2,
         "xp_drop" : 4,
