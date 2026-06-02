@@ -1,5 +1,9 @@
 
 
+<<<<<<< Updated upstream
+=======
+import numpy
+>>>>>>> Stashed changes
 import pygame
 
 from typing import TYPE_CHECKING
@@ -8,8 +12,17 @@ if TYPE_CHECKING:
 
 from Asset.GameSetting import UI_CONFIG, COLOR_CONFIG, GAME_CONFIG
 from Asset.Enemies import EnemyManager
+<<<<<<< Updated upstream
 from Asset.Pickups import WorldChunkManager, XPOrb
 from Asset.Weapons import Card, Gun
+=======
+from Asset.Pickups import WorldChunkManager, XPOrb, Obstacle, Altar
+from Asset.Weapons import Gun, BulletManager
+from Asset.SpatialGrid import SpatialGrid, NoneGrid, Quadtree
+from Asset.Card import Card
+from Asset.Player import Player
+
+>>>>>>> Stashed changes
 
 
 def _ensure_runtime_state(game: "Game"):
@@ -22,6 +35,18 @@ def _ensure_runtime_state(game: "Game"):
     game.run_start_time = game.now_time
     game.run_summary = None
     game.message_queue = []  # list of [text, timer_left, color]
+<<<<<<< Updated upstream
+=======
+    game.effects_queue = []  # list of [effect : {}, timer_left]
+    game.player = Player(position = pygame.Vector2(0,0), radius = 15, color = (0, 150, 255), 
+                         bullet_manager = game.bullet_manager)
+    game.leveling_up = False
+    game.level_up_options = []
+    game.level_up_scroll_offsets = [0, 0, 0]
+    game.altar_choosing = False
+    game.altar_options = []
+    game.active_altar = None
+>>>>>>> Stashed changes
     game._screen1_initialised = True
 
 
@@ -39,7 +64,17 @@ def reset_screen1(game: "Game"):
     game.run_start_time = game.now_time
     game.run_summary = None
     game.message_queue = []
+<<<<<<< Updated upstream
     game.player.reset_run(pygame.Vector2(0, 0))
+=======
+    game.effects_queue = []
+    game.leveling_up = False
+    game.level_up_options = []
+    game.level_up_scroll_offsets = [0, 0, 0]
+    game.altar_choosing = False
+    game.altar_options = []
+    game.active_altar = None
+>>>>>>> Stashed changes
     game._screen1_initialised = True
 
 
@@ -63,6 +98,237 @@ def _drop_boss_reward(game: "Game"):
     game.message_queue.append(["BOSS DOWN!", 5.0, (255, 220, 120)])
 
 
+<<<<<<< Updated upstream
+=======
+def _get_random_cards(game: "Game", count=3):
+    """Pick cards based on inverse weights in PROBABILITY_CONFIG."""
+    tiers = list(PROBABILITY_CONFIG.keys())
+    # weights: higher weight = lower probability (score = 1/weight)
+    scores = [1.0 / PROBABILITY_CONFIG[tier]["weight"] for tier in tiers]
+    
+    selected_cards = []
+    for _ in range(count):
+        chosen_tier_name = random.choices(tiers, weights=scores, k=1)[0]
+        tier_data = PROBABILITY_CONFIG[chosen_tier_name]
+        item_config = random.choice(tier_data["items"])
+        
+        card = Card(
+            type=item_config["type"],
+            inter_type=item_config["id"]
+        )
+        selected_cards.append(card)
+    return selected_cards
+
+
+def _draw_level_up_screen(game: "Game", events):
+    """Draw the card selection screen when leveling up."""
+    # Dark overlay
+    overlay = pygame.Surface((game.screen_width, game.screen_height), pygame.SRCALPHA)
+    overlay.fill((0, 0, 0, 200))
+    game.screen.blit(overlay, (0, 0))
+    
+    title_font = pygame.font.SysFont("Arial", 54, bold=True)
+    title_text = title_font.render("LEVEL UP! CHOOSE A CARD", True, (255, 255, 255))
+    game.screen.blit(title_text, (game.screen_width // 2 - title_text.get_width() // 2, 80))
+    
+    card_w, card_h = 260, 400
+    spacing = 50
+    total_w = 3 * card_w + 2 * spacing
+    start_x = (game.screen_width - total_w) // 2
+    start_y = (game.screen_height - card_h) // 2 + 40
+    
+    mouse_pos = pygame.mouse.get_pos()
+    mouse_clicked = False
+    
+    hovered_card_idx = -1
+    for i in range(len(game.level_up_options)):
+        card_x = start_x + i * (card_w + spacing)
+        card_y = start_y
+        if pygame.Rect(card_x, card_y, card_w, card_h).collidepoint(mouse_pos):
+            hovered_card_idx = i
+            break
+
+    for event in events:
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            if event.button == 1:
+                mouse_clicked = True
+            elif event.button == 4 and hovered_card_idx != -1: # Scroll Up
+                game.level_up_scroll_offsets[hovered_card_idx] = max(0, game.level_up_scroll_offsets[hovered_card_idx] - 20)
+            elif event.button == 5 and hovered_card_idx != -1: # Scroll Down
+                game.level_up_scroll_offsets[hovered_card_idx] += 20
+    
+    for i, card in enumerate(game.level_up_options):
+        x = start_x + i * (card_w + spacing)
+        y = start_y
+        rect = pygame.Rect(x, y, card_w, card_h)
+        
+        is_hovered = rect.collidepoint(mouse_pos)
+        border_color = (255, 255, 100) if is_hovered else (200, 200, 200)
+        bg_color = (60, 60, 60, 255) if is_hovered else (40, 40, 40, 255)
+        
+        # Card Background
+        pygame.draw.rect(game.screen, bg_color, rect)
+        pygame.draw.rect(game.screen, border_color, rect, 3)
+        
+        name, info = card.get_info()
+        
+        # 1. Name
+        name_surf = game.mid_font.render(name, True, (255, 255, 255))
+        game.screen.blit(name_surf, (x + (card_w - name_surf.get_width()) // 2, y + 20))
+        
+        # 2. Icon area
+        icon_rect = pygame.Rect(x + 40, y + 50, 180, 140)
+        pygame.draw.rect(game.screen, (30, 30, 30), icon_rect)
+        card.draw(game.screen, icon_rect)
+        pygame.draw.rect(game.screen, (100, 100, 100), icon_rect, 1)
+        
+        # 3. Description
+        def draw_wrapped_text(surface, text, font, color, draw_rect, card_idx):
+            words = text.split(' ')
+            lines = []
+            curr = []
+            for ws in words:
+                for idx, w in enumerate(ws.split("\n")):
+                    if not w: continue
+                    test = ' '.join(curr + [w])
+                    if font.size(test)[0] <= draw_rect.width and idx == 0:
+                        curr.append(w)
+                    else:
+                        lines.append(' '.join(curr))
+                        curr = [w]
+            lines.append(' '.join(curr))
+            
+            total_h = len(lines) * font.get_linesize()
+            max_scroll = max(0, total_h - draw_rect.height)
+            if game.level_up_scroll_offsets[card_idx] > max_scroll:
+                game.level_up_scroll_offsets[card_idx] = max_scroll
+            
+            old_clip = surface.get_clip()
+            surface.set_clip(draw_rect)
+            
+            line_y = draw_rect.top - game.level_up_scroll_offsets[card_idx]
+            for line in lines:
+                if not line: continue
+                if line_y + font.get_linesize() > draw_rect.top and line_y < draw_rect.bottom:
+                    s = font.render(line, True, color)
+                    surface.blit(s, (draw_rect.left , line_y))
+                line_y += font.get_linesize()
+            
+            surface.set_clip(old_clip)
+
+        desc_rect = pygame.Rect(x + 20, y + 200, card_w - 40, 160)
+        draw_wrapped_text(game.screen, info, game.HUD_font, (230, 230, 230), desc_rect, i)
+        
+        if is_hovered and mouse_clicked:
+            # Selection logic
+            for idx in range(len(game.player.inventory)):
+                if game.player.inventory[idx] is None:
+                    game.player.inventory[idx] = card
+                    break
+            else:
+                game.player.inventory.append(card)
+            
+            game.leveling_up = False
+            game.level_up_options = []
+            game.message_queue.append([f"Acquired: {name}", 2.5, (100, 255, 120)])
+            return
+
+
+def _altar_buff_info(buff_type: str):
+    amounts = GAME_CONFIG["altar_buff_amount"]
+    if buff_type == "hp":
+        return ("Health +", f"+{amounts['hp']} Max HP", (220, 70, 70))
+    if buff_type == "damage":
+        return ("Damage +", f"+{int(amounts['damage'] * 100)}% Damage", (255, 190, 70))
+    if buff_type == "speed":
+        return ("Move Speed +", f"+{amounts['speed']} Speed", (100, 220, 140))
+    return (buff_type, buff_type, (220, 220, 220))
+
+
+def _draw_altar_buff_icon(surface, rect, buff_type: str, color):
+    cx, cy = rect.center
+    if buff_type == "hp":
+        points = [
+            (cx, cy + rect.height * 0.28),
+            (cx - rect.width * 0.34, cy - rect.height * 0.05),
+            (cx - rect.width * 0.20, cy - rect.height * 0.32),
+            (cx, cy - rect.height * 0.18),
+            (cx + rect.width * 0.20, cy - rect.height * 0.32),
+            (cx + rect.width * 0.34, cy - rect.height * 0.05),
+        ]
+        pygame.draw.polygon(surface, color, points)
+        pygame.draw.polygon(surface, (255, 255, 255), points, 2)
+    elif buff_type == "damage":
+        start = (cx - rect.width * 0.28, cy + rect.height * 0.24)
+        end = (cx + rect.width * 0.24, cy - rect.height * 0.28)
+        pygame.draw.line(surface, color, start, end, 10)
+        pygame.draw.polygon(surface, color, [
+            (end[0] + rect.width * 0.12, end[1] - rect.height * 0.12),
+            (end[0] + rect.width * 0.02, end[1] + rect.height * 0.18),
+            (end[0] - rect.width * 0.16, end[1] - rect.height * 0.02),
+        ])
+        pygame.draw.line(surface, (255, 255, 255), start, end, 2)
+    elif buff_type == "speed":
+        pygame.draw.polygon(surface, color, [
+            (cx - rect.width * 0.18, cy - rect.height * 0.28),
+            (cx + rect.width * 0.26, cy),
+            (cx - rect.width * 0.18, cy + rect.height * 0.28),
+        ])
+        for offset in (-24, 0, 24):
+            pygame.draw.line(surface, (255, 255, 255), (cx - rect.width * 0.38, cy + offset), (cx - rect.width * 0.08, cy + offset), 4)
+
+
+def _draw_altar_choice_screen(game: "Game", events):
+    overlay = pygame.Surface((game.screen_width, game.screen_height), pygame.SRCALPHA)
+    overlay.fill((0, 0, 0, 200))
+    game.screen.blit(overlay, (0, 0))
+
+    title_font = pygame.font.SysFont("Arial", 54, bold=True)
+    title_text = title_font.render("ALTAR BLESSING", True, (255, 245, 210))
+    game.screen.blit(title_text, (game.screen_width // 2 - title_text.get_width() // 2, 80))
+
+    card_w, card_h = 260, 340
+    spacing = 50
+    total_w = 3 * card_w + 2 * spacing
+    start_x = (game.screen_width - total_w) // 2
+    start_y = (game.screen_height - card_h) // 2 + 40
+
+    mouse_pos = pygame.mouse.get_pos()
+    mouse_clicked = any(event.type == pygame.MOUSEBUTTONDOWN and event.button == 1 for event in events)
+
+    for i, buff_type in enumerate(game.altar_options):
+        x = start_x + i * (card_w + spacing)
+        y = start_y
+        rect = pygame.Rect(x, y, card_w, card_h)
+        title, detail, color = _altar_buff_info(buff_type)
+        is_hovered = rect.collidepoint(mouse_pos)
+        border_color = (255, 245, 120) if is_hovered else (210, 190, 130)
+        bg_color = (58, 48, 32, 255) if is_hovered else (36, 34, 30, 255)
+
+        pygame.draw.rect(game.screen, bg_color, rect)
+        pygame.draw.rect(game.screen, border_color, rect, 3)
+
+        name_surf = game.mid_font.render(title, True, (255, 255, 255))
+        game.screen.blit(name_surf, (x + (card_w - name_surf.get_width()) // 2, y + 24))
+
+        icon_rect = pygame.Rect(x + 50, y + 80, 160, 130)
+        pygame.draw.rect(game.screen, (24, 24, 24), icon_rect)
+        _draw_altar_buff_icon(game.screen, icon_rect, buff_type, color)
+        pygame.draw.rect(game.screen, (120, 110, 90), icon_rect, 1)
+
+        detail_surf = game.font.render(detail, True, color)
+        game.screen.blit(detail_surf, (x + (card_w - detail_surf.get_width()) // 2, y + 240))
+
+        if is_hovered and mouse_clicked:
+            game.player.apply_altar_buff(buff_type)
+            game.altar_choosing = False
+            game.altar_options = []
+            game.active_altar = None
+            game.message_queue.append([f"Altar: {detail}", 2.5, (255, 230, 120)])
+            return
+
+
+>>>>>>> Stashed changes
 def _handle_collisions(game: "Game"):
     player = game.player
 
@@ -145,16 +411,16 @@ def _draw_boss_bar(game: "Game"):
     boss = game.enemy_manager.boss
     if boss is None or not boss.alive:
         return
-    bar_w = game.screen_width - 200
+    bar_w = min(900, game.screen_width - 200)
     bar_h = 24
-    bar_x = 100
+    bar_x = (game.screen_width - bar_w) // 2
     bar_y = game.screen_height - bar_h - 30
     pygame.draw.rect(game.screen, (40, 0, 0), (bar_x, bar_y, bar_w, bar_h))
     ratio = max(0.0, boss.hp / boss.max_hp)
     pygame.draw.rect(game.screen, (200, 30, 30), (bar_x, bar_y, int(bar_w * ratio), bar_h))
     pygame.draw.rect(game.screen, (255, 255, 255), (bar_x, bar_y, bar_w, bar_h), 2)
     label = game.font.render("BOSS", True, (255, 255, 255))
-    game.screen.blit(label, (bar_x + 10, bar_y - 4))
+    game.screen.blit(label, (bar_x + (bar_w - label.get_width()) // 2, bar_y - 4))
 
 
 def _draw_messages(game: "Game"):
@@ -420,9 +686,15 @@ def test_screen1(game: "Game", events):
             selected_slot = True
 
     mouse_pos_world = game.to_world(pygame.mouse.get_pos())
+<<<<<<< Updated upstream
     diff = pygame.Vector2(mouse_pos_world) - game.player.pos2D
     if diff.length_squared() > 0:
         game.player.face_direction = diff.normalize()
+=======
+    if not game.leveling_up and not game.altar_choosing:
+        # ---- 1. World streaming ----
+        game.world.ensure_around(game.player.pos2D)
+>>>>>>> Stashed changes
 
     # ---- 1. World streaming ----
     game.world.ensure_around(game.player.pos2D)
@@ -449,8 +721,19 @@ def test_screen1(game: "Game", events):
             label = {"hp": "+25 MAX HP", "damage": "+15% DAMAGE", "speed": "+30 SPEED"}.get(result, result)
             game.message_queue.append([f"Altar: {label}", 2.5, (255, 230, 120)])
 
+<<<<<<< Updated upstream
     # ---- 5. Combat ----
     _handle_collisions(game)
+=======
+        # ---- 4. Altars ----
+        for altar in game.world.altars:
+            if altar.update(game.delta_time, game.player.pos2D):
+                game.altar_choosing = True
+                game.altar_options = list(Altar.BUFF_TYPES)
+                game.active_altar = altar
+                game.gun_info = False
+                break
+>>>>>>> Stashed changes
 
     # ---- 6. XP orbs ----
     for orb in list(game.xp_orbs):
@@ -503,3 +786,11 @@ def test_screen1(game: "Game", events):
 
     if game.gun_info:
         _draw_gun_info_overlay(game, events, selected_slot)
+<<<<<<< Updated upstream
+=======
+
+    if game.leveling_up:
+        _draw_level_up_screen(game, events)
+    elif game.altar_choosing:
+        _draw_altar_choice_screen(game, events)
+>>>>>>> Stashed changes

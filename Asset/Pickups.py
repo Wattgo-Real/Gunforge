@@ -1,8 +1,31 @@
 import random
 
 import pygame
+from Asset.SpatialGrid import SpatialGrid
 
-from Asset.GameSetting import GAME_CONFIG
+from Asset.GameSetting import ENTITY_TYPE, GAME_CONFIG, GRID_CONFIG
+from Asset.ImageLoader import load_image_surface
+
+_ALTAR_IMAGE_CACHE = {}
+
+
+def _get_altar_image(path="./Img/altar_sprite.png", sprite_height=150):
+    key = (path, sprite_height)
+    if key in _ALTAR_IMAGE_CACHE:
+        return _ALTAR_IMAGE_CACHE[key]
+
+    try:
+        image = load_image_surface(path)
+        width, height = image.get_size()
+        scale = sprite_height / height
+        image = pygame.transform.smoothscale(
+            image, (max(1, int(width * scale)), int(sprite_height))
+        )
+    except (OSError, pygame.error, ValueError):
+        image = None
+
+    _ALTAR_IMAGE_CACHE[key] = image
+    return image
 
 
 class XPOrb:
@@ -46,11 +69,14 @@ class Altar:
 
     def __init__(self, position, charge_time=None):
         self.pos2D = pygame.Vector2(position)
-        self.radius = 50
-        self.charge_time = charge_time if charge_time is not None else GAME_CONFIG["altar_charge_time"]
+        self.radius = 70
+        self.charge_time = (
+            charge_time if charge_time is not None else GAME_CONFIG["altar_charge_time"]
+        )
         self.charge = 0.0
         self.used = False
         self.last_buff = None
+        self.image = _get_altar_image()
 
     def update(self, delta_time, player_pos):
         if self.used:
@@ -59,25 +85,53 @@ class Altar:
             self.charge += delta_time
             if self.charge >= self.charge_time:
                 self.used = True
-                self.last_buff = random.choice(self.BUFF_TYPES)
-                return self.last_buff
+                return True
         else:
             self.charge = max(0.0, self.charge - delta_time * 0.5)
         return None
 
     def draw(self, screen, game):
         screen_pos = game.to_screen(self.pos2D)
+        ratio = min(1.0, self.charge / self.charge_time)
+
+        pygame.draw.circle(screen, (255, 230, 120), screen_pos, self.radius, 2)
+        if not self.used and ratio > 0:
+            pygame.draw.circle(
+                screen, (255, 230, 120), screen_pos, int(self.radius * ratio), 4
+            )
+
+        if self.image:
+            rect = self.image.get_rect(center=(int(screen_pos.x), int(screen_pos.y)))
+            if self.used:
+                faded = self.image.copy()
+                faded.set_alpha(120)
+                screen.blit(faded, rect)
+            else:
+                screen.blit(self.image, rect)
+            return
+
         if self.used:
             pygame.draw.circle(screen, (60, 60, 60), screen_pos, self.radius, 3)
             pygame.draw.circle(screen, (40, 40, 40), screen_pos, self.radius - 6)
         else:
-            ratio = min(1.0, self.charge / self.charge_time)
             pygame.draw.circle(screen, (180, 180, 60), screen_pos, self.radius, 3)
             inner = max(0, int(self.radius * ratio * 0.85))
             if inner > 0:
                 pygame.draw.circle(screen, (240, 220, 80), screen_pos, inner)
-        pygame.draw.line(screen, (255, 240, 120), (screen_pos.x - 12, screen_pos.y), (screen_pos.x + 12, screen_pos.y), 2)
-        pygame.draw.line(screen, (255, 240, 120), (screen_pos.x, screen_pos.y - 12), (screen_pos.x, screen_pos.y + 12), 2)
+        pygame.draw.line(
+            screen,
+            (255, 240, 120),
+            (screen_pos.x - 12, screen_pos.y),
+            (screen_pos.x + 12, screen_pos.y),
+            2,
+        )
+        pygame.draw.line(
+            screen,
+            (255, 240, 120),
+            (screen_pos.x, screen_pos.y - 12),
+            (screen_pos.x, screen_pos.y + 12),
+            2,
+        )
 
 
 class Obstacle:
@@ -106,9 +160,13 @@ class Obstacle:
             dx = circle_pos.x - self.pos2D.x
             dy = circle_pos.y - self.pos2D.y
             if abs(dx) > abs(dy):
-                circle_pos.x = self.pos2D.x + (half.x + radius + 1) * (1 if dx >= 0 else -1)
+                circle_pos.x = self.pos2D.x + (half.x + radius + 1) * (
+                    1 if dx >= 0 else -1
+                )
             else:
-                circle_pos.y = self.pos2D.y + (half.y + radius + 1) * (1 if dy >= 0 else -1)
+                circle_pos.y = self.pos2D.y + (half.y + radius + 1) * (
+                    1 if dy >= 0 else -1
+                )
         elif d < radius:
             push = diff.normalize() * (radius - d + 0.5)
             circle_pos += push
@@ -118,7 +176,12 @@ class Obstacle:
         half = self.size / 2
         topleft_world = self.pos2D + pygame.Vector2(-half.x, half.y)
         topleft_screen = game.to_screen(topleft_world)
-        rect = pygame.Rect(int(topleft_screen.x), int(topleft_screen.y), int(self.size.x), int(self.size.y))
+        rect = pygame.Rect(
+            int(topleft_screen.x),
+            int(topleft_screen.y),
+            int(self.size.x),
+            int(self.size.y),
+        )
         pygame.draw.rect(screen, self.color, rect)
         pygame.draw.rect(screen, (180, 180, 180), rect, 2)
 
@@ -170,5 +233,13 @@ class WorldChunkManager:
 
     def cull_far(self, player_pos, max_distance=2500):
         max_sq = max_distance * max_distance
-        self.obstacles = [o for o in self.obstacles if (o.pos2D - player_pos).length_squared() <= max_sq]
-        self.altars = [a for a in self.altars if a.used or (a.pos2D - player_pos).length_squared() <= max_sq]
+        self.obstacles = [
+            o
+            for o in self.obstacles
+            if (o.pos2D - player_pos).length_squared() <= max_sq
+        ]
+        self.altars = [
+            a
+            for a in self.altars
+            if a.used or (a.pos2D - player_pos).length_squared() <= max_sq
+        ]

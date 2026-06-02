@@ -14,6 +14,8 @@ class Player:
 
         self.max_velocity : float = max_velocity
         self.max_acceleration : float = max_acceleration
+        self.base_max_velocity : float = max_velocity
+        self.base_max_acceleration : float = max_acceleration
 
         self.radius : int = radius
         self.color : tuple = color
@@ -243,7 +245,12 @@ class Player:
         self.pos2D = pygame.Vector2(position)
         self.vel2D = pygame.Vector2(0, 0)
         self.acc2D = pygame.Vector2(0, 0)
+        self.max_hp = GAME_CONFIG["player_max_hp"]
         self.hp = self.max_hp
+        self.damage_multiplier = 1.0
+        self.bonus_speed = 0.0
+        self.max_velocity = self.base_max_velocity
+        self.max_acceleration = self.base_max_acceleration
         self.invincible_timer = 0.0
         self.alive = True
         self.xp = 0

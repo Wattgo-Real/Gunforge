@@ -3,7 +3,40 @@ import random
 
 import pygame
 
+<<<<<<< Updated upstream
 from Asset.GameSetting import BOSS_CONFIG, ENEMY_CONFIG, GAME_CONFIG
+
+=======
+from Asset.GameSetting import BOSS_CONFIG, ENEMY_CONFIG, GAME_CONFIG, GRID_CONFIG 
+from Asset.GameSetting import ENTITY_TYPE
+from Asset.ImageLoader import load_image_surface
+from Asset.SpatialGrid import SpatialGrid
+import uuid
+>>>>>>> Stashed changes
+
+_ENEMY_IMAGE_CACHE = {}
+
+
+def _get_enemy_image(path, sprite_height):
+    if not path or sprite_height <= 0:
+        return None
+
+    key = (path, sprite_height)
+    if key in _ENEMY_IMAGE_CACHE:
+        return _ENEMY_IMAGE_CACHE[key]
+
+    try:
+        image = load_image_surface(path)
+        width, height = image.get_size()
+        scale = sprite_height / height
+        sprite_width = max(1, int(width * scale))
+        sprite_height = max(1, int(sprite_height))
+        image = pygame.transform.smoothscale(image, (sprite_width, sprite_height))
+    except (OSError, pygame.error, ValueError):
+        image = None
+
+    _ENEMY_IMAGE_CACHE[key] = image
+    return image
 
 
 class DamageNumber:
@@ -61,6 +94,7 @@ class Enemy:
         self.pos2D = pygame.Vector2(position)
         self.radius = cfg["radius"]
         self.color = cfg["color"]
+        self.image = _get_enemy_image(cfg.get("image_path"), cfg.get("sprite_height", self.radius * 4))
         self.max_hp = cfg["max_hp"] * hp_mul
         self.hp = self.max_hp
         self.speed = cfg["speed"]
@@ -191,13 +225,22 @@ class Enemy:
 
     def draw(self, screen, game):
         screen_pos = game.to_screen(self.pos2D)
-        pygame.draw.circle(screen, self.color, screen_pos, self.radius)
-        pygame.draw.circle(screen, (255, 255, 255), screen_pos, self.radius, 2)
+        visual_half_height = self.radius
+        visual_width = self.radius * 2
 
-        bar_w = max(60, int(self.radius * 2.5))
+        if self.image:
+            rect = self.image.get_rect(center=(int(screen_pos.x), int(screen_pos.y)))
+            screen.blit(self.image, rect)
+            visual_half_height = rect.height // 2
+            visual_width = rect.width
+        else:
+            pygame.draw.circle(screen, self.color, screen_pos, self.radius)
+            pygame.draw.circle(screen, (255, 255, 255), screen_pos, self.radius, 2)
+
+        bar_w = max(60, int(visual_width * 0.7)) if self.is_boss else max(60, int(self.radius * 2.5))
         bar_h = 6
         bar_x = screen_pos.x - bar_w // 2
-        bar_y = screen_pos.y - self.radius - 15
+        bar_y = screen_pos.y - visual_half_height - 15
         pygame.draw.rect(screen, (50, 50, 50), (bar_x, bar_y, bar_w, bar_h))
         hp_ratio = max(0, self.hp / self.max_hp)
         pygame.draw.rect(screen, (100, 255, 100), (bar_x, bar_y, int(bar_w * hp_ratio), bar_h))

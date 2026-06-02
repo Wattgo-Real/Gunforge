@@ -3,6 +3,9 @@ import sys
 import numpy as np
 np.random.seed(42)
 
+from Asset.FontCompat import install_pygame_font_compat
+install_pygame_font_compat(pygame)
+
 import Asset.Function as GF
 import Asset.TestScreen1 as TS1
 import Asset.TestScreen2 as TS2
@@ -40,7 +43,10 @@ class Game():
         self.player : Player = Player(position = pygame.Vector2(0,0), radius = 15, color = ball_color)
         
         # Background grid image.
-        self.background : pygame.Surface = pygame.image.load("./Img/grid_1000x1000.png").convert_alpha()   # size: 1000 x 1000
+        try:
+            self.background : pygame.Surface = pygame.image.load("./Img/grid_1000x1000.png").convert_alpha()   # size: 1000 x 1000
+        except pygame.error:
+            self.background = self._create_grid_background()
 
         # Time per frame.
         self.delta_time : float = 1/60
@@ -59,6 +65,15 @@ class Game():
         self.best_record = {"kills": 0, "time": 0.0, "damage": 0, "level": 1, "points": 0}
         self.total_points = 0
         self.run_summary = None
+
+    def _create_grid_background(self):
+        background = pygame.Surface((1000, 1000), pygame.SRCALPHA)
+        background.fill((0, 0, 0, 0))
+        for pos in range(0, 1001, 100):
+            color = (60, 60, 60) if pos % 500 else (85, 85, 85)
+            pygame.draw.line(background, color, (pos, 0), (pos, 1000), 1)
+            pygame.draw.line(background, color, (0, pos), (1000, pos), 1)
+        return background
 
     def _draw_main_menu(self, events):
         self.screen.fill((20, 20, 30))
