@@ -10,3 +10,23 @@
 ## 2026/05/05
 
 Simple Ui add and value Setting `GameSetting.py、Start.py TestScreen1.py TestScreen2.py`, and bastic Enemies and Boss designed `Enemies.py`
+
+### 2026/05/10
+- Add Spatial Partitioning Grid.
+- Add the enemy vs enemy collision detection (Based on Spatial Partitioning Grid).
+
+### 2026/05/17
+- Adjust the obstacle detection logic (Based on Spatial Partitioning Grid).
+- Add the obstacle vs bullet collision detection (Based on Spatial Partitioning Grid).
+- Add levelup 3 random cards selection system.
+- Adjust Gun and Bullet System.
+- Add more cards.
+
+### 2026/05/24
+- Add Quadtree and No Partitioning.
+- Adjust Gun and Bullet System.
+- Add more cards.
+
+### 2026/05/31
+- Add more cards
+- Add Evaluation3.py to compare the efficiency of different spatial partitioning methods.

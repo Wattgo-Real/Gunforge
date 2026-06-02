@@ -1,13 +1,3 @@
-<<<<<<< Updated upstream
-
-
-
-COLOR_CONFIG = {
-    "cooldown" : (100, 180, 255),
-    "reload" : (255, 140, 40),
-    "scatter_angel" : (255, 255, 0),
-    "capacity" : (100, 255, 100),
-=======
 ENTITY_TYPE = {
     "bullet": 0,
     "enemy": 1,
@@ -33,7 +23,6 @@ COLOR_CONFIG = {
     "speed": (100, 255, 150),
     "normal_bullet": (200, 200, 150, 255),
     "enemy": (255, 0, 0, 255),
->>>>>>> Stashed changes
 }
 
 # Bullet Type: "Type Name", {stats}, {draw_info}
@@ -44,14 +33,6 @@ BULLET_CONFIG = {
         "Normal Bullet",
         {
             "speed": 10,
-<<<<<<< Updated upstream
-            "damage": 5,
-            "info" : "The most basic bullet" 
-        },
-        {
-            "circle" : [{"pos_x" : 0.5, "pos_y" : 0.5, "size" : 0.4, "color" : (255, 255, 255, 255)}]
-        }
-=======
             "physical_damage": 5,
             "radius": 3,
             "info": "The most basic bullet, deal physical damage",
@@ -69,23 +50,10 @@ BULLET_CONFIG = {
                 }
             ]
         },
->>>>>>> Stashed changes
     ],
     1: [
         "Light Bullet",
         {
-<<<<<<< Updated upstream
-            "speed": 5,
-            "damage": 3,
-            "capacity_modifier" : 20,
-            "cooldown_modifier" : -0.1,
-            "scatter_angel_modifier" : 5,
-            "info" : "High capacity, low damage"
-        },
-        {
-            "circle" : [{"pos_x" : 0.5, "pos_y" : 0.5, "size" : 0.3, "color" : (255, 255, 255, 255)}]
-        }
-=======
             "speed": 6,
             "physical_damage": 3,
             "radius": 2,
@@ -107,23 +75,10 @@ BULLET_CONFIG = {
                 }
             ]
         },
->>>>>>> Stashed changes
     ],
     2: [
         "Heavy Bullet",
         {
-<<<<<<< Updated upstream
-            "speed": 20,
-            "damage": 15,
-            "capacity_modifier" : -20,
-            "cooldown_modifier" : 0.1,
-            "scatter_angel_modifier" : -5,
-            "info" : "Low capacity, high damage"
-        },
-        {
-            "circle" : [{"pos_x" : 0.5, "pos_y" : 0.5, "size" : 0.5, "color" : (255, 255, 255, 255)}]
-        }
-=======
             "speed": 16,
             "physical_damage": 15,
             "radius": 4,
@@ -145,20 +100,10 @@ BULLET_CONFIG = {
                 }
             ]
         },
->>>>>>> Stashed changes
     ],
     3: [
         "Grenades",
         {
-<<<<<<< Updated upstream
-            "speed": 3,
-            "damage": 10,
-            "radius": 40,
-            "capacity_modifier" : -20,
-            "cooldown_modifier" : 0.5,
-            "info" : "Deal damage to enemies in an area. The explosion occurs either when its lifetime ends or when it collides with an enemy or an obstacle."
-        }
-=======
             "speed": 4,
             "explosion_damage": 10,
             "radius": 5,
@@ -194,19 +139,11 @@ BULLET_CONFIG = {
                 }
             ],
         },
->>>>>>> Stashed changes
     ],
     4: [
         "Laser",
         {
             "speed": 10,
-<<<<<<< Updated upstream
-            "damage": 2,
-            "scatter_angel_modifier" : -10,
-            "info" : "Deals damage to enemies in a straight line."
-        }
-    ]
-=======
             "burn_damage": 2,
             "radius": 2,
             "scatter_angel_modifier": -10,
@@ -234,19 +171,12 @@ BULLET_CONFIG = {
             ]
         },
     ],
->>>>>>> Stashed changes
 }
 
-
 ATTRIBUTE_MODIFIER_CONFIG = {
-<<<<<<< Updated upstream
-    0 : [
-        "Add Cooldown",
-=======
     0: [
         "Add Cooldown I",
         {"cooldown_modifier": 0.1, "info": "Add cooldown"},
->>>>>>> Stashed changes
         {
             "line": [
                 {
@@ -275,17 +205,6 @@ ATTRIBUTE_MODIFIER_CONFIG = {
                 },
             ],
         },
-<<<<<<< Updated upstream
-        {
-            "line" : [{"start_x" : 0.50, "start_y" : 0.25, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.05, "color" : COLOR_CONFIG["cooldown"]},
-                     {"start_x" : 0.40, "start_y" : 0.35, "end_x" : 0.50, "end_y" : 0.25, "width" : 0.05, "color" : COLOR_CONFIG["cooldown"]},
-                     {"start_x" : 0.60, "start_y" : 0.35, "end_x" : 0.50, "end_y" : 0.25, "width" : 0.05, "color" : COLOR_CONFIG["cooldown"]}],
-            #"string" : [{"text" : "+", "font" : "Arial", "pos_x" : 0.3, "pos_y" : 0.3, "size" : 0.4, "color" : (255, 255, 255, 255)}],
-        }
-    ],
-    1 : [
-        "Sub Cooldown",
-=======
     ],
     1: [
         "Add Cooldown II",
@@ -418,7 +337,6 @@ ATTRIBUTE_MODIFIER_CONFIG = {
     5: [
         "Sub Cooldown I",
         {"cooldown_modifier": -0.1, "info": "Subtract cooldown"},
->>>>>>> Stashed changes
         {
             "line": [
                 {
@@ -447,43 +365,6 @@ ATTRIBUTE_MODIFIER_CONFIG = {
                 },
             ],
         },
-<<<<<<< Updated upstream
-        {
-            "line" : [{"start_x" : 0.50, "start_y" : 0.25, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.05, "color" : COLOR_CONFIG["cooldown"]},
-                     {"start_x" : 0.40, "start_y" : 0.65, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.05, "color" : COLOR_CONFIG["cooldown"]},
-                     {"start_x" : 0.60, "start_y" : 0.65, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.05, "color" : COLOR_CONFIG["cooldown"]}],
-            #"string" : [{"text" : "+", "font" : "Arial", "pos_x" : 0.3, "pos_y" : 0.3, "size" : 0.4, "color" : (255, 255, 255, 255)}],
-        }
-    ],
-    2 : [
-        "Add Reload",
-        {
-            "reload_modifier" : 0.5,
-            "info" : "Add reload"
-        },
-        {
-            "line" : [{"start_x" : 0.50, "start_y" : 0.25, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.05, "color" : COLOR_CONFIG["reload"]},
-                     {"start_x" : 0.40, "start_y" : 0.35, "end_x" : 0.50, "end_y" : 0.25, "width" : 0.05, "color" : COLOR_CONFIG["reload"]},
-                     {"start_x" : 0.60, "start_y" : 0.35, "end_x" : 0.50, "end_y" : 0.25, "width" : 0.05, "color" : COLOR_CONFIG["reload"]},],
-            #"string" : [{"text" : "+", "font" : "Arial", "pos_x" : 0.3, "pos_y" : 0.3, "size" : 0.4, "color" : (255, 255, 255, 255)}],
-        }
-    ],
-    3 : [
-        "Sub Reload",
-        {
-            "reload_modifier" : -0.5,
-            "info" : "Subtract reload"
-        },
-        {
-            "line" : [{"start_x" : 0.50, "start_y" : 0.25, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.05, "color" : COLOR_CONFIG["reload"]},
-                     {"start_x" : 0.40, "start_y" : 0.65, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.05, "color" : COLOR_CONFIG["reload"]},
-                     {"start_x" : 0.60, "start_y" : 0.65, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.05, "color" : COLOR_CONFIG["reload"]}],
-            #"string" : [{"text" : "+", "font" : "Arial", "pos_x" : 0.3, "pos_y" : 0.3, "size" : 0.4, "color" : (255, 255, 255, 255)}],
-        }
-    ],
-    4 : [
-        "Add Scatter Angel",
-=======
     ],
     6: [
         "Sub Cooldown II",
@@ -936,7 +817,6 @@ ATTRIBUTE_MODIFIER_CONFIG = {
     20: [
         "Add Scatter Angel I",
         {"scatter_angel_modifier": 5, "info": "Add scatter angel"},
->>>>>>> Stashed changes
         {
             "line": [
                 {
@@ -965,17 +845,6 @@ ATTRIBUTE_MODIFIER_CONFIG = {
                 },
             ],
         },
-<<<<<<< Updated upstream
-        {
-            "line" : [{"start_x" : 0.50, "start_y" : 0.25, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.05, "color" : COLOR_CONFIG["scatter_angel"]},
-                     {"start_x" : 0.40, "start_y" : 0.35, "end_x" : 0.50, "end_y" : 0.25, "width" : 0.05, "color" : COLOR_CONFIG["scatter_angel"]},
-                     {"start_x" : 0.60, "start_y" : 0.35, "end_x" : 0.50, "end_y" : 0.25, "width" : 0.05, "color" : COLOR_CONFIG["scatter_angel"]},],
-            #"string" : [{"text" : "+", "font" : "Arial", "pos_x" : 0.3, "pos_y" : 0.3, "size" : 0.4, "color" : (255, 255, 255, 255)}],
-        }
-    ],
-    5 : [
-        "Sub Scatter Angel",
-=======
     ],
     21: [
         "Add Scatter Angel II",
@@ -1108,7 +977,6 @@ ATTRIBUTE_MODIFIER_CONFIG = {
     25: [
         "Sub Scatter Angel I",
         {"scatter_angel_modifier": -5, "info": "Subtract scatter angel"},
->>>>>>> Stashed changes
         {
             "line": [
                 {
@@ -1137,17 +1005,6 @@ ATTRIBUTE_MODIFIER_CONFIG = {
                 },
             ],
         },
-<<<<<<< Updated upstream
-        {
-            "line" : [{"start_x" : 0.50, "start_y" : 0.25, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.05, "color" : COLOR_CONFIG["scatter_angel"]},
-                     {"start_x" : 0.40, "start_y" : 0.65, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.05, "color" : COLOR_CONFIG["scatter_angel"]},
-                     {"start_x" : 0.60, "start_y" : 0.65, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.05, "color" : COLOR_CONFIG["scatter_angel"]}],
-            #"string" : [{"text" : "+", "font" : "Arial", "pos_x" : 0.3, "pos_y" : 0.3, "size" : 0.4, "color" : (255, 255, 255, 255)}],
-        }
-    ],
-    6 : [
-        "Add Capacity",
-=======
     ],
     26: [
         "Sub Scatter Angel II",
@@ -1280,7 +1137,6 @@ ATTRIBUTE_MODIFIER_CONFIG = {
     30: [
         "Add Capacity I",
         {"capacity_modifier": 5, "info": "Add capacity"},
->>>>>>> Stashed changes
         {
             "line": [
                 {
@@ -1309,17 +1165,6 @@ ATTRIBUTE_MODIFIER_CONFIG = {
                 },
             ],
         },
-<<<<<<< Updated upstream
-        {
-            "line" : [{"start_x" : 0.50, "start_y" : 0.25, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.05, "color" : COLOR_CONFIG["capacity"]},
-                     {"start_x" : 0.40, "start_y" : 0.35, "end_x" : 0.50, "end_y" : 0.25, "width" : 0.05, "color" : COLOR_CONFIG["capacity"]},
-                     {"start_x" : 0.60, "start_y" : 0.35, "end_x" : 0.50, "end_y" : 0.25, "width" : 0.05, "color" : COLOR_CONFIG["capacity"]},],
-            #"string" : [{"text" : "+", "font" : "Arial", "pos_x" : 0.3, "pos_y" : 0.3, "size" : 0.4, "color" : (255, 255, 255, 255)}],
-        }
-    ],
-    7 : [
-        "Sub Capacity",
-=======
     ],
     31: [
         "Add Capacity II",
@@ -1452,7 +1297,6 @@ ATTRIBUTE_MODIFIER_CONFIG = {
     35: [
         "Sub Capacity I",
         {"capacity_modifier": -5, "info": "Subtract capacity"},
->>>>>>> Stashed changes
         {
             "line": [
                 {
@@ -1481,17 +1325,6 @@ ATTRIBUTE_MODIFIER_CONFIG = {
                 },
             ],
         },
-<<<<<<< Updated upstream
-        {
-            "line" : [{"start_x" : 0.50, "start_y" : 0.25, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.05, "color" : COLOR_CONFIG["capacity"]},
-                     {"start_x" : 0.40, "start_y" : 0.65, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.05, "color" : COLOR_CONFIG["capacity"]},
-                     {"start_x" : 0.60, "start_y" : 0.65, "end_x" : 0.50, "end_y" : 0.75, "width" : 0.05, "color" : COLOR_CONFIG["capacity"]}],
-            #"string" : [{"text" : "+", "font" : "Arial", "pos_x" : 0.3, "pos_y" : 0.3, "size" : 0.4, "color" : (255, 255, 255, 255)}],
-        }
-    ]
-}
-
-=======
     ],
     36: [
         "Sub Capacity II",
@@ -4025,7 +3858,6 @@ PROBABILITY_CONFIG = {
     },
 }
 
->>>>>>> Stashed changes
 UI_CONFIG = {
     "gun_box_w": 620,
     "gun_box_h": 210,
@@ -4036,45 +3868,11 @@ UI_CONFIG = {
     "grid_rows": 2,
     "inv_bottom_padding": 20,
     "gun_box_padding_x": 50,
-    "gun_box_padding_y": 50,
+    "gun_box_padding_y": 120,
     "gun_box_spacing_y": 270,
 }
 
 ENEMY_CONFIG = {
-<<<<<<< Updated upstream
-    0 : {
-        "name" : "Chaser",
-        "radius" : 18,
-        "color" : (220, 80, 80),
-        "max_hp" : 30,
-        "speed" : 110,
-        "damage" : 10,
-        "attack_cooldown" : 0.8,
-        "xp_drop" : 1,
-        "ai" : "chase",
-    },
-    1 : {
-        "name" : "Runner",
-        "radius" : 12,
-        "color" : (220, 220, 80),
-        "max_hp" : 15,
-        "speed" : 170,
-        "damage" : 6,
-        "attack_cooldown" : 0.5,
-        "xp_drop" : 1,
-        "ai" : "runner",
-    },
-    2 : {
-        "name" : "Tank",
-        "radius" : 30,
-        "color" : (140, 60, 200),
-        "max_hp" : 200,
-        "speed" : 60,
-        "damage" : 25,
-        "attack_cooldown" : 1.2,
-        "xp_drop" : 4,
-        "ai" : "chase",
-=======
     0: {
         "name": "Chaser",
         "radius": 10,
@@ -4113,7 +3911,6 @@ ENEMY_CONFIG = {
         "attack_cooldown": 1.2,
         "xp_drop": 4,
         "ai": "chase",
->>>>>>> Stashed changes
     },
     3: {
         "name": "Shooter",

@@ -1,12 +1,22 @@
 import random
+import uuid
 
 import pygame
+
+from Asset.GameSetting import GAME_CONFIG, ENTITY_TYPE, GRID_CONFIG
+from Asset.ImageLoader import load_image_surface
 from Asset.SpatialGrid import SpatialGrid
 
-from Asset.GameSetting import ENTITY_TYPE, GAME_CONFIG, GRID_CONFIG
-from Asset.ImageLoader import load_image_surface
 
 _ALTAR_IMAGE_CACHE = {}
+_OBSTACLE_SOURCE_CACHE = {}
+_OBSTACLE_IMAGE_CACHE = {}
+OBSTACLE_SPRITE_HEIGHTS = (170, 210, 250)
+OBSTACLE_IMAGE_PATHS = (
+    "./Img/obstacle_ruins.png",
+    "./Img/obstacle_roots.png",
+    "./Img/obstacle_shrine.png",
+)
 
 
 def _get_altar_image(path="./Img/altar_sprite.png", sprite_height=150):
@@ -18,13 +28,32 @@ def _get_altar_image(path="./Img/altar_sprite.png", sprite_height=150):
         image = load_image_surface(path)
         width, height = image.get_size()
         scale = sprite_height / height
-        image = pygame.transform.smoothscale(
-            image, (max(1, int(width * scale)), int(sprite_height))
-        )
+        image = pygame.transform.smoothscale(image, (max(1, int(width * scale)), int(sprite_height)))
     except (OSError, pygame.error, ValueError):
         image = None
 
     _ALTAR_IMAGE_CACHE[key] = image
+    return image
+
+
+def _get_obstacle_image(path, sprite_height):
+    sprite_height = min(OBSTACLE_SPRITE_HEIGHTS, key=lambda h: abs(h - sprite_height))
+    key = (path, sprite_height)
+    if key in _OBSTACLE_IMAGE_CACHE:
+        return _OBSTACLE_IMAGE_CACHE[key]
+
+    try:
+        if path not in _OBSTACLE_SOURCE_CACHE:
+            _OBSTACLE_SOURCE_CACHE[path] = load_image_surface(path)
+
+        image = _OBSTACLE_SOURCE_CACHE[path]
+        width, height = image.get_size()
+        scale = sprite_height / height
+        image = pygame.transform.smoothscale(image, (max(1, int(width * scale)), int(sprite_height)))
+    except (OSError, pygame.error, ValueError):
+        image = None
+
+    _OBSTACLE_IMAGE_CACHE[key] = image
     return image
 
 
@@ -70,9 +99,7 @@ class Altar:
     def __init__(self, position, charge_time=None):
         self.pos2D = pygame.Vector2(position)
         self.radius = 70
-        self.charge_time = (
-            charge_time if charge_time is not None else GAME_CONFIG["altar_charge_time"]
-        )
+        self.charge_time = charge_time if charge_time is not None else GAME_CONFIG["altar_charge_time"]
         self.charge = 0.0
         self.used = False
         self.last_buff = None
@@ -96,9 +123,7 @@ class Altar:
 
         pygame.draw.circle(screen, (255, 230, 120), screen_pos, self.radius, 2)
         if not self.used and ratio > 0:
-            pygame.draw.circle(
-                screen, (255, 230, 120), screen_pos, int(self.radius * ratio), 4
-            )
+            pygame.draw.circle(screen, (255, 230, 120), screen_pos, int(self.radius * ratio), 4)
 
         if self.image:
             rect = self.image.get_rect(center=(int(screen_pos.x), int(screen_pos.y)))
@@ -118,27 +143,33 @@ class Altar:
             inner = max(0, int(self.radius * ratio * 0.85))
             if inner > 0:
                 pygame.draw.circle(screen, (240, 220, 80), screen_pos, inner)
-        pygame.draw.line(
-            screen,
-            (255, 240, 120),
-            (screen_pos.x - 12, screen_pos.y),
-            (screen_pos.x + 12, screen_pos.y),
-            2,
-        )
-        pygame.draw.line(
-            screen,
-            (255, 240, 120),
-            (screen_pos.x, screen_pos.y - 12),
-            (screen_pos.x, screen_pos.y + 12),
-            2,
-        )
+        pygame.draw.line(screen, (255, 240, 120), (screen_pos.x - 12, screen_pos.y), (screen_pos.x + 12, screen_pos.y), 2)
+        pygame.draw.line(screen, (255, 240, 120), (screen_pos.x, screen_pos.y - 12), (screen_pos.x, screen_pos.y + 12), 2)
 
 
 class Obstacle:
-    def __init__(self, position, size):
+    def __init__(self, position, size, image_path=None, sprite_height=None):
+        self.uuid = uuid.uuid4()
+        self.entity_type = ENTITY_TYPE["obstacle"]
         self.pos2D = pygame.Vector2(position)
         self.size = pygame.Vector2(size)
         self.color = (90, 90, 100)
+        self.registered_cells = []
+        self.image_path = image_path if image_path is not None else random.choice(OBSTACLE_IMAGE_PATHS)
+        requested_height = int(sprite_height if sprite_height is not None else max(self.size.x, self.size.y))
+        self.sprite_height = min(OBSTACLE_SPRITE_HEIGHTS, key=lambda h: abs(h - requested_height))
+        self.image = _get_obstacle_image(self.image_path, self.sprite_height)
+        self.draw_radius = (self.image.get_width() if self.image else max(self.size.x, self.size.y)) * 0.6
+
+    def add_to_grid(self, spatial_grid_dict : SpatialGrid):
+        spatial_grid_dict.register_obstacle(self)
+
+    def remove_from_grid(self, spatial_grid_dict : SpatialGrid):
+        spatial_grid_dict.remove_obstacle(self)
+
+    @staticmethod
+    def get_nearby_obstacles(pos, spatial_grid_dict : SpatialGrid):
+        return spatial_grid_dict.get_entities_near_by_type(pos, ENTITY_TYPE["obstacle"], range_cells=1)
 
     def _nearest_point(self, point):
         half = self.size / 2
@@ -160,36 +191,44 @@ class Obstacle:
             dx = circle_pos.x - self.pos2D.x
             dy = circle_pos.y - self.pos2D.y
             if abs(dx) > abs(dy):
-                circle_pos.x = self.pos2D.x + (half.x + radius + 1) * (
-                    1 if dx >= 0 else -1
-                )
+                circle_pos.x = self.pos2D.x + (half.x + radius + 1) * (1 if dx >= 0 else -1)
             else:
-                circle_pos.y = self.pos2D.y + (half.y + radius + 1) * (
-                    1 if dy >= 0 else -1
-                )
+                circle_pos.y = self.pos2D.y + (half.y + radius + 1) * (1 if dy >= 0 else -1)
         elif d < radius:
             push = diff.normalize() * (radius - d + 0.5)
             circle_pos += push
         return circle_pos
 
     def draw(self, screen, game):
+        if not self.is_visible(game):
+            return
+
+        if self.image:
+            screen_pos = game.to_screen(self.pos2D)
+            rect = self.image.get_rect(center=(int(screen_pos.x), int(screen_pos.y)))
+            screen.blit(self.image, rect)
+            return
+
         half = self.size / 2
         topleft_world = self.pos2D + pygame.Vector2(-half.x, half.y)
         topleft_screen = game.to_screen(topleft_world)
-        rect = pygame.Rect(
-            int(topleft_screen.x),
-            int(topleft_screen.y),
-            int(self.size.x),
-            int(self.size.y),
-        )
+        rect = pygame.Rect(int(topleft_screen.x), int(topleft_screen.y), int(self.size.x), int(self.size.y))
         pygame.draw.rect(screen, self.color, rect)
         pygame.draw.rect(screen, (180, 180, 180), rect, 2)
+
+    def is_visible(self, game, margin=160):
+        screen_pos = game.to_screen(self.pos2D)
+        return (
+            -margin <= screen_pos.x <= game.screen_width + margin
+            and -margin <= screen_pos.y <= game.screen_height + margin
+        )
 
 
 class WorldChunkManager:
     CHUNK_SIZE = 1000
 
-    def __init__(self, seed=42):
+    def __init__(self, spatial_grid_dict : SpatialGrid = None, seed=42):
+        self.spatial_grid_dict = spatial_grid_dict
         self.seed = seed
         self.generated = set()
         self.altars = []
@@ -216,15 +255,24 @@ class WorldChunkManager:
         self.generated.add(key)
         rng = random.Random((self.seed * 73856093) ^ (cx * 19349663) ^ (cy * 83492791))
 
-        n_obs = rng.randint(0, 3)
+        n_obs = rng.randint(2, 4)
         for _ in range(n_obs):
             x = cx * self.CHUNK_SIZE + rng.uniform(0, self.CHUNK_SIZE)
             y = cy * self.CHUNK_SIZE + rng.uniform(0, self.CHUNK_SIZE)
-            w = rng.uniform(60, 180)
-            h = rng.uniform(60, 180)
+            sprite_height = rng.choice(OBSTACLE_SPRITE_HEIGHTS)
+            w = sprite_height * rng.uniform(0.40, 0.58)
+            h = sprite_height * rng.uniform(0.32, 0.46)
             if abs(x) < 220 and abs(y) < 220:
                 continue
-            self.obstacles.append(Obstacle((x, y), (w, h)))
+            obs = Obstacle(
+                (x, y),
+                (w, h),
+                image_path=rng.choice(OBSTACLE_IMAGE_PATHS),
+                sprite_height=sprite_height,
+            )
+            self.obstacles.append(obs)
+            if self.spatial_grid_dict is not None:
+                obs.add_to_grid(self.spatial_grid_dict)
 
         if rng.random() < 0.18 and key != (0, 0):
             x = cx * self.CHUNK_SIZE + rng.uniform(150, self.CHUNK_SIZE - 150)
@@ -233,13 +281,12 @@ class WorldChunkManager:
 
     def cull_far(self, player_pos, max_distance=2500):
         max_sq = max_distance * max_distance
-        self.obstacles = [
-            o
-            for o in self.obstacles
-            if (o.pos2D - player_pos).length_squared() <= max_sq
-        ]
-        self.altars = [
-            a
-            for a in self.altars
-            if a.used or (a.pos2D - player_pos).length_squared() <= max_sq
-        ]
+        new_obstacles = []
+        for o in self.obstacles:
+            if (o.pos2D - player_pos).length_squared() <= max_sq:
+                new_obstacles.append(o)
+            else:
+                if self.spatial_grid_dict is not None:
+                    o.remove_from_grid(self.spatial_grid_dict)
+        self.obstacles = new_obstacles
+        self.altars = [a for a in self.altars if a.used or (a.pos2D - player_pos).length_squared() <= max_sq]

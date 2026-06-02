@@ -3,11 +3,13 @@ import pygame
 
 from collections import deque
 from Asset.GameSetting import GAME_CONFIG
-from Asset.Weapons import Gun, Card
+from Asset.Weapons import Gun
+from Asset.Card import Card
+import random
 
 class Player:
     def __init__(self, position : pygame.Vector2 = pygame.Vector2(0,0), radius : int = 10, color : tuple = (255, 255, 255),
-                        max_velocity : float = 300, max_acceleration : float = 10000):
+                        max_velocity : float = 150, max_acceleration : float = 10000, bullet_manager= None):
         self.pos2D : pygame.Vector2 = pygame.Vector2(position)
         self.vel2D : pygame.Vector2 = pygame.Vector2(0, 0)
         self.acc2D : pygame.Vector2 = pygame.Vector2(0, 0)
@@ -23,7 +25,15 @@ class Player:
 
         # The direction the player is facing, it should always be normalized
         self.face_direction : pygame.Vector2 = pygame.Vector2(1, 0)
-        self.inventory : list[Card | None] = [None for i in range(40)]
+        self.inventory : list[Card | None] = [Card(type = 0, inter_type = i) for i in range(5)] + \
+                                            [Card(type = 2, inter_type = i) for i in range(5)] + \
+                                            [Card(type = 1, inter_type = 100),
+                                             Card(type = 1, inter_type = 59),
+                                             Card(type = 1, inter_type = 64)] + \
+                                             [Card(type = 3, inter_type = i) for i in range(6)] + \
+                                             [Card(type = 4, inter_type = i//2) for i in range(6)] + \
+                                             [Card(type = 5, inter_type = i) for i in range(10)]
+        self.inventory.extend([None] * (40 - len(self.inventory)))
 
         # weapon
         basic_info = {
@@ -31,14 +41,28 @@ class Player:
             "reload" : 2,
             "scatter_angel" : 5,
             "capacity" : 20,
-            "card_list" : [Card(type = 1, attribute_modifier_type = 0), Card(type = 1, attribute_modifier_type = 1),
-                            Card(type = 1, attribute_modifier_type = 2), Card(type = 1, attribute_modifier_type = 3),
-                            Card(type = 1, attribute_modifier_type = 4), Card(type = 1, attribute_modifier_type = 5),
-                            Card(type = 1, attribute_modifier_type = 6), Card(type = 1, attribute_modifier_type = 7),
-                            Card(type = 0, bullet_type = 0), Card(type = 0, bullet_type = 1), Card(type = 0, bullet_type = 2)],
+            "max_slots" : 20,
+            "card_list" : [Card(type = 1, inter_type = 9)] +
+                          [Card(type = 1, inter_type = 100+i) for i in range(2)] +
+                          [Card(type = 3, inter_type = 1)] +
+                          [Card(type = 1, inter_type = 19)] +
+                          [Card(type = 2, inter_type = 4)] +
+                          [Card(type = 0, inter_type = 0)]
+        }
+        basic_info2 = {
+            "cooldown" : 0.4,
+            "reload" : 2,
+            "scatter_angel" : 5,
+            "capacity" : 20,
+            "max_slots" : 20,
+            "card_list" : [Card(type = 0, inter_type = 0)],
         }
 
-        self.weapon_list : list[Gun | None] = [Gun(basic_info), None, None, None]
+        self.bullet_manager = bullet_manager
+        self.bullet_manager.player = self
+        self.weapon_list : list[Gun | None] = [Gun(basic_info, self.bullet_manager),
+                                               Gun(basic_info2, self.bullet_manager),
+                                               None, None]
         self.weapon_index : int = 0
 
         # This is for the player to record its trajectory
@@ -64,12 +88,24 @@ class Player:
         self.damage_dealt : float = 0.0
         self.points : int = 0
 
+        # Dash mechanic
+        self.dash_cooldown : float = 5.0
+        self.dash_cooldown_timer : float = 0.0
+        self.dash_duration : float = 0.2
+        self.dash_timer : float = 0.0
+        self.dash_speed_boost : float = 600.0  # Added to max velocity
+        self.dash_acc_boost : float = 20000.0 # Added to max acceleration
+
+        # Weapon feedback
+        self.weapon_error_msg : str = ""
+        self.weapon_error_timer : float = 0.0
+
     def get_velocity(self):
         '''
         Returns the velocity of the player
         '''
         return pygame.Vector2(self.vel2D).length()
-    
+
     def get_acceleration(self):
         '''
         Returns the acceleration of the player
@@ -101,41 +137,54 @@ class Player:
         # Limit maximum acceleration
         if next_acc2D.length() > self.max_acceleration:
             next_acc2D.scale_to_length(self.max_acceleration)
-        
+
         self.acc2D = next_acc2D
 
     def get_vel_orientation_deg(self):
         '''
-        Get the angle of its velocity 
+        Get the angle of its velocity
 
         Pygame's angle is 0 degrees pointing to the right (1, 0)
         '''
-        if self.vel2D.length() == 0: 
+        if self.vel2D.length() == 0:
             return 0
-        
+
         # Vector2.as_polar() returns (length, angle).
         return self.vel2D.as_polar()[1]
 
     def get_acc_orientation_deg(self):
         '''
-        Get the angle of its acceleration 
+        Get the angle of its acceleration
 
         Pygame's angle is 0 degrees pointing to the right (1, 0)
         '''
-        if self.acc2D.length() == 0: 
+        if self.acc2D.length() == 0:
             return 0
-        
+
         return self.acc2D.as_polar()[1]
 
-    def Update(self, delta_time : float, acc_direction : pygame.Vector2 = None):
+    def Update(self, delta_time : float, keys):
         '''
-        Update the position and velocity of the player, if acc_direction is None, 
+        Update the position and velocity of the player, if acc_direction is None,
         the player will stop with a reverse acceleration.
 
         Args:
             delta_time (float): The time step, e.g. 1/60
             acc_direction (pygame.Vector2): The direction of the acceleration
         '''
+
+        # Update position based on arrow key input
+        acc_direction = pygame.Vector2(0, 0)
+        if keys[pygame.K_LEFT] or keys[pygame.K_a]:
+            acc_direction.x -= 1
+        if keys[pygame.K_RIGHT] or keys[pygame.K_d]:
+            acc_direction.x += 1
+        if keys[pygame.K_UP] or keys[pygame.K_w]:
+            acc_direction.y += 1
+        if keys[pygame.K_DOWN] or keys[pygame.K_s]:
+            acc_direction.y -= 1
+
+
         # If the acceleration direction is not None and its length is greater than 0
         if acc_direction is not None and acc_direction.length_squared() > 0:
             acc_vector = acc_direction.normalize() * self.max_acceleration
@@ -145,10 +194,10 @@ class Player:
             if self.vel2D.length_squared() > 0:
                 # 1. Determine the direction of deceleration (the opposite direction of velocity)
                 friction_dir = -self.vel2D.normalize()
-                
+
                 # 2. Calculate the amount of velocity that will be reduced if the player accelerates with full force
                 braking_force = self.max_acceleration * delta_time
-                
+
                 # 3. Prevent over-deceleration (Oversteer/Jitter)
                 # If the current velocity is less than the velocity that can be reduced in this frame, set it directly to 0
                 if self.vel2D.length() <= braking_force:
@@ -162,11 +211,23 @@ class Player:
                 acc_vector = pygame.Vector2(0, 0)
         self.set_acceleration(acc_vector)
 
+        # Handle Dash Speed Boost
+        current_max_vel = self.max_velocity
+        current_max_acc = self.max_acceleration
+
+        if self.dash_timer > 0:
+            current_max_vel += self.dash_speed_boost
+            current_max_acc += self.dash_acc_boost
+
         old_vel = pygame.Vector2(self.vel2D)
 
         # Update speed: v = v0 + a * dt
         new_vel = self.vel2D + self.acc2D * delta_time
-        self.set_velocity(new_vel)
+
+        # Manually apply velocity limit here because set_velocity uses self.max_velocity
+        if new_vel.length() > current_max_vel:
+            new_vel.scale_to_length(current_max_vel)
+        self.vel2D = new_vel
 
         # Update position: p = p0 + (v0 + v1)/2 * dt
         self.pos2D += (old_vel + self.vel2D) * 0.5 * delta_time
@@ -176,13 +237,17 @@ class Player:
         if self.total_frame_passed % 10 == 0:
             self.history_position.append(pygame.Vector2(self.pos2D))
 
-    def UpdateWeapon(self, delta_time : float, fire : bool = False):
+
+        self._update_timers(delta_time)
+
+    def UpdateWeapon(self, delta_time : float, fire : bool = False, trigger_feedback : bool = False):
         '''
         Update the weapon.
 
         Args:
             delta_time (float): The time step, e.g. 1/60
             fire (bool): Whether to fire
+            trigger_feedback (bool): Whether to trigger feedback messages
         '''
 
         for i, weapon in enumerate(self.weapon_list):
@@ -191,10 +256,14 @@ class Player:
 
             if i == self.weapon_index:
                 if fire:
-                    weapon.fire(self.face_direction, self.pos2D)
+                    res = weapon.fire(self.face_direction, self.pos2D)
+                    if res != "" and trigger_feedback:
+                        self.weapon_error_msg = res
+                        self.weapon_error_timer = 0.5
             else:
-                pass
+                weapon.fire(pygame.Vector2(1, 0).rotate(random.random() * 360), self.pos2D)
             weapon.update(delta_time)
+
 
     def take_damage(self, damage : float):
         if self.invincible_timer > 0 or not self.alive:
@@ -209,9 +278,28 @@ class Player:
     def heal(self, amount : float):
         self.hp = min(self.max_hp, self.hp + amount)
 
-    def update_timers(self, delta_time : float):
+    def _update_timers(self, delta_time : float):
         if self.invincible_timer > 0:
             self.invincible_timer = max(0.0, self.invincible_timer - delta_time)
+
+        if self.dash_cooldown_timer > 0:
+            self.dash_cooldown_timer = max(0.0, self.dash_cooldown_timer - delta_time)
+
+        if self.dash_timer > 0:
+            self.dash_timer = max(0.0, self.dash_timer - delta_time)
+
+        if self.weapon_error_timer > 0:
+            self.weapon_error_timer = max(0.0, self.weapon_error_timer - delta_time)
+
+    def dash(self):
+        '''
+        Trigger the dash burst if cooldown is ready.
+        '''
+        if self.dash_cooldown_timer <= 0:
+            self.dash_timer = self.dash_duration
+            self.dash_cooldown_timer = self.dash_cooldown
+            return True
+        return False
 
     def gain_xp(self, value : int):
         self.xp += value
@@ -259,4 +347,8 @@ class Player:
         self.kills = 0
         self.damage_dealt = 0.0
         self.points = 0
+        self.dash_cooldown_timer = 0.0
+        self.dash_timer = 0.0
+        self.weapon_error_msg = ""
+        self.weapon_error_timer = 0.0
         self.history_position.clear()

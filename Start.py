@@ -6,9 +6,13 @@ np.random.seed(42)
 from Asset.FontCompat import install_pygame_font_compat
 install_pygame_font_compat(pygame)
 
+from Asset.ImageLoader import load_image_surface
 import Asset.Function as GF
 import Asset.TestScreen1 as TS1
 import Asset.TestScreen2 as TS2
+import Asset.Evaluation1 as EV1
+import Asset.Evaluation2 as EV2
+import Asset.Evaluation3 as EV3
 
 from Asset.Player import Player
 
@@ -24,7 +28,7 @@ class Game():
         self.screen_width : int = 1600
         self.screen_height : int = 900
 
-        # Create the game window 
+        # Create the game window
         self.screen : pygame.Surface = pygame.display.set_mode((self.screen_width, self.screen_height))
         self.screen_center : pygame.Vector2 = pygame.Vector2(self.screen_width//2, self.screen_height//2)
 
@@ -33,20 +37,18 @@ class Game():
 
         # Create a font object for rendering text
         self.font : pygame.font.SysFont = pygame.font.SysFont(["consolas", "monaco", "monospace"], 24)
+        self.mid_font : pygame.font.SysFont = pygame.font.SysFont(["consolas", "monaco", "monospace"], 20)
         self.HUD_font : pygame.font.SysFont = pygame.font.SysFont(["consolas", "monaco", "monospace"], 16)
 
         # Init camera position.
         self.camera_position : pygame.Vector2 = pygame.Vector2(0,0)
 
-        # Init player.
-        ball_color : tuple = (0, 150, 255)
-        self.player : Player = Player(position = pygame.Vector2(0,0), radius = 15, color = ball_color)
-        
-        # Background grid image.
+        # Background image tile.
         try:
-            self.background : pygame.Surface = pygame.image.load("./Img/grid_1000x1000.png").convert_alpha()   # size: 1000 x 1000
-        except pygame.error:
+            self.background : pygame.Surface = load_image_surface("./Img/background.png")
+        except (OSError, pygame.error):
             self.background = self._create_grid_background()
+        self.background_tile_size = pygame.Vector2(self.background.get_size())
 
         # Time per frame.
         self.delta_time : float = 1/60
@@ -60,6 +62,9 @@ class Game():
         self.test_screen = 0
         self.selected_slot_info = None
         self.gun_info = False
+
+        # Using SpatialGrid for spatial partitioning.
+        self.partition_method = "SpatialGrid"   # "NoneGrid" or "Quadtree" or "SpatialGrid"
 
         # Persistent meta-progression
         self.best_record = {"kills": 0, "time": 0.0, "damage": 0, "level": 1, "points": 0}
@@ -75,19 +80,27 @@ class Game():
             pygame.draw.line(background, color, (0, pos), (1000, pos), 1)
         return background
 
+    def _blit_centered(self, surface, center_y):
+        rect = surface.get_rect(center=(self.screen.get_rect().centerx, center_y))
+        self.screen.blit(surface, rect)
+
     def _draw_main_menu(self, events):
         self.screen.fill((20, 20, 30))
+        center_x = self.screen.get_rect().centerx
 
         title_font = pygame.font.SysFont(["consolas", "monaco", "monospace"], 96, bold=True)
         title_surf = title_font.render("GUNFORGE", True, (255, 220, 120))
-        self.screen.blit(title_surf, ((self.screen_width - title_surf.get_width()) // 2, 140))
+        self._blit_centered(title_surf, 180)
 
         sub_surf = self.font.render("Vampire-Survivors-style with stackable gun cards", True, (200, 200, 220))
-        self.screen.blit(sub_surf, ((self.screen_width - sub_surf.get_width()) // 2, 240))
+        self._blit_centered(sub_surf, 265)
 
-        cx = self.screen_width // 2
-        play_btn = pygame.Rect(cx - 150, 360, 300, 70)
-        quit_btn = pygame.Rect(cx - 150, 460, 300, 70)
+        play_btn = pygame.Rect(0, 0, 300, 70)
+        eval_btn = pygame.Rect(0, 0, 300, 70)
+        quit_btn = pygame.Rect(0, 0, 300, 70)
+        play_btn.center = (center_x, 365)
+        eval_btn.center = (center_x, 455)
+        quit_btn.center = (center_x, 545)
         info_lines = [
             "WASD to move   |   Left click to fire   |   TAB to open gun/inventory",
             "Survive, kill enemies, collect XP orbs, stand on altars for buffs.",
@@ -95,12 +108,13 @@ class Game():
         ]
 
         GF.draw_button(self.screen, play_btn, "Play", font=self.font)
+        GF.draw_button(self.screen, eval_btn, "Evaluation Mode", font=self.font)
         GF.draw_button(self.screen, quit_btn, "Quit", font=self.font)
 
-        info_y = 580
+        info_y = 640
         for line in info_lines:
             line_surf = self.HUD_font.render(line, True, (200, 200, 200))
-            self.screen.blit(line_surf, ((self.screen_width - line_surf.get_width()) // 2, info_y))
+            self._blit_centered(line_surf, info_y)
             info_y += 24
 
         for event in events:
@@ -109,8 +123,43 @@ class Game():
                     self.gun_info = False
                     TS1.reset_screen1(self)
                     self.test_screen = 1
+                elif eval_btn.collidepoint(event.pos):
+                    self.test_screen = 4
                 elif quit_btn.collidepoint(event.pos):
                     pygame.event.post(pygame.event.Event(pygame.QUIT))
+
+    def _draw_evaluation_menu(self, events):
+        self.screen.fill((20, 20, 30))
+        center_x = self.screen.get_rect().centerx
+
+        title_font = pygame.font.SysFont(["consolas", "monaco", "monospace"], 64, bold=True)
+        title_surf = title_font.render("EVALUATION MODE", True, (100, 180, 255))
+        self._blit_centered(title_surf, 175)
+
+        btn_eval1 = pygame.Rect(0, 0, 300, 70)
+        btn_eval2 = pygame.Rect(0, 0, 300, 70)
+        btn_eval3 = pygame.Rect(0, 0, 300, 70)
+        btn_back = pygame.Rect(0, 0, 300, 70)
+        btn_eval1.center = (center_x, 300)
+        btn_eval2.center = (center_x, 400)
+        btn_eval3.center = (center_x, 500)
+        btn_back.center = (center_x, 600)
+
+        GF.draw_button(self.screen, btn_eval1, "Evaluation 1", font=self.font)
+        GF.draw_button(self.screen, btn_eval2, "Evaluation 2", font=self.font)
+        GF.draw_button(self.screen, btn_eval3, "Evaluation 3", font=self.font)
+        GF.draw_button(self.screen, btn_back, "Back", font=self.font)
+
+        for event in events:
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                if btn_eval1.collidepoint(event.pos):
+                    self.test_screen = 5
+                elif btn_eval2.collidepoint(event.pos):
+                    self.test_screen = 6
+                elif btn_eval3.collidepoint(event.pos):
+                    self.test_screen = 3
+                elif btn_back.collidepoint(event.pos):
+                    self.test_screen = 0
 
     def Start(self):
         # Control variable for the main loop
@@ -129,8 +178,14 @@ class Game():
                 TS1.test_screen1(self, events)
             elif self.test_screen == 2:
                 TS2.test_screen2(self, events)
-
-
+            elif self.test_screen == 3:
+                EV3.test_screen3(self, events)
+            elif self.test_screen == 4:
+                self._draw_evaluation_menu(events)
+            elif self.test_screen == 5:
+                EV1.test_screen_eval1(self, events)
+            elif self.test_screen == 6:
+                EV2.test_screen_eval2(self, events)
 
 
             # Update the display (render everything to the screen)
@@ -158,31 +213,30 @@ class Game():
         """
         pos = pygame.Vector2(pos[0], self.screen_height - pos[1])
         return pos - self.screen_center + self.camera_position
-    
+
     def DrawBackground(self):
-        """
-        Fill the screen, 這裡直接幫我替換到你想設計的地圖背景
-        """
         self.screen.fill((30, 30, 30))
-            
+
+        tile_w = self.background_tile_size.x
+        tile_h = self.background_tile_size.y
         LD = self.camera_position - self.screen_center
-        LeftDown = np.floor(LD / 1000).astype(np.int32)
-        RightUp = np.floor((LD + np.array([self.screen_width, self.screen_height])) / 1000).astype(np.int32)
+        LeftDown = np.floor(np.array([LD.x / tile_w, LD.y / tile_h])).astype(np.int32)
+        RightUp = np.floor(np.array([
+            (LD.x + self.screen_width) / tile_w,
+            (LD.y + self.screen_height) / tile_h,
+        ])).astype(np.int32)
         grid_points = [pygame.Vector2(x, y) for x in range(LeftDown[0], RightUp[0]+1) for y in range(LeftDown[1], RightUp[1]+1)]
 
         for i in range(len(grid_points)):
-            self.screen.blit(self.background, self.to_screen(1000 * grid_points[i]) - pygame.Vector2(0, 1000))
+            tile_origin = pygame.Vector2(tile_w * grid_points[i].x, tile_h * grid_points[i].y)
+            self.screen.blit(self.background, self.to_screen(tile_origin) - pygame.Vector2(0, tile_h))
 
     def DrawLayer1(self):
-        """
-        Draw Layer 1.
-        """
         # --- 1. Draw bullet. ---
-        for weapon in self.player.weapon_list:
-            if weapon is None:
+        for bullet in self.bullet_manager.bullets:
+            if bullet.isKill:
                 continue
-            for bullet in weapon.bullets:
-                pygame.draw.circle(self.screen, (255, 255, 255), self.to_screen(bullet.pos2D), 2)
+            bullet.draw(self.screen, self.to_screen)
 
         # --- 2. Draw player. ---
         # Draw Trajectory Trail
@@ -194,38 +248,27 @@ class Game():
         # Draw the Ball (Player)
         # Using a simple circle for the "ball"
         pygame.draw.circle(self.screen, self.player.color, self.to_screen(self.player.pos2D), self.player.radius)
-        
+
         # Add a little "glow" or detail
         pygame.draw.circle(self.screen, (255, 255, 255), self.to_screen(self.player.pos2D), self.player.radius, 2)
 
-    def PlayerUpdate(self):
-        """
-        If self.KeyBoardControl is True, the target position can be controlled by arrow keys, and the camera will follow the target. \n
-        If self.KeyBoardControl is False, the camera will follow the Main Agent.
-        """
-        # Get current keyboard state (continuous input)
-        keys = pygame.key.get_pressed()
+        # --- 3. Draw Player Feedback Messages ---
+        if self.player.weapon_error_timer > 0:
+            # Position above player's head
+            world_pos_above = self.player.pos2D + pygame.Vector2(0, self.player.radius + 15)
+            screen_pos = self.to_screen(world_pos_above)
 
-        # Get current mouse state
-        mouse_buttons = pygame.mouse.get_pressed()
-        
-        # Update weapon
-        self.player.UpdateWeapon(self.delta_time, fire = mouse_buttons[0])
+            # Render text
+            alpha = min(255, int(255 * (self.player.weapon_error_timer / 0.5))) if self.player.weapon_error_timer < 0.5 else 255
+            color = (255, 100, 100) # Reddish
 
-        # Update position based on arrow key input
-        acc_dir = pygame.Vector2(0, 0)
-        if keys[pygame.K_LEFT] or keys[pygame.K_a]:
-            acc_dir.x -= 1
-        if keys[pygame.K_RIGHT] or keys[pygame.K_d]:
-            acc_dir.x += 1
-        if keys[pygame.K_UP] or keys[pygame.K_w]:
-            acc_dir.y += 1
-        if keys[pygame.K_DOWN] or keys[pygame.K_s]:
-            acc_dir.y -= 1
-        self.player.Update(self.delta_time, acc_dir)
+            error_surf = self.HUD_font.render(self.player.weapon_error_msg, True, color)
+            # Create a surface for alpha if needed, but simple blit with HUD_font is usually fine.
+            # Pygame's render doesn't support per-pixel alpha easily without a temporary surface if using .set_alpha()
+            # For simplicity, we just blit it.
 
-        # Set the camera position to follow the target
-        self.camera_position = self.player.pos2D
+            text_rect = error_surf.get_rect(center=(screen_pos.x, screen_pos.y))
+            self.screen.blit(error_surf, text_rect)
 
 
 if __name__ == '__main__':
