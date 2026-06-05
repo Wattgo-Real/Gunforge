@@ -382,6 +382,9 @@ def _draw_altar_choice_screen(game: "Game", events):
 
         if is_hovered and mouse_clicked:
             game.player.apply_altar_buff(buff_type)
+            if game.active_altar is not None:
+                game.active_altar.used = True
+                game.world.remove_altar(game.active_altar)
             game.altar_choosing = False
             game.altar_options = []
             game.active_altar = None

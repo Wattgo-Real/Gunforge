@@ -1,25 +1,55 @@
 import heapq
 import math
 import random
-import sys
 import time
+from collections import deque
 
 import pygame
 
 import Asset.Function as GF
+from Asset.ImageLoader import load_image_surface
 
 
 METHODS = ("Steering", "A*", "Dijkstra", "Flow Field")
-N_VALUES = (10, 30, 60, 120, 200)
-FRAME_BUDGET_MS = 16.0
-SIM_FRAMES = 126
+N_VALUES = (10, 30, 60, 120)
 DT = 1.0 / 60.0
 CELL_SIZE = 32
 GRID_W = 42
 GRID_H = 30
+WORLD_W = GRID_W * CELL_SIZE
+WORLD_H = GRID_H * CELL_SIZE
 ENEMY_SPEED = 92.0
 PATH_REFRESH_FRAMES = 18
-CHUNK_WORLD_SIZE = 1000
+FRAME_BUDGET_MS = 16.0
+
+METHOD_COLORS = {
+    "Steering": (245, 175, 90),
+    "A*": (115, 190, 255),
+    "Dijkstra": (155, 230, 145),
+    "Flow Field": (235, 135, 245),
+}
+EVAL1_IMAGE_CACHE = {}
+OBSTACLE_IMAGE_PATHS = (
+    "./Img/obstacle_ruins.png",
+    "./Img/obstacle_roots.png",
+    "./Img/obstacle_shrine.png",
+)
+
+
+def _load_eval_image(path, size=None):
+    key = (path, size)
+    if key in EVAL1_IMAGE_CACHE:
+        return EVAL1_IMAGE_CACHE[key]
+    try:
+        image = load_image_surface(path)
+        if size is not None:
+            image = pygame.transform.smoothscale(
+                image, (max(1, int(size[0])), max(1, int(size[1])))
+            )
+    except (OSError, pygame.error, ValueError):
+        image = None
+    EVAL1_IMAGE_CACHE[key] = image
+    return image
 
 
 def _fixed_obstacles():
@@ -44,7 +74,16 @@ def _fixed_obstacles():
 
 BLOCKED_CELLS, OBSTACLE_RECTS = _fixed_obstacles()
 NEIGHBORS_4 = ((1, 0), (-1, 0), (0, 1), (0, -1))
-NEIGHBORS_8 = ((1, 0), (-1, 0), (0, 1), (0, -1), (1, 1), (1, -1), (-1, 1), (-1, -1))
+NEIGHBORS_8 = (
+    (1, 0),
+    (-1, 0),
+    (0, 1),
+    (0, -1),
+    (1, 1),
+    (1, -1),
+    (-1, 1),
+    (-1, -1),
+)
 
 
 def _cell_to_world(cell):
@@ -108,9 +147,11 @@ def _search_path(start, goal, use_heuristic):
     frontier = [(0.0, start)]
     came_from = {}
     cost_so_far = {start: 0.0}
+    expanded = 0
 
     while frontier:
         _, curr = heapq.heappop(frontier)
+        expanded += 1
         if curr == goal:
             break
 
@@ -125,18 +166,20 @@ def _search_path(start, goal, use_heuristic):
                 heapq.heappush(frontier, (priority, nxt))
                 came_from[nxt] = curr
 
-    return _reconstruct(came_from, start, goal), cost_so_far.get(goal)
+    return _reconstruct(came_from, start, goal), cost_so_far.get(goal), expanded
 
 
 def _build_flow_field(goal):
     goal = _nearest_walkable(goal)
     frontier = [(0.0, goal)]
     dist = {goal: 0.0}
+    expanded = 0
 
     while frontier:
         curr_cost, curr = heapq.heappop(frontier)
         if curr_cost > dist[curr]:
             continue
+        expanded += 1
         for dx, dy in NEIGHBORS_8:
             nxt = (curr[0] + dx, curr[1] + dy)
             if not _is_walkable(nxt):
@@ -161,25 +204,21 @@ def _build_flow_field(goal):
             direction = _cell_to_world(best) - _cell_to_world(cell)
             if direction.length_squared() > 0:
                 flow[cell] = direction.normalize()
-    return dist, flow
+    return dist, flow, expanded
 
 
 def _scripted_player(frame):
     t = frame / 60.0
-    cx = GRID_W * CELL_SIZE * 0.5
-    cy = GRID_H * CELL_SIZE * 0.5
+    cx = WORLD_W * 0.5
+    cy = WORLD_H * 0.5
     return pygame.Vector2(
         cx + math.sin(t * 0.9) * 360 + math.sin(t * 1.7) * 120,
         cy + math.cos(t * 0.7) * 250,
     )
 
 
-def _spawn_enemies(count):
-    rng = random.Random(42 + count * 17)
-    enemies = []
-    attempts = 0
-    while len(enemies) < count and attempts < count * 40:
-        attempts += 1
+def _spawn_enemy_from_rng(rng):
+    for _ in range(80):
         edge = rng.randrange(4)
         if edge == 0:
             cell = (rng.randrange(GRID_W), 1)
@@ -190,18 +229,30 @@ def _spawn_enemies(count):
         else:
             cell = (GRID_W - 2, rng.randrange(GRID_H))
         cell = _nearest_walkable(cell)
-        enemies.append({
-            "pos": _cell_to_world(cell),
-            "start": _cell_to_world(cell),
+        pos = _cell_to_world(cell)
+        return {
+            "pos": pos,
+            "start": pos.copy(),
             "path": [],
             "path_idx": 0,
             "stuck_time": 0.0,
             "stuck_counted": False,
             "path_len": 0.0,
-            "detour_sum": 0.0,
-            "detour_samples": 0,
-        })
-    return enemies
+        }
+    return {
+        "pos": pygame.Vector2(16, 16),
+        "start": pygame.Vector2(16, 16),
+        "path": [],
+        "path_idx": 0,
+        "stuck_time": 0.0,
+        "stuck_counted": False,
+        "path_len": 0.0,
+    }
+
+
+def _spawn_enemies(count):
+    rng = random.Random(42 + count * 17)
+    return [_spawn_enemy_from_rng(rng) for _ in range(count)]
 
 
 def _near_obstacle(cell):
@@ -237,93 +288,103 @@ def _try_move(pos, velocity):
     return pos
 
 
-def _path_distance(cells):
-    if len(cells) < 2:
-        return 0.0
-    total = 0.0
-    for a, b in zip(cells, cells[1:]):
-        total += _edge_cost(a, b) * CELL_SIZE
-    return total
+class LivePathEvaluation:
+    def __init__(self, method, enemy_count):
+        self.method = method
+        self.enemy_count = enemy_count
+        self.rng = random.Random(9000 + enemy_count * 13 + METHODS.index(method))
+        self.player_trace = deque(maxlen=180)
+        self.reset(enemy_count)
 
+    def reset(self, enemy_count=None):
+        if enemy_count is not None:
+            self.enemy_count = enemy_count
+        self.frame = 0
+        self.enemies = _spawn_enemies(self.enemy_count)
+        self.flow_dist = {}
+        self.flow = {}
+        self.flow_goal = None
+        self.path_cache = {}
+        self.recomputes = 0
+        self.expanded_this_frame = 0
+        self.reached = 0
+        self.path_ms_ema = 0.0
+        self.total_ms_ema = 0.0
+        self.detour_ema = 1.0
+        self.stuck_count = 0
+        self.player_trace.clear()
 
-def _estimate_memory_kb(method, n, flow_dist=None, flow=None, avg_path_len=0):
-    total = sys.getsizeof(BLOCKED_CELLS) + len(BLOCKED_CELLS) * 16
-    total += GRID_W * GRID_H
-    if method in ("A*", "Dijkstra"):
-        total += n * max(1, avg_path_len) * 8
-    elif method == "Flow Field":
-        total += sys.getsizeof(flow_dist or {}) + len(flow_dist or {}) * 24
-        total += sys.getsizeof(flow or {}) + len(flow or {}) * 24
-    chunk_count = max(1, math.ceil((GRID_W * CELL_SIZE) / CHUNK_WORLD_SIZE) * math.ceil((GRID_H * CELL_SIZE) / CHUNK_WORLD_SIZE))
-    return total / 1024.0 / chunk_count
+    def update(self):
+        t_total = time.perf_counter()
+        self.frame += 1
+        self.expanded_this_frame = 0
+        path_ms = 0.0
+        detour_values = []
 
-
-def _simulate(method, enemy_count):
-    enemies = _spawn_enemies(enemy_count)
-    flow_dist = {}
-    flow = {}
-    flow_goal = None
-    recomputes = 0
-    path_ms = 0.0
-    other_ms = 0.0
-    path_cache = {}
-
-    for frame in range(SIM_FRAMES):
-        player_pos = _scripted_player(frame)
+        player_pos = _scripted_player(self.frame)
         player_cell = _nearest_walkable(_world_to_cell(player_pos))
+        self.player_trace.append(player_pos.copy())
 
-        if method == "Flow Field" and flow_goal != player_cell:
+        if self.method == "Flow Field" and self.flow_goal != player_cell:
             t0 = time.perf_counter()
-            flow_dist, flow = _build_flow_field(player_cell)
+            self.flow_dist, self.flow, expanded = _build_flow_field(player_cell)
             path_ms += (time.perf_counter() - t0) * 1000.0
-            flow_goal = player_cell
-            recomputes += 1
+            self.expanded_this_frame += expanded
+            self.flow_goal = player_cell
+            self.recomputes += 1
 
-        t_other = time.perf_counter()
-        for idx, enemy in enumerate(enemies):
+        for idx, enemy in enumerate(self.enemies):
             pos = enemy["pos"]
             start_cell = _nearest_walkable(_world_to_cell(pos))
-            target = player_pos
+            direction = pygame.Vector2(0, 0)
 
-            if method == "Steering":
+            if self.method == "Steering":
+                target = player_pos
                 direction = target - pos
                 if direction.length_squared() > 0:
                     direction = direction.normalize()
-                enemy["detour_sum"] += 1.65 if _line_crosses_obstacle(pos, target) else 1.0
-                enemy["detour_samples"] += 1
-            elif method in ("A*", "Dijkstra"):
-                needs_path = frame % PATH_REFRESH_FRAMES == idx % PATH_REFRESH_FRAMES
+                detour_values.append(1.65 if _line_crosses_obstacle(pos, player_pos) else 1.0)
+
+            elif self.method in ("A*", "Dijkstra"):
+                needs_path = self.frame % PATH_REFRESH_FRAMES == idx % PATH_REFRESH_FRAMES
                 needs_path = needs_path or not enemy["path"] or enemy["path_idx"] >= len(enemy["path"])
                 if needs_path:
-                    cache_key = (method, start_cell, player_cell)
-                    if cache_key in path_cache:
-                        path, cost = path_cache[cache_key]
+                    cache_key = (self.method, start_cell, player_cell)
+                    if cache_key in self.path_cache:
+                        path, cost = self.path_cache[cache_key]
+                        expanded = 0
                     else:
                         t0 = time.perf_counter()
-                        path, cost = _search_path(start_cell, player_cell, method == "A*")
+                        path, cost, expanded = _search_path(start_cell, player_cell, self.method == "A*")
                         path_ms += (time.perf_counter() - t0) * 1000.0
-                        path_cache[cache_key] = (path, cost)
+                        self.path_cache[cache_key] = (path, cost)
+                        if len(self.path_cache) > 500:
+                            self.path_cache.clear()
+                    self.expanded_this_frame += expanded
                     enemy["path"] = path
                     enemy["path_idx"] = 1 if len(path) > 1 else 0
-                    euclid = max(1.0, pos.distance_to(player_pos))
                     if cost is not None:
-                        enemy["detour_sum"] += (cost * CELL_SIZE) / euclid
-                        enemy["detour_samples"] += 1
+                        euclid = max(1.0, pos.distance_to(player_pos))
+                        detour_values.append((cost * CELL_SIZE) / euclid)
+
                 if enemy["path"] and enemy["path_idx"] < len(enemy["path"]):
                     target = _cell_to_world(enemy["path"][enemy["path_idx"]])
                     if pos.distance_to(target) < CELL_SIZE * 0.35:
                         enemy["path_idx"] += 1
+                else:
+                    target = player_pos
+
                 direction = target - pos
                 if direction.length_squared() > 0:
                     direction = direction.normalize()
-            else:
-                direction = flow.get(start_cell, pygame.Vector2(0, 0))
-                euclid = max(1.0, pos.distance_to(player_pos))
-                if start_cell in flow_dist:
-                    enemy["detour_sum"] += (flow_dist[start_cell] * CELL_SIZE) / euclid
-                    enemy["detour_samples"] += 1
 
-            old_pos = pos
+            else:
+                direction = self.flow.get(start_cell, pygame.Vector2(0, 0))
+                if start_cell in self.flow_dist:
+                    euclid = max(1.0, pos.distance_to(player_pos))
+                    detour_values.append((self.flow_dist[start_cell] * CELL_SIZE) / euclid)
+
+            old_pos = pos.copy()
             new_pos = _try_move(pos, direction * ENEMY_SPEED * DT)
             moved = old_pos.distance_to(new_pos)
             enemy["pos"] = new_pos
@@ -335,124 +396,40 @@ def _simulate(method, enemy_count):
                     enemy["stuck_counted"] = True
             else:
                 enemy["stuck_time"] = 0.0
-        other_ms += (time.perf_counter() - t_other) * 1000.0
 
-    total_path_len = sum(enemy["path_len"] for enemy in enemies)
-    final_player = _scripted_player(SIM_FRAMES - 1)
-    straight = sum(max(1.0, enemy["start"].distance_to(final_player)) for enemy in enemies)
-    fallback_ratio = total_path_len / straight if straight > 0 else 1.0
-    sampled = [
-        enemy["detour_sum"] / enemy["detour_samples"]
-        for enemy in enemies
-        if enemy["detour_samples"] > 0
-    ]
-    detour_ratio = sum(sampled) / len(sampled) if sampled else fallback_ratio
-    stuck_count = sum(1 for enemy in enemies if enemy["stuck_counted"])
-    avg_path_len = sum(len(enemy["path"]) for enemy in enemies) / max(1, len(enemies))
+            if new_pos.distance_to(player_pos) < 22:
+                self.reached += 1
+                self.enemies[idx] = _spawn_enemy_from_rng(self.rng)
 
-    path_frame = path_ms / SIM_FRAMES
-    other_frame = other_ms / SIM_FRAMES
-    total_frame = path_frame + other_frame
-    sim_minutes = (SIM_FRAMES * DT) / 60.0
-    recompute_rate = recomputes / sim_minutes if method == "Flow Field" and sim_minutes > 0 else 0.0
-    memory_kb = _estimate_memory_kb(method, enemy_count, flow_dist, flow, avg_path_len)
+        total_ms = (time.perf_counter() - t_total) * 1000.0
+        alpha = 0.08
+        self.path_ms_ema = (1 - alpha) * self.path_ms_ema + alpha * path_ms
+        self.total_ms_ema = (1 - alpha) * self.total_ms_ema + alpha * total_ms
+        if detour_values:
+            detour = sum(detour_values) / len(detour_values)
+            self.detour_ema = (1 - alpha) * self.detour_ema + alpha * detour
+        self.stuck_count = sum(1 for enemy in self.enemies if enemy["stuck_counted"])
 
-    return {
-        "method": method,
-        "n": enemy_count,
-        "fps": 1000.0 / max(0.001, total_frame),
-        "path_ms": path_frame,
-        "other_ms": other_frame,
-        "total_ms": total_frame,
-        "detour": detour_ratio,
-        "stuck": stuck_count,
-        "memory_kb": memory_kb,
-        "flow_recompute": recompute_rate,
-    }
-
-
-def _run_benchmark():
-    results = {}
-    for method in METHODS:
-        results[method] = {}
-        for n in N_VALUES:
-            results[method][n] = _simulate(method, n)
-    return results
-
-
-def _recommend(results):
-    recommendations = []
-    for n in N_VALUES:
-        budget_rows = {method: results[method][n] for method in METHODS if results[method][n]["total_ms"] <= FRAME_BUDGET_MS}
-        if not budget_rows:
-            best = min((results[method][n] for method in METHODS), key=lambda row: row["total_ms"])
-            recommendations.append((n, best["method"]))
-            continue
-
-        steering = budget_rows.get("Steering")
-        astar = budget_rows.get("A*")
-        dijkstra = budget_rows.get("Dijkstra")
-        flow = budget_rows.get("Flow Field")
-
-        steering_ok = steering and steering["detour"] <= 1.55 and steering["stuck"] <= max(1, int(n * 0.04))
-        astar_ok = astar and astar["detour"] <= 1.35 and astar["stuck"] <= max(1, int(n * 0.03))
-        dijkstra_ok = dijkstra and dijkstra["detour"] <= 1.35 and dijkstra["stuck"] <= max(1, int(n * 0.03))
-
-        if n <= 30 and steering_ok:
-            method = "Steering"
-        elif n <= 60 and astar_ok:
-            method = "A*"
-        elif n <= 60 and dijkstra_ok and (not astar or astar["total_ms"] > FRAME_BUDGET_MS):
-            method = "Dijkstra"
-        elif flow:
-            method = "Flow Field"
-        else:
-            method = min(budget_rows.values(), key=lambda row: (row["stuck"], row["detour"], row["total_ms"]))["method"]
-        recommendations.append((n, method))
-
-    ranges = []
-    start_n, current = recommendations[0]
-    prev_n = start_n
-    for n, method in recommendations[1:]:
-        if method != current:
-            ranges.append((start_n, prev_n, current))
-            start_n, current = n, method
-        prev_n = n
-    ranges.append((start_n, prev_n, current))
-    return recommendations, ranges
+    def recomputes_per_min(self):
+        sim_minutes = max((self.frame * DT) / 60.0, 1.0 / 60.0)
+        return self.recomputes / sim_minutes
 
 
 def _ensure_eval1_state(game):
     if getattr(game, "_eval1_initialized", False):
         return
-    game.eval1_method_idx = 0
-    game.eval1_running = True
-    t0 = time.perf_counter()
-    game.eval1_results = _run_benchmark()
-    game.eval1_elapsed_ms = (time.perf_counter() - t0) * 1000.0
-    game.eval1_recommendations, game.eval1_ranges = _recommend(game.eval1_results)
-    game.eval1_running = False
+    game.eval1_enemy_idx = 1
+    game.eval1_paused = False
+    enemy_count = N_VALUES[game.eval1_enemy_idx]
+    game.eval1_sims = [LivePathEvaluation(method, enemy_count) for method in METHODS]
     game._eval1_initialized = True
 
 
-def _format_ranges(ranges):
-    parts = []
-    for start, end, method in ranges:
-        label = f"N={start}" if start == end else f"N={start}-{end}"
-        parts.append(f"{label}: {method}")
-    return " | ".join(parts)
-
-
-def _analysis_notes(results, recommendations):
-    used = {method for _, method in recommendations}
-    notes = []
-    if "Steering" not in used:
-        worst_detour = max(results["Steering"][n]["detour"] for n in N_VALUES)
-        notes.append(f"Steering excluded: detour peaks at {worst_detour:.2f} in obstacle map.")
-    if "Dijkstra" not in used:
-        d200 = results["Dijkstra"][200]["total_ms"]
-        notes.append(f"Dijkstra dominated: {d200:.1f} ms at N=200 and no better detour than A*/Flow.")
-    return notes
+def _reset_eval1(game):
+    _ensure_eval1_state(game)
+    enemy_count = N_VALUES[game.eval1_enemy_idx]
+    for sim in game.eval1_sims:
+        sim.reset(enemy_count)
 
 
 def _draw_text(game, text, x, y, color=(230, 230, 230), font=None):
@@ -461,124 +438,202 @@ def _draw_text(game, text, x, y, color=(230, 230, 230), font=None):
     return surf.get_height()
 
 
-def _draw_results(game):
-    game.screen.fill((18, 22, 28))
-    title = game.font.render("Evaluation 1: Pathfinder Crossover Benchmark", True, (255, 230, 140))
-    game.screen.blit(title, (40, 28))
-
-    subtitle = "Fixed seed/scripted player, pure chasers, N={10,30,60,120,200}, 16 ms frame budget"
-    _draw_text(game, subtitle, 40, 62, (190, 200, 210))
-    _draw_text(game, f"Benchmark time: {game.eval1_elapsed_ms:.1f} ms   [M] method details   [R] rerun   [ESC] back", 40, 84, (170, 190, 220))
-
-    ranges = _format_ranges(game.eval1_ranges)
-    _draw_text(game, "Recommended crossover: " + ranges, 40, 118, (120, 255, 160), game.mid_font)
-    notes = _analysis_notes(game.eval1_results, game.eval1_recommendations)
-    for idx, note in enumerate(notes):
-        _draw_text(game, note, 40, 142 + idx * 20, (255, 190, 120))
-
-    y = 190
-    headers = ["N", "Best", "Total", "FPS", "Path", "Other", "Detour", "Stuck", "Mem/Chunk"]
-    xs = [40, 105, 230, 315, 390, 470, 555, 650, 735]
-    for x, h in zip(xs, headers):
-        _draw_text(game, h, x, y, (255, 255, 255))
-    y += 24
-
-    for n, method in game.eval1_recommendations:
-        row = game.eval1_results[method][n]
-        color = (130, 255, 150) if row["total_ms"] <= FRAME_BUDGET_MS else (255, 120, 120)
-        values = [
-            str(n),
-            method,
-            f"{row['total_ms']:.2f}",
-            f"{row['fps']:.1f}",
-            f"{row['path_ms']:.2f}",
-            f"{row['other_ms']:.2f}",
-            f"{row['detour']:.2f}",
-            str(row["stuck"]),
-            f"{row['memory_kb']:.1f} KB",
-        ]
-        for x, value in zip(xs, values):
-            _draw_text(game, value, x, y, color)
-        y += 22
-
-    method = METHODS[game.eval1_method_idx]
-    y += 30
-    _draw_text(game, f"Details: {method}", 40, y, (255, 220, 120), game.mid_font)
-    y += 30
-    detail_headers = ["N", "FPS", "Path ms", "Other ms", "Total ms", "Detour", "Stuck", "Mem KB", "FF recompute/min"]
-    detail_xs = [40, 95, 165, 260, 360, 465, 550, 625, 720]
-    for x, h in zip(detail_xs, detail_headers):
-        _draw_text(game, h, x, y, (255, 255, 255))
-    y += 24
-
-    for n in N_VALUES:
-        row = game.eval1_results[method][n]
-        color = (210, 230, 250) if row["total_ms"] <= FRAME_BUDGET_MS else (255, 150, 150)
-        values = [
-            str(n),
-            f"{row['fps']:.1f}",
-            f"{row['path_ms']:.2f}",
-            f"{row['other_ms']:.2f}",
-            f"{row['total_ms']:.2f}",
-            f"{row['detour']:.2f}",
-            str(row["stuck"]),
-            f"{row['memory_kb']:.1f}",
-            f"{row['flow_recompute']:.1f}" if method == "Flow Field" else "-",
-        ]
-        for x, value in zip(detail_xs, values):
-            _draw_text(game, value, x, y, color)
-        y += 22
-
-    _draw_map_preview(game, 1040, 150, 500, 360)
-
-    back_btn = pygame.Rect(40, game.screen_height - 88, 220, 56)
-    GF.draw_button(game.screen, back_btn, "Back", font=game.font)
-    return back_btn
+def _world_to_rect(pos, area):
+    scale = min(area.width / WORLD_W, area.height / WORLD_H)
+    draw_w = WORLD_W * scale
+    draw_h = WORLD_H * scale
+    left = area.left + (area.width - draw_w) * 0.5
+    top = area.top + (area.height - draw_h) * 0.5
+    return pygame.Vector2(left + pos.x * scale, top + pos.y * scale), scale, left, top
 
 
-def _draw_map_preview(game, x, y, w, h):
-    rect = pygame.Rect(x, y, w, h)
-    pygame.draw.rect(game.screen, (28, 32, 40), rect)
-    pygame.draw.rect(game.screen, (120, 130, 150), rect, 1)
-    sx = w / (GRID_W * CELL_SIZE)
-    sy = h / (GRID_H * CELL_SIZE)
+def _draw_obstacles(screen, area):
+    _, scale, left, top = _world_to_rect(pygame.Vector2(0, 0), area)
+    map_rect = pygame.Rect(left, top, WORLD_W * scale, WORLD_H * scale)
+    background = _load_eval_image("./Img/background.png", map_rect.size)
+    if background:
+        screen.blit(background, map_rect)
+    else:
+        pygame.draw.rect(screen, (14, 17, 24), map_rect)
+    pygame.draw.rect(screen, (58, 64, 78), map_rect, 1)
 
-    for ox, oy, ow, oh in OBSTACLE_RECTS:
-        obstacle_rect = pygame.Rect(
-            x + int(ox * CELL_SIZE * sx),
-            y + int(oy * CELL_SIZE * sy),
-            max(1, int(ow * CELL_SIZE * sx)),
-            max(1, int(oh * CELL_SIZE * sy)),
+    for idx, (ox, oy, ow, oh) in enumerate(OBSTACLE_RECTS):
+        rect = pygame.Rect(
+            left + ox * CELL_SIZE * scale,
+            top + oy * CELL_SIZE * scale,
+            ow * CELL_SIZE * scale,
+            oh * CELL_SIZE * scale,
         )
-        pygame.draw.rect(game.screen, (90, 70, 95), obstacle_rect)
+        obstacle_path = OBSTACLE_IMAGE_PATHS[idx % len(OBSTACLE_IMAGE_PATHS)]
+        obstacle = _load_eval_image(obstacle_path, (rect.width * 1.45, rect.height * 1.65))
+        if obstacle:
+            image_rect = obstacle.get_rect(center=rect.center)
+            screen.blit(obstacle, image_rect)
+        else:
+            pygame.draw.rect(screen, (83, 70, 96), rect)
 
-    points = []
-    for frame in range(0, SIM_FRAMES, 4):
-        pos = _scripted_player(frame)
-        points.append((x + int(pos.x * sx), y + int(pos.y * sy)))
-    if len(points) >= 2:
-        pygame.draw.lines(game.screen, (120, 220, 255), False, points, 2)
-    _draw_text(game, "Scripted player path / obstacle grid", x, y - 24, (190, 200, 220))
+    return scale, left, top, map_rect
+
+
+def _draw_flow_arrows(screen, sim, area):
+    if not sim.flow:
+        return
+    for cell, direction in sim.flow.items():
+        if cell[0] % 4 != 0 or cell[1] % 4 != 0:
+            continue
+        start, scale, _, _ = _world_to_rect(_cell_to_world(cell), area)
+        end = start + pygame.Vector2(direction.x, -direction.y) * CELL_SIZE * scale * 0.55
+        pygame.draw.line(screen, (210, 130, 230), start, end, 1)
+
+
+def _draw_paths(screen, sim, area):
+    if sim.method not in ("A*", "Dijkstra"):
+        return
+    color = METHOD_COLORS[sim.method]
+    drawn = 0
+    for enemy in sim.enemies:
+        if len(enemy["path"]) < 2:
+            continue
+        points = [_world_to_rect(_cell_to_world(cell), area)[0] for cell in enemy["path"]]
+        if len(points) >= 2:
+            pygame.draw.lines(screen, color, False, points, 1)
+            drawn += 1
+        if drawn >= 10:
+            break
+
+
+def _draw_steering_rays(screen, sim, player_pos, area):
+    if sim.method != "Steering":
+        return
+    for enemy in sim.enemies[:10]:
+        start = _world_to_rect(enemy["pos"], area)[0]
+        end = _world_to_rect(player_pos, area)[0]
+        pygame.draw.line(screen, (190, 125, 80), start, end, 1)
+
+
+def _draw_panel(game, sim, rect):
+    color = METHOD_COLORS[sim.method]
+    pygame.draw.rect(game.screen, (19, 22, 30), rect)
+    pygame.draw.rect(game.screen, color, rect, 2)
+
+    _draw_text(game, sim.method, rect.left + 14, rect.top + 10, color, game.font)
+    budget_color = (130, 245, 155) if sim.total_ms_ema <= FRAME_BUDGET_MS else (255, 130, 130)
+    metric_y = rect.top + 42
+    metric_lines = [
+        f"N {sim.enemy_count}   Frame {sim.total_ms_ema:4.2f} ms",
+        f"Path {sim.path_ms_ema:4.2f} ms   Expanded {sim.expanded_this_frame}",
+        f"Detour {sim.detour_ema:4.2f}   Stuck {sim.stuck_count}   Reached {sim.reached}",
+    ]
+    if sim.method == "Flow Field":
+        metric_lines[1] = f"Flow build {sim.path_ms_ema:4.2f} ms   {sim.recomputes_per_min():.1f}/min"
+
+    for idx, line in enumerate(metric_lines):
+        line_color = budget_color if idx == 0 else (215, 220, 230)
+        _draw_text(game, line, rect.left + 14, metric_y + idx * 18, line_color)
+
+    area = pygame.Rect(rect.left + 12, rect.top + 102, rect.width - 24, rect.height - 116)
+    scale, left, top, map_rect = _draw_obstacles(game.screen, area)
+    old_clip = game.screen.get_clip()
+    game.screen.set_clip(map_rect)
+
+    player_pos = _scripted_player(sim.frame)
+    if len(sim.player_trace) >= 2:
+        points = [_world_to_rect(pos, area)[0] for pos in sim.player_trace]
+        pygame.draw.lines(game.screen, (90, 180, 255), False, points, 2)
+
+    _draw_flow_arrows(game.screen, sim, area)
+    _draw_paths(game.screen, sim, area)
+    _draw_steering_rays(game.screen, sim, player_pos, area)
+
+    player_screen = _world_to_rect(player_pos, area)[0]
+    player_size = max(12, int(30 * scale))
+    player_img = _load_eval_image("./Img/Ball.png", (player_size, player_size))
+    if player_img:
+        game.screen.blit(player_img, player_img.get_rect(center=player_screen))
+    else:
+        pygame.draw.circle(game.screen, (80, 185, 255), player_screen, max(4, int(9 * scale)))
+        pygame.draw.circle(game.screen, (235, 250, 255), player_screen, max(4, int(9 * scale)), 1)
+
+    enemy_size = max(12, int(42 * scale))
+    enemy_img = _load_eval_image("./Img/enemy_1.png", (enemy_size, enemy_size))
+    for enemy in sim.enemies:
+        pos = _world_to_rect(enemy["pos"], area)[0]
+        if enemy_img:
+            image = enemy_img.copy()
+            if enemy["stuck_counted"]:
+                image.fill((255, 120, 120, 255), special_flags=pygame.BLEND_RGBA_MULT)
+            game.screen.blit(image, image.get_rect(center=pos))
+        else:
+            enemy_color = (255, 100, 100) if enemy["stuck_counted"] else color
+            pygame.draw.circle(game.screen, enemy_color, pos, max(2, int(6 * scale)))
+
+    game.screen.set_clip(old_clip)
+
+
+def _draw_eval1(game):
+    game.screen.fill((15, 17, 23))
+    title = game.font.render("Evaluation 1 - Pathfinding Methods Live Comparison", True, (255, 230, 140))
+    game.screen.blit(title, (28, 18))
+
+    enemy_count = N_VALUES[game.eval1_enemy_idx]
+    state = "Paused" if game.eval1_paused else "Running"
+    hint = (
+        f"{state} | Same obstacle map, same scripted player, N={enemy_count}. "
+        "E changes N, P pauses, R resets, ESC returns."
+    )
+    _draw_text(game, hint, 30, 54, (180, 190, 205))
+
+    reset_btn = pygame.Rect(game.screen_width - 290, 18, 120, 42)
+    back_btn = pygame.Rect(game.screen_width - 150, 18, 120, 42)
+    GF.draw_button(game.screen, reset_btn, "Reset", font=game.HUD_font)
+    GF.draw_button(game.screen, back_btn, "Back", font=game.HUD_font)
+
+    margin = 22
+    top = 88
+    gap = 14
+    panel_w = (game.screen_width - margin * 2 - gap) // 2
+    panel_h = (game.screen_height - top - margin - gap) // 2
+    for idx, sim in enumerate(game.eval1_sims):
+        col = idx % 2
+        row = idx // 2
+        rect = pygame.Rect(
+            margin + col * (panel_w + gap),
+            top + row * (panel_h + gap),
+            panel_w,
+            panel_h,
+        )
+        _draw_panel(game, sim, rect)
+
+    return reset_btn, back_btn
 
 
 def test_screen_eval1(game, events):
     _ensure_eval1_state(game)
 
-    back_btn = None
+    reset_btn = pygame.Rect(game.screen_width - 290, 18, 120, 42)
+    back_btn = pygame.Rect(game.screen_width - 150, 18, 120, 42)
+
     for event in events:
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
                 game.test_screen = 4
-            elif event.key == pygame.K_m:
-                game.eval1_method_idx = (game.eval1_method_idx + 1) % len(METHODS)
-            elif event.key == pygame.K_r:
-                game._eval1_initialized = False
-                _ensure_eval1_state(game)
+                return
+            if event.key == pygame.K_r:
+                _reset_eval1(game)
+            elif event.key == pygame.K_p:
+                game.eval1_paused = not game.eval1_paused
+            elif event.key == pygame.K_e:
+                game.eval1_enemy_idx = (game.eval1_enemy_idx + 1) % len(N_VALUES)
+                _reset_eval1(game)
         elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-            if back_btn and back_btn.collidepoint(event.pos):
+            if back_btn.collidepoint(event.pos):
                 game.test_screen = 4
+                return
+            if reset_btn.collidepoint(event.pos):
+                _reset_eval1(game)
 
-    back_btn = _draw_results(game)
-    for event in events:
-        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1 and back_btn.collidepoint(event.pos):
-            game.test_screen = 4
+    if not game.eval1_paused:
+        for sim in game.eval1_sims:
+            sim.update()
+
+    _draw_eval1(game)

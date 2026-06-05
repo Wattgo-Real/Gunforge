@@ -289,4 +289,14 @@ class WorldChunkManager:
                 if self.spatial_grid_dict is not None:
                     o.remove_from_grid(self.spatial_grid_dict)
         self.obstacles = new_obstacles
-        self.altars = [a for a in self.altars if a.used or (a.pos2D - player_pos).length_squared() <= max_sq]
+        self.altars = [
+            a
+            for a in self.altars
+            if not a.used and (a.pos2D - player_pos).length_squared() <= max_sq
+        ]
+
+    def remove_altar(self, altar):
+        try:
+            self.altars.remove(altar)
+        except ValueError:
+            pass

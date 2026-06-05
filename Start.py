@@ -1,5 +1,6 @@
 import pygame
 import sys
+import os
 import numpy as np
 np.random.seed(42)
 
@@ -17,16 +18,22 @@ import Asset.Evaluation3 as EV3
 from Asset.Player import Player
 
 class Game():
+    DESIGN_WIDTH = 1600
+    DESIGN_HEIGHT = 900
+    WINDOW_MARGIN = 0.92
+
     def __init__(self):
+        os.environ.setdefault("SDL_VIDEO_CENTERED", "1")
+
         # Initialize pygame (must be called before using any pygame functions)
         pygame.init()
 
         # Set the window title
         pygame.display.set_caption("Game")
 
-        # Screen size
-        self.screen_width : int = 1600
-        self.screen_height : int = 900
+        # Screen size. Fit the 16:9 design into the current desktop so the
+        # window is not larger than the user's visible screen area.
+        self.screen_width, self.screen_height = self._get_window_size()
 
         # Create the game window
         self.screen : pygame.Surface = pygame.display.set_mode((self.screen_width, self.screen_height))
@@ -71,6 +78,21 @@ class Game():
         self.total_points = 0
         self.run_summary = None
 
+    def _get_window_size(self):
+        try:
+            desktop_w, desktop_h = pygame.display.get_desktop_sizes()[0]
+        except (IndexError, pygame.error):
+            desktop_w, desktop_h = self.DESIGN_WIDTH, self.DESIGN_HEIGHT
+
+        scale = min(
+            1.0,
+            (desktop_w * self.WINDOW_MARGIN) / self.DESIGN_WIDTH,
+            (desktop_h * self.WINDOW_MARGIN) / self.DESIGN_HEIGHT,
+        )
+        width = max(1, int(self.DESIGN_WIDTH * scale))
+        height = max(1, int(self.DESIGN_HEIGHT * scale))
+        return width, height
+
     def _create_grid_background(self):
         background = pygame.Surface((1000, 1000), pygame.SRCALPHA)
         background.fill((0, 0, 0, 0))
@@ -87,20 +109,21 @@ class Game():
     def _draw_main_menu(self, events):
         self.screen.fill((20, 20, 30))
         center_x = self.screen.get_rect().centerx
+        h = self.screen_height
 
         title_font = pygame.font.SysFont(["consolas", "monaco", "monospace"], 96, bold=True)
         title_surf = title_font.render("GUNFORGE", True, (255, 220, 120))
-        self._blit_centered(title_surf, 180)
+        self._blit_centered(title_surf, int(h * 0.20))
 
         sub_surf = self.font.render("Vampire-Survivors-style with stackable gun cards", True, (200, 200, 220))
-        self._blit_centered(sub_surf, 265)
+        self._blit_centered(sub_surf, int(h * 0.29))
 
         play_btn = pygame.Rect(0, 0, 300, 70)
         eval_btn = pygame.Rect(0, 0, 300, 70)
         quit_btn = pygame.Rect(0, 0, 300, 70)
-        play_btn.center = (center_x, 365)
-        eval_btn.center = (center_x, 455)
-        quit_btn.center = (center_x, 545)
+        play_btn.center = (center_x, int(h * 0.41))
+        eval_btn.center = (center_x, int(h * 0.51))
+        quit_btn.center = (center_x, int(h * 0.61))
         info_lines = [
             "WASD to move   |   Left click to fire   |   TAB to open gun/inventory",
             "Survive, kill enemies, collect XP orbs, stand on altars for buffs.",
@@ -111,7 +134,7 @@ class Game():
         GF.draw_button(self.screen, eval_btn, "Evaluation Mode", font=self.font)
         GF.draw_button(self.screen, quit_btn, "Quit", font=self.font)
 
-        info_y = 640
+        info_y = int(h * 0.72)
         for line in info_lines:
             line_surf = self.HUD_font.render(line, True, (200, 200, 200))
             self._blit_centered(line_surf, info_y)
@@ -131,19 +154,20 @@ class Game():
     def _draw_evaluation_menu(self, events):
         self.screen.fill((20, 20, 30))
         center_x = self.screen.get_rect().centerx
+        h = self.screen_height
 
         title_font = pygame.font.SysFont(["consolas", "monaco", "monospace"], 64, bold=True)
         title_surf = title_font.render("EVALUATION MODE", True, (100, 180, 255))
-        self._blit_centered(title_surf, 175)
+        self._blit_centered(title_surf, int(h * 0.20))
 
         btn_eval1 = pygame.Rect(0, 0, 300, 70)
         btn_eval2 = pygame.Rect(0, 0, 300, 70)
         btn_eval3 = pygame.Rect(0, 0, 300, 70)
         btn_back = pygame.Rect(0, 0, 300, 70)
-        btn_eval1.center = (center_x, 300)
-        btn_eval2.center = (center_x, 400)
-        btn_eval3.center = (center_x, 500)
-        btn_back.center = (center_x, 600)
+        btn_eval1.center = (center_x, int(h * 0.34))
+        btn_eval2.center = (center_x, int(h * 0.45))
+        btn_eval3.center = (center_x, int(h * 0.56))
+        btn_back.center = (center_x, int(h * 0.67))
 
         GF.draw_button(self.screen, btn_eval1, "Evaluation 1", font=self.font)
         GF.draw_button(self.screen, btn_eval2, "Evaluation 2", font=self.font)
