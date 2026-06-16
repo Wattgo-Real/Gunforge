@@ -310,8 +310,12 @@ def test_screen3(game, events):
     # Draw enemies using exact parameters from config
     for e in game.eval_enemies:
         screen_pos = game.to_screen(e.pos2D)
-        pygame.draw.circle(game.screen, e.color, screen_pos, e.radius)
-        pygame.draw.circle(game.screen, (255, 255, 255), screen_pos, e.radius, 1)
+        if e.image:
+            rect = e.image.get_rect(center=(int(screen_pos.x), int(screen_pos.y)))
+            game.screen.blit(e.image, rect)
+        else:
+            pygame.draw.circle(game.screen, e.color, screen_pos, e.radius)
+            pygame.draw.circle(game.screen, (255, 255, 255), screen_pos, e.radius, 1)
 
     # Draw Center Target marker
     center_screen = game.to_screen(pygame.Vector2(0, 0))

@@ -30,3 +30,10 @@ Simple Ui add and value Setting `GameSetting.py、Start.py TestScreen1.py TestSc
 ### 2026/05/31
 - Add more cards
 - Add Evaluation3.py to compare the efficiency of different spatial partitioning methods.
+
+### 2026/06/06
+- Add obstacles enemys boss Images
+- Update Evaluation1 and Evaluation2
+
+### 2026/06/16
+- Make some numerical adjustments (Altar size, enemy health)
