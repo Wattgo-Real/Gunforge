@@ -44,7 +44,7 @@ class Card(pygame.sprite.Sprite):
             info = TRAJECTORY_MODIFIER_CONFIG[self.inter_type][1]
         target.cooldown += info.get("cooldown_modifier", 0) 
         target.reload += info.get("reload_modifier", 0) 
-        target.scatter_angel += info.get("scatter_angel_modifier", 0) 
+        target.scatter_angle += info.get("scatter_angle_modifier", 0) 
         target.capacity += info.get("capacity_modifier", 0) 
 
 
@@ -75,6 +75,8 @@ class Card(pygame.sprite.Sprite):
                 target.trigger_time = 1.0
 
         elif self.type == 5:    # trajectory_modifier
+            info = TRAJECTORY_MODIFIER_CONFIG[self.inter_type][1]
+            target.phy_damage += info.get("physical_damage_modifier", 0)
             target.trajectory_modifier_list.append(TModifierIT(self.inter_type))
 
     def draw(self, surface : pygame.Surface, rect : pygame.Rect):
@@ -180,8 +182,8 @@ class Card(pygame.sprite.Sprite):
                 info += f"\nReload Modifier: {CONFIG.get('reload_modifier', 0)}"
             if "capacity_modifier" in CONFIG:
                 info += f"\nCapacity Modifier: {CONFIG.get('capacity_modifier', 0)}"
-            if "scatter_angel_modifier" in CONFIG:
-                info += f"\nScatter Modifier: {CONFIG.get('scatter_angel_modifier', 0)}"
+            if "scatter_angle_modifier" in CONFIG:
+                info += f"\nScatter Modifier: {CONFIG.get('scatter_angle_modifier', 0)}"
 
             if "bullet_speed_modifier" in CONFIG:
                 info += f"\nSpeed Modifier: {CONFIG.get('bullet_speed_modifier', 0)}"
