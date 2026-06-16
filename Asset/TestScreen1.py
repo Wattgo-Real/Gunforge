@@ -793,31 +793,6 @@ def _draw_gun_info_overlay(game: "Game", events, selected_slot: bool):
                 game.screen, (255, 255, 100), (x, y, box_w, box_h), 4
             )
 
-        # Handle clicking the gun box area to select or swap gun slots
-        if mouse_clicked:
-            # Use the entire box area (screen coords)
-            box_screen_rect = pygame.Rect(x, y, box_w, box_h)
-            if box_screen_rect.collidepoint(mouse_pos):
-                cur_selected = getattr(game, "selected_gun_slot", None)
-                # If nothing selected and this slot has a gun, select it
-                if cur_selected is None:
-                    if game.player.weapon_list[i] is not None:
-                        setattr(game, "selected_gun_slot", i)
-                else:
-                    # Swap guns between cur_selected and i (allows swapping with empty)
-                    if cur_selected != i:
-                        game.player.weapon_list[cur_selected], game.player.weapon_list[i] = (
-                            game.player.weapon_list[i],
-                            game.player.weapon_list[cur_selected],
-                        )
-                        # Refresh guns if present
-                        if game.player.weapon_list[cur_selected]:
-                            game.player.weapon_list[cur_selected]._refresh()
-                        if game.player.weapon_list[i]:
-                            game.player.weapon_list[i]._refresh()
-                    # Clear selection
-                    setattr(game, "selected_gun_slot", None)
-
     # --- Draw Inventory Grid ---
     grid_cell_size = UI_CONFIG["grid_cell_size"]
     grid_cols = UI_CONFIG["grid_cols"]
@@ -856,51 +831,57 @@ def _draw_gun_info_overlay(game: "Game", events, selected_slot: bool):
 
     # --- Draw Tooltip and clicked slot ---
     m_x, m_y = pygame.mouse.get_pos()
-    
-    # --- Draw Delete/Trash box if a card is selected ---
-    if game.selected_slot_info:
-        trash_w = 120
-        trash_h = grid_h
-        trash_x = grid_start_x + grid_w + 20
-        trash_y = grid_start_y
-        
-        # If it would go off screen, put it on the left of inventory
-        if trash_x + trash_w > game.screen_width:
-            trash_x = grid_start_x - trash_w - 20
-            
-        trash_rect = pygame.Rect(trash_x, trash_y, trash_w, trash_h)
-        is_hovered = trash_rect.collidepoint(m_x, m_y)
-        
-        # Draw trash box with premium aesthetics
-        bg_color = (180, 50, 50, 200) if is_hovered else (80, 30, 30, 180)
-        border_color = (255, 100, 100) if is_hovered else (150, 50, 50)
-        
-        trash_surf = pygame.Surface((trash_w, trash_h), pygame.SRCALPHA)
-        trash_surf.fill(bg_color)
-        pygame.draw.rect(trash_surf, border_color, trash_surf.get_rect(), 2)
-        
-        # Render text "DELETE"
-        del_text = game.font.render("DELETE", True, (255, 255, 255))
-        text_rect = del_text.get_rect(center=(trash_w // 2, trash_h // 2))
-        trash_surf.blit(del_text, text_rect)
-        
-        game.screen.blit(trash_surf, (trash_x, trash_y))
-        
-        # Handle click to delete
-        if selected_slot and is_hovered:
-            src = game.selected_slot_info
-            if src["type"] == "gun":
-                game.player.weapon_list[src["gun_idx"]].card_list[src["slot_idx"]] = None
-                game.player.weapon_list[src["gun_idx"]]._refresh()
-            else:
-                game.player.inventory[src["slot_idx"]] = None
-            game.selected_slot_info = None
-            selected_slot = False
 
-    clicked_slot = None
+    # --- Draw Discard Zone (above backpack bottom right) ---
+    discard_w = 220
+    discard_h = 50
+    discard_x = grid_start_x + grid_w - discard_w
+    discard_y = grid_start_y - discard_h - 15
+    discard_rect = pygame.Rect(discard_x, discard_y, discard_w, discard_h)
+
+    # Check hover and determine if discard is valid
+    is_hovered_discard = discard_rect.collidepoint(m_x, m_y)
+    can_discard = False
+    if game.selected_slot_info is not None:
+        can_discard = True
+    elif getattr(game, "selected_gun_slot", None) is not None:
+        gun_count = sum(1 for g in game.player.weapon_list if g is not None)
+        if gun_count > 1:
+            can_discard = True
+
+    # Draw premium styled discard zone
+    if can_discard:
+        bg_color = (180, 50, 50, 220) if is_hovered_discard else (120, 30, 30, 180)
+        border_color = (255, 120, 120) if is_hovered_discard else (180, 60, 60)
+        text_color = (255, 255, 255)
+    else:
+        bg_color = (60, 60, 60, 100) if is_hovered_discard else (40, 40, 40, 80)
+        border_color = (100, 100, 100)
+        text_color = (120, 120, 120)
+
+    discard_surf = pygame.Surface((discard_w, discard_h), pygame.SRCALPHA)
+    discard_surf.fill(bg_color)
+    pygame.draw.rect(discard_surf, border_color, discard_surf.get_rect(), 2)
+
+    label_str = "DISCARD"
+    if game.selected_slot_info is not None:
+        label_str = "DISCARD CARD"
+    elif getattr(game, "selected_gun_slot", None) is not None:
+        label_str = "DISCARD GUN"
+
+    discard_text = game.font.render(label_str, True, text_color)
+    text_rect = discard_text.get_rect(center=(discard_w // 2, discard_h // 2))
+    discard_surf.blit(discard_text, text_rect)
+
+    game.screen.blit(discard_surf, (discard_x, discard_y))
+
+    # --- Click and Hover Detection ---
+    clicked_card_slot = None
+    clicked_gun_idx = None
+    clicked_trash = False
     hovered_card = None
 
-    # Check Gun Slots for hover or check clicked slot
+    # Check gun card slots for hover/click
     for i in range(4):
         gun = game.player.weapon_list[i]
         if not gun:
@@ -916,81 +897,140 @@ def _draw_gun_info_overlay(game: "Game", events, selected_slot: bool):
                 slot_size,
             )
             if slot_rect.collidepoint(m_x, m_y):
-                clicked_slot = {"type": "gun", "gun_idx": i, "slot_idx": s}
+                clicked_card_slot = {"type": "gun", "gun_idx": i, "slot_idx": s}
                 if gun.card_list[s]:
                     hovered_card = gun.card_list[s]
                 break
-        if hovered_card:
+        if clicked_card_slot:
             break
 
-    # Check Inventory for hover or check clicked slot
-    if not hovered_card:
-        inv_start_x = grid_start_x
-        inv_start_y = grid_start_y
+    # Check inventory grid for hover/click
+    if not clicked_card_slot:
         for idx in range(40):
             r, c = idx // grid_cols, idx % grid_cols
             slot_rect = pygame.Rect(
-                inv_start_x + c * grid_cell_size,
-                inv_start_y + r * grid_cell_size,
+                grid_start_x + c * grid_cell_size,
+                grid_start_y + r * grid_cell_size,
                 grid_cell_size,
                 grid_cell_size,
             )
             if slot_rect.collidepoint(m_x, m_y):
-                clicked_slot = {"type": "inv", "slot_idx": idx}
+                clicked_card_slot = {"type": "inv", "slot_idx": idx}
                 if idx < len(game.player.inventory) and game.player.inventory[idx]:
                     hovered_card = game.player.inventory[idx]
                 break
 
-    # Move the card from the selected sol to the clicked slot.
-    if clicked_slot and selected_slot:
-        if game.selected_slot_info is None:
-            # Select if there is a card
-            has_card = False
-            if clicked_slot["type"] == "gun":
-                has_card = (
-                    game.player.weapon_list[clicked_slot["gun_idx"]].card_list[
-                        clicked_slot["slot_idx"]
-                    ]
-                    is not None
-                )
-            else:
-                has_card = game.player.inventory[clicked_slot["slot_idx"]] is not None
+    # Check click handling
+    if mouse_clicked:
+        if discard_rect.collidepoint(m_x, m_y):
+            clicked_trash = True
+        elif not clicked_card_slot:
+            # Check gun boxes
+            for i in range(4):
+                x, y = positions[i]
+                box_screen_rect = pygame.Rect(x, y, box_w, box_h)
+                if box_screen_rect.collidepoint(m_x, m_y):
+                    clicked_gun_idx = i
+                    break
 
-            if has_card:
-                game.selected_slot_info = clicked_slot
-        else:
-            # Already selected, try to move/swap
-            if game.selected_slot_info == clicked_slot:
-                game.selected_slot_info = None
-            else:
-                # Perform swap
-                # Get source card
+        # Process actions
+        if clicked_trash:
+            if game.selected_slot_info:
+                # Discard Card
                 src = game.selected_slot_info
-                dst = clicked_slot
-
                 if src["type"] == "gun":
-                    src_list = game.player.weapon_list[src["gun_idx"]].card_list
-                else:
-                    src_list = game.player.inventory
-
-                if dst["type"] == "gun":
-                    dst_list = game.player.weapon_list[dst["gun_idx"]].card_list
-                else:
-                    dst_list = game.player.inventory
-
-                # Swap
-                src_list[src["slot_idx"]], dst_list[dst["slot_idx"]] = (
-                    dst_list[dst["slot_idx"]],
-                    src_list[src["slot_idx"]],
-                )
-
-                # Refresh guns if needed
-                if src["type"] == "gun":
+                    game.player.weapon_list[src["gun_idx"]].card_list[src["slot_idx"]] = None
                     game.player.weapon_list[src["gun_idx"]]._refresh()
-                if dst["type"] == "gun":
-                    game.player.weapon_list[dst["gun_idx"]]._refresh()
-
+                else:
+                    game.player.inventory[src["slot_idx"]] = None
                 game.selected_slot_info = None
+                game.message_queue.append(["Card discarded", 2.0, (255, 100, 100)])
+            elif getattr(game, "selected_gun_slot", None) is not None:
+                # Discard Gun
+                gun_idx = game.selected_gun_slot
+                gun_count = sum(1 for g in game.player.weapon_list if g is not None)
+                if gun_count > 1:
+                    game.player.weapon_list[gun_idx] = None
+                    # Update active weapon if we deleted the current one
+                    if game.player.weapon_index == gun_idx:
+                        for idx, w in enumerate(game.player.weapon_list):
+                            if w is not None:
+                                game.player.weapon_index = idx
+                                break
+                    setattr(game, "selected_gun_slot", None)
+                    game.message_queue.append(["Gun discarded", 2.0, (255, 100, 100)])
+                else:
+                    game.message_queue.append(["Cannot discard your last Gun!", 2.5, (255, 100, 100)])
+        elif clicked_card_slot:
+            # Deselect gun slot to prevent simultaneous selection
+            setattr(game, "selected_gun_slot", None)
+
+            if game.selected_slot_info is None:
+                # Select card
+                has_card = False
+                if clicked_card_slot["type"] == "gun":
+                    has_card = (
+                        game.player.weapon_list[clicked_card_slot["gun_idx"]].card_list[
+                            clicked_card_slot["slot_idx"]
+                        ]
+                        is not None
+                    )
+                else:
+                    has_card = clicked_card_slot["slot_idx"] < len(game.player.inventory) and game.player.inventory[clicked_card_slot["slot_idx"]] is not None
+
+                if has_card:
+                    game.selected_slot_info = clicked_card_slot
+            else:
+                # Swap or deselect
+                if game.selected_slot_info == clicked_card_slot:
+                    game.selected_slot_info = None
+                else:
+                    src = game.selected_slot_info
+                    dst = clicked_card_slot
+
+                    if src["type"] == "gun":
+                        src_list = game.player.weapon_list[src["gun_idx"]].card_list
+                    else:
+                        src_list = game.player.inventory
+
+                    if dst["type"] == "gun":
+                        dst_list = game.player.weapon_list[dst["gun_idx"]].card_list
+                    else:
+                        dst_list = game.player.inventory
+
+                    # Perform swap
+                    src_list[src["slot_idx"]], dst_list[dst["slot_idx"]] = (
+                        dst_list[dst["slot_idx"]],
+                        src_list[src["slot_idx"]],
+                    )
+
+                    # Refresh guns if needed
+                    if src["type"] == "gun":
+                        game.player.weapon_list[src["gun_idx"]]._refresh()
+                    if dst["type"] == "gun":
+                        game.player.weapon_list[dst["gun_idx"]]._refresh()
+
+                    game.selected_slot_info = None
+
+        elif clicked_gun_idx is not None:
+            # Deselect card slot to prevent simultaneous selection
+            game.selected_slot_info = None
+
+            cur_selected = getattr(game, "selected_gun_slot", None)
+            if cur_selected is None:
+                if game.player.weapon_list[clicked_gun_idx] is not None:
+                    setattr(game, "selected_gun_slot", clicked_gun_idx)
+            else:
+                if cur_selected != clicked_gun_idx:
+                    game.player.weapon_list[cur_selected], game.player.weapon_list[clicked_gun_idx] = (
+                        game.player.weapon_list[clicked_gun_idx],
+                        game.player.weapon_list[cur_selected],
+                    )
+                    if game.player.weapon_list[cur_selected]:
+                        game.player.weapon_list[cur_selected]._refresh()
+                    if game.player.weapon_list[clicked_gun_idx]:
+                        game.player.weapon_list[clicked_gun_idx]._refresh()
+                setattr(game, "selected_gun_slot", None)
 
     # Draw the tool tip
     if hovered_card:
