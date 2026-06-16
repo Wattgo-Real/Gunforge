@@ -44,7 +44,7 @@ class Game():
 
         # Create a font object for rendering text
         self.font : pygame.font.SysFont = pygame.font.SysFont(["consolas", "monaco", "monospace"], 24)
-        self.mid_font : pygame.font.SysFont = pygame.font.SysFont(["consolas", "monaco"aaaaaaaaaw, "monospace"], 20)
+        self.mid_font : pygame.font.SysFont = pygame.font.SysFont(["consolas", "monaco", "monospace"], 20)
         self.HUD_font : pygame.font.SysFont = pygame.font.SysFont(["consolas", "monaco", "monospace"], 16)
 
         # Init camera position.
