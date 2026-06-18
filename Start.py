@@ -21,6 +21,9 @@ class Game():
     DESIGN_WIDTH = 1600
     DESIGN_HEIGHT = 900
     WINDOW_MARGIN = 0.92
+    PLAYER_SPRITE_PATH = "./Img/player_sprite.png"
+    PLAYER_SPRITE_HEIGHT = 118
+    PLAYER_SPRITE_BASE_ANGLE = 0
 
     def __init__(self):
         os.environ.setdefault("SDL_VIDEO_CENTERED", "1")
@@ -77,6 +80,9 @@ class Game():
         self.best_record = {"kills": 0, "time": 0.0, "damage": 0, "level": 1, "points": 0}
         self.total_points = 0
         self.run_summary = None
+        self._player_sprite_source = None
+        self._player_sprite_scaled = None
+        self._player_sprite_failed = False
 
     def _get_window_size(self):
         try:
@@ -101,6 +107,43 @@ class Game():
             pygame.draw.line(background, color, (pos, 0), (pos, 1000), 1)
             pygame.draw.line(background, color, (0, pos), (1000, pos), 1)
         return background
+
+    def _get_player_sprite(self):
+        if self._player_sprite_failed:
+            return None
+        if self._player_sprite_scaled is not None:
+            return self._player_sprite_scaled
+
+        try:
+            self._player_sprite_source = load_image_surface(self.PLAYER_SPRITE_PATH)
+        except (OSError, pygame.error, ValueError):
+            self._player_sprite_failed = True
+            return None
+
+        width, height = self._player_sprite_source.get_size()
+        scale = self.PLAYER_SPRITE_HEIGHT / max(1, height)
+        self._player_sprite_scaled = pygame.transform.smoothscale(
+            self._player_sprite_source,
+            (max(1, int(width * scale)), self.PLAYER_SPRITE_HEIGHT),
+        )
+        return self._player_sprite_scaled
+
+    def _draw_player_sprite(self):
+        screen_pos = self.to_screen(self.player.pos2D)
+        sprite = self._get_player_sprite()
+
+        if sprite is None:
+            pygame.draw.circle(self.screen, self.player.color, screen_pos, self.player.radius)
+            pygame.draw.circle(self.screen, (255, 255, 255), screen_pos, self.player.radius, 2)
+            return
+
+        direction = pygame.Vector2(self.player.face_direction)
+        if direction.length_squared() == 0:
+            direction = pygame.Vector2(1, 0)
+        screen_direction = pygame.Vector2(direction.x, -direction.y)
+        angle = -screen_direction.as_polar()[1] + self.PLAYER_SPRITE_BASE_ANGLE
+        rotated = pygame.transform.rotozoom(sprite, angle, 1.0)
+        self.screen.blit(rotated, rotated.get_rect(center=(int(screen_pos.x), int(screen_pos.y))))
 
     def _blit_centered(self, surface, center_y):
         rect = surface.get_rect(center=(self.screen.get_rect().centerx, center_y))
@@ -269,12 +312,7 @@ class Game():
             if len(points) >= 2:
                 pygame.draw.lines(self.screen, (70, 70, 70), False, points, 2)
 
-        # Draw the Ball (Player)
-        # Using a simple circle for the "ball"
-        pygame.draw.circle(self.screen, self.player.color, self.to_screen(self.player.pos2D), self.player.radius)
-
-        # Add a little "glow" or detail
-        pygame.draw.circle(self.screen, (255, 255, 255), self.to_screen(self.player.pos2D), self.player.radius, 2)
+        self._draw_player_sprite()
 
         # --- 3. Draw Player Feedback Messages ---
         if self.player.weapon_error_timer > 0:

@@ -15,7 +15,7 @@ GRID_CONFIG = {
 COLOR_CONFIG = {
     "cooldown": (100, 180, 255),
     "reload": (255, 140, 40),
-    "scatter_angel": (255, 255, 0),
+    "scatter_angle": (255, 255, 0),
     "capacity": (100, 255, 100),
     "phy_damage": (255, 255, 255),
     "exp_damage": (255, 100, 0),
@@ -59,7 +59,7 @@ BULLET_CONFIG = {
             "radius": 2,
             "capacity_modifier": 20,
             "cooldown_modifier": -0.1,
-            "scatter_angel_modifier": 5,
+            "scatter_angle_modifier": 5,
             "info": "Deal physical damage with high capacity, low speed, low damage and narrow scatter angle",
             "draw_info": {
                 "circle": [{"radius": 2, "color": COLOR_CONFIG["normal_bullet"]}]
@@ -84,7 +84,7 @@ BULLET_CONFIG = {
             "radius": 4,
             "capacity_modifier": -15,
             "cooldown_modifier": 0.1,
-            "scatter_angel_modifier": -5,
+            "scatter_angle_modifier": -5,
             "info": "Deal physical damage with low capacity, high speed, high damage and wide scatter angle",
             "draw_info": {
                 "circle": [{"radius": 4, "color": COLOR_CONFIG["normal_bullet"]}]
@@ -146,7 +146,7 @@ BULLET_CONFIG = {
             "speed": 10,
             "burn_damage": 2,
             "radius": 2,
-            "scatter_angel_modifier": -10,
+            "scatter_angle_modifier": -10,
             "info": "Deals burn damage to enemies in a straight line.",
             "draw_info": {"line": [{"width": 2, "color": (150, 255, 120, 255)}]},
         },
@@ -174,166 +174,166 @@ BULLET_CONFIG = {
 }
 
 ATTRIBUTE_MODIFIER_CONFIG = {
-    0: [
-        "Add Cooldown I",
-        {"cooldown_modifier": 0.1, "info": "Add cooldown"},
-        {
-            "line": [
-                {
-                    "start_x": 0.50,
-                    "start_y": 0.25,
-                    "end_x": 0.50,
-                    "end_y": 0.75,
-                    "width": 0.05,
-                    "color": COLOR_CONFIG["cooldown"],
-                },
-                {
-                    "start_x": 0.40,
-                    "start_y": 0.35,
-                    "end_x": 0.50,
-                    "end_y": 0.25,
-                    "width": 0.05,
-                    "color": COLOR_CONFIG["cooldown"],
-                },
-                {
-                    "start_x": 0.60,
-                    "start_y": 0.35,
-                    "end_x": 0.50,
-                    "end_y": 0.25,
-                    "width": 0.05,
-                    "color": COLOR_CONFIG["cooldown"],
-                },
-            ],
-        },
-    ],
-    1: [
-        "Add Cooldown II",
-        {"cooldown_modifier": 0.2, "info": "Add cooldown"},
-        {
-            "line": [
-                {
-                    "start_x": 0.50,
-                    "start_y": 0.25,
-                    "end_x": 0.50,
-                    "end_y": 0.75,
-                    "width": 0.1,
-                    "color": COLOR_CONFIG["cooldown"],
-                },
-                {
-                    "start_x": 0.40,
-                    "start_y": 0.35,
-                    "end_x": 0.50,
-                    "end_y": 0.25,
-                    "width": 0.1,
-                    "color": COLOR_CONFIG["cooldown"],
-                },
-                {
-                    "start_x": 0.60,
-                    "start_y": 0.35,
-                    "end_x": 0.50,
-                    "end_y": 0.25,
-                    "width": 0.1,
-                    "color": COLOR_CONFIG["cooldown"],
-                },
-            ],
-        },
-    ],
-    2: [
-        "Add Cooldown III",
-        {"cooldown_modifier": 0.3, "info": "Add cooldown"},
-        {
-            "line": [
-                {
-                    "start_x": 0.50,
-                    "start_y": 0.25,
-                    "end_x": 0.50,
-                    "end_y": 0.75,
-                    "width": 0.15,
-                    "color": COLOR_CONFIG["cooldown"],
-                },
-                {
-                    "start_x": 0.40,
-                    "start_y": 0.35,
-                    "end_x": 0.50,
-                    "end_y": 0.25,
-                    "width": 0.15,
-                    "color": COLOR_CONFIG["cooldown"],
-                },
-                {
-                    "start_x": 0.60,
-                    "start_y": 0.35,
-                    "end_x": 0.50,
-                    "end_y": 0.25,
-                    "width": 0.15,
-                    "color": COLOR_CONFIG["cooldown"],
-                },
-            ],
-        },
-    ],
-    3: [
-        "Add Cooldown IV",
-        {"cooldown_modifier": 0.4, "info": "Add cooldown"},
-        {
-            "line": [
-                {
-                    "start_x": 0.50,
-                    "start_y": 0.25,
-                    "end_x": 0.50,
-                    "end_y": 0.75,
-                    "width": 0.2,
-                    "color": COLOR_CONFIG["cooldown"],
-                },
-                {
-                    "start_x": 0.40,
-                    "start_y": 0.35,
-                    "end_x": 0.50,
-                    "end_y": 0.25,
-                    "width": 0.2,
-                    "color": COLOR_CONFIG["cooldown"],
-                },
-                {
-                    "start_x": 0.60,
-                    "start_y": 0.35,
-                    "end_x": 0.50,
-                    "end_y": 0.25,
-                    "width": 0.2,
-                    "color": COLOR_CONFIG["cooldown"],
-                },
-            ],
-        },
-    ],
-    4: [
-        "Add Cooldown V",
-        {"cooldown_modifier": 0.5, "info": "Add cooldown"},
-        {
-            "line": [
-                {
-                    "start_x": 0.50,
-                    "start_y": 0.25,
-                    "end_x": 0.50,
-                    "end_y": 0.75,
-                    "width": 0.25,
-                    "color": COLOR_CONFIG["cooldown"],
-                },
-                {
-                    "start_x": 0.40,
-                    "start_y": 0.35,
-                    "end_x": 0.50,
-                    "end_y": 0.25,
-                    "width": 0.25,
-                    "color": COLOR_CONFIG["cooldown"],
-                },
-                {
-                    "start_x": 0.60,
-                    "start_y": 0.35,
-                    "end_x": 0.50,
-                    "end_y": 0.25,
-                    "width": 0.25,
-                    "color": COLOR_CONFIG["cooldown"],
-                },
-            ],
-        },
-    ],
+    # 0: [
+    #     "Add Cooldown I",
+    #     {"cooldown_modifier": 0.1, "info": "Add cooldown"},
+    #     {
+    #         "line": [
+    #             {
+    #                 "start_x": 0.50,
+    #                 "start_y": 0.25,
+    #                 "end_x": 0.50,
+    #                 "end_y": 0.75,
+    #                 "width": 0.05,
+    #                 "color": COLOR_CONFIG["cooldown"],
+    #             },
+    #             {
+    #                 "start_x": 0.40,
+    #                 "start_y": 0.35,
+    #                 "end_x": 0.50,
+    #                 "end_y": 0.25,
+    #                 "width": 0.05,
+    #                 "color": COLOR_CONFIG["cooldown"],
+    #             },
+    #             {
+    #                 "start_x": 0.60,
+    #                 "start_y": 0.35,
+    #                 "end_x": 0.50,
+    #                 "end_y": 0.25,
+    #                 "width": 0.05,
+    #                 "color": COLOR_CONFIG["cooldown"],
+    #             },
+    #         ],
+    #     },
+    # ],
+    # 1: [
+    #     "Add Cooldown II",
+    #     {"cooldown_modifier": 0.2, "info": "Add cooldown"},
+    #     {
+    #         "line": [
+    #             {
+    #                 "start_x": 0.50,
+    #                 "start_y": 0.25,
+    #                 "end_x": 0.50,
+    #                 "end_y": 0.75,
+    #                 "width": 0.1,
+    #                 "color": COLOR_CONFIG["cooldown"],
+    #             },
+    #             {
+    #                 "start_x": 0.40,
+    #                 "start_y": 0.35,
+    #                 "end_x": 0.50,
+    #                 "end_y": 0.25,
+    #                 "width": 0.1,
+    #                 "color": COLOR_CONFIG["cooldown"],
+    #             },
+    #             {
+    #                 "start_x": 0.60,
+    #                 "start_y": 0.35,
+    #                 "end_x": 0.50,
+    #                 "end_y": 0.25,
+    #                 "width": 0.1,
+    #                 "color": COLOR_CONFIG["cooldown"],
+    #             },
+    #         ],
+    #     },
+    # ],
+    # 2: [
+    #     "Add Cooldown III",
+    #     {"cooldown_modifier": 0.3, "info": "Add cooldown"},
+    #     {
+    #         "line": [
+    #             {
+    #                 "start_x": 0.50,
+    #                 "start_y": 0.25,
+    #                 "end_x": 0.50,
+    #                 "end_y": 0.75,
+    #                 "width": 0.15,
+    #                 "color": COLOR_CONFIG["cooldown"],
+    #             },
+    #             {
+    #                 "start_x": 0.40,
+    #                 "start_y": 0.35,
+    #                 "end_x": 0.50,
+    #                 "end_y": 0.25,
+    #                 "width": 0.15,
+    #                 "color": COLOR_CONFIG["cooldown"],
+    #             },
+    #             {
+    #                 "start_x": 0.60,
+    #                 "start_y": 0.35,
+    #                 "end_x": 0.50,
+    #                 "end_y": 0.25,
+    #                 "width": 0.15,
+    #                 "color": COLOR_CONFIG["cooldown"],
+    #             },
+    #         ],
+    #     },
+    # ],
+    # 3: [
+    #     "Add Cooldown IV",
+    #     {"cooldown_modifier": 0.4, "info": "Add cooldown"},
+    #     {
+    #         "line": [
+    #             {
+    #                 "start_x": 0.50,
+    #                 "start_y": 0.25,
+    #                 "end_x": 0.50,
+    #                 "end_y": 0.75,
+    #                 "width": 0.2,
+    #                 "color": COLOR_CONFIG["cooldown"],
+    #             },
+    #             {
+    #                 "start_x": 0.40,
+    #                 "start_y": 0.35,
+    #                 "end_x": 0.50,
+    #                 "end_y": 0.25,
+    #                 "width": 0.2,
+    #                 "color": COLOR_CONFIG["cooldown"],
+    #             },
+    #             {
+    #                 "start_x": 0.60,
+    #                 "start_y": 0.35,
+    #                 "end_x": 0.50,
+    #                 "end_y": 0.25,
+    #                 "width": 0.2,
+    #                 "color": COLOR_CONFIG["cooldown"],
+    #             },
+    #         ],
+    #     },
+    # ],
+    # 4: [
+    #     "Add Cooldown V",
+    #     {"cooldown_modifier": 0.5, "info": "Add cooldown"},
+    #     {
+    #         "line": [
+    #             {
+    #                 "start_x": 0.50,
+    #                 "start_y": 0.25,
+    #                 "end_x": 0.50,
+    #                 "end_y": 0.75,
+    #                 "width": 0.25,
+    #                 "color": COLOR_CONFIG["cooldown"],
+    #             },
+    #             {
+    #                 "start_x": 0.40,
+    #                 "start_y": 0.35,
+    #                 "end_x": 0.50,
+    #                 "end_y": 0.25,
+    #                 "width": 0.25,
+    #                 "color": COLOR_CONFIG["cooldown"],
+    #             },
+    #             {
+    #                 "start_x": 0.60,
+    #                 "start_y": 0.35,
+    #                 "end_x": 0.50,
+    #                 "end_y": 0.25,
+    #                 "width": 0.25,
+    #                 "color": COLOR_CONFIG["cooldown"],
+    #             },
+    #         ],
+    #     },
+    # ],
     5: [
         "Sub Cooldown I",
         {"cooldown_modifier": -0.1, "info": "Subtract cooldown"},
@@ -494,166 +494,166 @@ ATTRIBUTE_MODIFIER_CONFIG = {
             ],
         },
     ],
-    10: [
-        "Add Reload I",
-        {"reload_modifier": 0.2, "info": "Add reload"},
-        {
-            "line": [
-                {
-                    "start_x": 0.50,
-                    "start_y": 0.25,
-                    "end_x": 0.50,
-                    "end_y": 0.75,
-                    "width": 0.05,
-                    "color": COLOR_CONFIG["reload"],
-                },
-                {
-                    "start_x": 0.40,
-                    "start_y": 0.35,
-                    "end_x": 0.50,
-                    "end_y": 0.25,
-                    "width": 0.05,
-                    "color": COLOR_CONFIG["reload"],
-                },
-                {
-                    "start_x": 0.60,
-                    "start_y": 0.35,
-                    "end_x": 0.50,
-                    "end_y": 0.25,
-                    "width": 0.05,
-                    "color": COLOR_CONFIG["reload"],
-                },
-            ],
-        },
-    ],
-    11: [
-        "Add Reload II",
-        {"reload_modifier": 0.5, "info": "Add reload"},
-        {
-            "line": [
-                {
-                    "start_x": 0.50,
-                    "start_y": 0.25,
-                    "end_x": 0.50,
-                    "end_y": 0.75,
-                    "width": 0.1,
-                    "color": COLOR_CONFIG["reload"],
-                },
-                {
-                    "start_x": 0.40,
-                    "start_y": 0.35,
-                    "end_x": 0.50,
-                    "end_y": 0.25,
-                    "width": 0.1,
-                    "color": COLOR_CONFIG["reload"],
-                },
-                {
-                    "start_x": 0.60,
-                    "start_y": 0.35,
-                    "end_x": 0.50,
-                    "end_y": 0.25,
-                    "width": 0.1,
-                    "color": COLOR_CONFIG["reload"],
-                },
-            ],
-        },
-    ],
-    12: [
-        "Add Reload III",
-        {"reload_modifier": 1.0, "info": "Add reload"},
-        {
-            "line": [
-                {
-                    "start_x": 0.50,
-                    "start_y": 0.25,
-                    "end_x": 0.50,
-                    "end_y": 0.75,
-                    "width": 0.15,
-                    "color": COLOR_CONFIG["reload"],
-                },
-                {
-                    "start_x": 0.40,
-                    "start_y": 0.35,
-                    "end_x": 0.50,
-                    "end_y": 0.25,
-                    "width": 0.15,
-                    "color": COLOR_CONFIG["reload"],
-                },
-                {
-                    "start_x": 0.60,
-                    "start_y": 0.35,
-                    "end_x": 0.50,
-                    "end_y": 0.25,
-                    "width": 0.15,
-                    "color": COLOR_CONFIG["reload"],
-                },
-            ],
-        },
-    ],
-    13: [
-        "Add Reload IV",
-        {"reload_modifier": 1.5, "info": "Add reload"},
-        {
-            "line": [
-                {
-                    "start_x": 0.50,
-                    "start_y": 0.25,
-                    "end_x": 0.50,
-                    "end_y": 0.75,
-                    "width": 0.2,
-                    "color": COLOR_CONFIG["reload"],
-                },
-                {
-                    "start_x": 0.40,
-                    "start_y": 0.35,
-                    "end_x": 0.50,
-                    "end_y": 0.25,
-                    "width": 0.2,
-                    "color": COLOR_CONFIG["reload"],
-                },
-                {
-                    "start_x": 0.60,
-                    "start_y": 0.35,
-                    "end_x": 0.50,
-                    "end_y": 0.25,
-                    "width": 0.2,
-                    "color": COLOR_CONFIG["reload"],
-                },
-            ],
-        },
-    ],
-    14: [
-        "Add Reload V",
-        {"reload_modifier": 2.5, "info": "Add reload"},
-        {
-            "line": [
-                {
-                    "start_x": 0.50,
-                    "start_y": 0.25,
-                    "end_x": 0.50,
-                    "end_y": 0.75,
-                    "width": 0.25,
-                    "color": COLOR_CONFIG["reload"],
-                },
-                {
-                    "start_x": 0.40,
-                    "start_y": 0.35,
-                    "end_x": 0.50,
-                    "end_y": 0.25,
-                    "width": 0.25,
-                    "color": COLOR_CONFIG["reload"],
-                },
-                {
-                    "start_x": 0.60,
-                    "start_y": 0.35,
-                    "end_x": 0.50,
-                    "end_y": 0.25,
-                    "width": 0.25,
-                    "color": COLOR_CONFIG["reload"],
-                },
-            ],
-        },
-    ],
+    # 10: [
+    #     "Add Reload I",
+    #     {"reload_modifier": 0.2, "info": "Add reload"},
+    #     {
+    #         "line": [
+    #             {
+    #                 "start_x": 0.50,
+    #                 "start_y": 0.25,
+    #                 "end_x": 0.50,
+    #                 "end_y": 0.75,
+    #                 "width": 0.05,
+    #                 "color": COLOR_CONFIG["reload"],
+    #             },
+    #             {
+    #                 "start_x": 0.40,
+    #                 "start_y": 0.35,
+    #                 "end_x": 0.50,
+    #                 "end_y": 0.25,
+    #                 "width": 0.05,
+    #                 "color": COLOR_CONFIG["reload"],
+    #             },
+    #             {
+    #                 "start_x": 0.60,
+    #                 "start_y": 0.35,
+    #                 "end_x": 0.50,
+    #                 "end_y": 0.25,
+    #                 "width": 0.05,
+    #                 "color": COLOR_CONFIG["reload"],
+    #             },
+    #         ],
+    #     },
+    # ],
+    # 11: [
+    #     "Add Reload II",
+    #     {"reload_modifier": 0.5, "info": "Add reload"},
+    #     {
+    #         "line": [
+    #             {
+    #                 "start_x": 0.50,
+    #                 "start_y": 0.25,
+    #                 "end_x": 0.50,
+    #                 "end_y": 0.75,
+    #                 "width": 0.1,
+    #                 "color": COLOR_CONFIG["reload"],
+    #             },
+    #             {
+    #                 "start_x": 0.40,
+    #                 "start_y": 0.35,
+    #                 "end_x": 0.50,
+    #                 "end_y": 0.25,
+    #                 "width": 0.1,
+    #                 "color": COLOR_CONFIG["reload"],
+    #             },
+    #             {
+    #                 "start_x": 0.60,
+    #                 "start_y": 0.35,
+    #                 "end_x": 0.50,
+    #                 "end_y": 0.25,
+    #                 "width": 0.1,
+    #                 "color": COLOR_CONFIG["reload"],
+    #             },
+    #         ],
+    #     },
+    # ],
+    # 12: [
+    #     "Add Reload III",
+    #     {"reload_modifier": 1.0, "info": "Add reload"},
+    #     {
+    #         "line": [
+    #             {
+    #                 "start_x": 0.50,
+    #                 "start_y": 0.25,
+    #                 "end_x": 0.50,
+    #                 "end_y": 0.75,
+    #                 "width": 0.15,
+    #                 "color": COLOR_CONFIG["reload"],
+    #             },
+    #             {
+    #                 "start_x": 0.40,
+    #                 "start_y": 0.35,
+    #                 "end_x": 0.50,
+    #                 "end_y": 0.25,
+    #                 "width": 0.15,
+    #                 "color": COLOR_CONFIG["reload"],
+    #             },
+    #             {
+    #                 "start_x": 0.60,
+    #                 "start_y": 0.35,
+    #                 "end_x": 0.50,
+    #                 "end_y": 0.25,
+    #                 "width": 0.15,
+    #                 "color": COLOR_CONFIG["reload"],
+    #             },
+    #         ],
+    #     },
+    # ],
+    # 13: [
+    #     "Add Reload IV",
+    #     {"reload_modifier": 1.5, "info": "Add reload"},
+    #     {
+    #         "line": [
+    #             {
+    #                 "start_x": 0.50,
+    #                 "start_y": 0.25,
+    #                 "end_x": 0.50,
+    #                 "end_y": 0.75,
+    #                 "width": 0.2,
+    #                 "color": COLOR_CONFIG["reload"],
+    #             },
+    #             {
+    #                 "start_x": 0.40,
+    #                 "start_y": 0.35,
+    #                 "end_x": 0.50,
+    #                 "end_y": 0.25,
+    #                 "width": 0.2,
+    #                 "color": COLOR_CONFIG["reload"],
+    #             },
+    #             {
+    #                 "start_x": 0.60,
+    #                 "start_y": 0.35,
+    #                 "end_x": 0.50,
+    #                 "end_y": 0.25,
+    #                 "width": 0.2,
+    #                 "color": COLOR_CONFIG["reload"],
+    #             },
+    #         ],
+    #     },
+    # ],
+    # 14: [
+    #     "Add Reload V",
+    #     {"reload_modifier": 2.5, "info": "Add reload"},
+    #     {
+    #         "line": [
+    #             {
+    #                 "start_x": 0.50,
+    #                 "start_y": 0.25,
+    #                 "end_x": 0.50,
+    #                 "end_y": 0.75,
+    #                 "width": 0.25,
+    #                 "color": COLOR_CONFIG["reload"],
+    #             },
+    #             {
+    #                 "start_x": 0.40,
+    #                 "start_y": 0.35,
+    #                 "end_x": 0.50,
+    #                 "end_y": 0.25,
+    #                 "width": 0.25,
+    #                 "color": COLOR_CONFIG["reload"],
+    #             },
+    #             {
+    #                 "start_x": 0.60,
+    #                 "start_y": 0.35,
+    #                 "end_x": 0.50,
+    #                 "end_y": 0.25,
+    #                 "width": 0.25,
+    #                 "color": COLOR_CONFIG["reload"],
+    #             },
+    #         ],
+    #     },
+    # ],
     15: [
         "Sub Reload I",
         {"reload_modifier": -0.2, "info": "Subtract reload"},
@@ -814,169 +814,169 @@ ATTRIBUTE_MODIFIER_CONFIG = {
             ],
         },
     ],
-    20: [
-        "Add Scatter Angel I",
-        {"scatter_angel_modifier": 5, "info": "Add scatter angel"},
-        {
-            "line": [
-                {
-                    "start_x": 0.50,
-                    "start_y": 0.25,
-                    "end_x": 0.50,
-                    "end_y": 0.75,
-                    "width": 0.05,
-                    "color": COLOR_CONFIG["scatter_angel"],
-                },
-                {
-                    "start_x": 0.40,
-                    "start_y": 0.35,
-                    "end_x": 0.50,
-                    "end_y": 0.25,
-                    "width": 0.05,
-                    "color": COLOR_CONFIG["scatter_angel"],
-                },
-                {
-                    "start_x": 0.60,
-                    "start_y": 0.35,
-                    "end_x": 0.50,
-                    "end_y": 0.25,
-                    "width": 0.05,
-                    "color": COLOR_CONFIG["scatter_angel"],
-                },
-            ],
-        },
-    ],
-    21: [
-        "Add Scatter Angel II",
-        {"scatter_angel_modifier": 10, "info": "Add scatter angel"},
-        {
-            "line": [
-                {
-                    "start_x": 0.50,
-                    "start_y": 0.25,
-                    "end_x": 0.50,
-                    "end_y": 0.75,
-                    "width": 0.1,
-                    "color": COLOR_CONFIG["scatter_angel"],
-                },
-                {
-                    "start_x": 0.40,
-                    "start_y": 0.35,
-                    "end_x": 0.50,
-                    "end_y": 0.25,
-                    "width": 0.1,
-                    "color": COLOR_CONFIG["scatter_angel"],
-                },
-                {
-                    "start_x": 0.60,
-                    "start_y": 0.35,
-                    "end_x": 0.50,
-                    "end_y": 0.25,
-                    "width": 0.1,
-                    "color": COLOR_CONFIG["scatter_angel"],
-                },
-            ],
-        },
-    ],
-    22: [
-        "Add Scatter Angel III",
-        {"scatter_angel_modifier": 15, "info": "Add scatter angel"},
-        {
-            "line": [
-                {
-                    "start_x": 0.50,
-                    "start_y": 0.25,
-                    "end_x": 0.50,
-                    "end_y": 0.75,
-                    "width": 0.15,
-                    "color": COLOR_CONFIG["scatter_angel"],
-                },
-                {
-                    "start_x": 0.40,
-                    "start_y": 0.35,
-                    "end_x": 0.50,
-                    "end_y": 0.25,
-                    "width": 0.15,
-                    "color": COLOR_CONFIG["scatter_angel"],
-                },
-                {
-                    "start_x": 0.60,
-                    "start_y": 0.35,
-                    "end_x": 0.50,
-                    "end_y": 0.25,
-                    "width": 0.15,
-                    "color": COLOR_CONFIG["scatter_angel"],
-                },
-            ],
-        },
-    ],
-    23: [
-        "Add Scatter Angel IV",
-        {"scatter_angel_modifier": 20, "info": "Add scatter angel"},
-        {
-            "line": [
-                {
-                    "start_x": 0.50,
-                    "start_y": 0.25,
-                    "end_x": 0.50,
-                    "end_y": 0.75,
-                    "width": 0.2,
-                    "color": COLOR_CONFIG["scatter_angel"],
-                },
-                {
-                    "start_x": 0.40,
-                    "start_y": 0.35,
-                    "end_x": 0.50,
-                    "end_y": 0.25,
-                    "width": 0.2,
-                    "color": COLOR_CONFIG["scatter_angel"],
-                },
-                {
-                    "start_x": 0.60,
-                    "start_y": 0.35,
-                    "end_x": 0.50,
-                    "end_y": 0.25,
-                    "width": 0.2,
-                    "color": COLOR_CONFIG["scatter_angel"],
-                },
-            ],
-        },
-    ],
-    24: [
-        "Add Scatter Angel V",
-        {"scatter_angel_modifier": 30, "info": "Add scatter angel"},
-        {
-            "line": [
-                {
-                    "start_x": 0.50,
-                    "start_y": 0.25,
-                    "end_x": 0.50,
-                    "end_y": 0.75,
-                    "width": 0.25,
-                    "color": COLOR_CONFIG["scatter_angel"],
-                },
-                {
-                    "start_x": 0.40,
-                    "start_y": 0.35,
-                    "end_x": 0.50,
-                    "end_y": 0.25,
-                    "width": 0.25,
-                    "color": COLOR_CONFIG["scatter_angel"],
-                },
-                {
-                    "start_x": 0.60,
-                    "start_y": 0.35,
-                    "end_x": 0.50,
-                    "end_y": 0.25,
-                    "width": 0.25,
-                    "color": COLOR_CONFIG["scatter_angel"],
-                },
-            ],
-        },
-    ],
+    # 20: [
+    #     "Add Scatter Angle I",
+    #     {"scatter_angle_modifier": 5, "info": "Add scatter angle"},
+    #     {
+    #         "line": [
+    #             {
+    #                 "start_x": 0.50,
+    #                 "start_y": 0.25,
+    #                 "end_x": 0.50,
+    #                 "end_y": 0.75,
+    #                 "width": 0.05,
+    #                 "color": COLOR_CONFIG["scatter_angle"],
+    #             },
+    #             {
+    #                 "start_x": 0.40,
+    #                 "start_y": 0.35,
+    #                 "end_x": 0.50,
+    #                 "end_y": 0.25,
+    #                 "width": 0.05,
+    #                 "color": COLOR_CONFIG["scatter_angle"],
+    #             },
+    #             {
+    #                 "start_x": 0.60,
+    #                 "start_y": 0.35,
+    #                 "end_x": 0.50,
+    #                 "end_y": 0.25,
+    #                 "width": 0.05,
+    #                 "color": COLOR_CONFIG["scatter_angle"],
+    #             },
+    #         ],
+    #     },
+    # ],
+    # 21: [
+    #     "Add Scatter Angle II",
+    #     {"scatter_angle_modifier": 10, "info": "Add scatter angle"},
+    #     {
+    #         "line": [
+    #             {
+    #                 "start_x": 0.50,
+    #                 "start_y": 0.25,
+    #                 "end_x": 0.50,
+    #                 "end_y": 0.75,
+    #                 "width": 0.1,
+    #                 "color": COLOR_CONFIG["scatter_angle"],
+    #             },
+    #             {
+    #                 "start_x": 0.40,
+    #                 "start_y": 0.35,
+    #                 "end_x": 0.50,
+    #                 "end_y": 0.25,
+    #                 "width": 0.1,
+    #                 "color": COLOR_CONFIG["scatter_angle"],
+    #             },
+    #             {
+    #                 "start_x": 0.60,
+    #                 "start_y": 0.35,
+    #                 "end_x": 0.50,
+    #                 "end_y": 0.25,
+    #                 "width": 0.1,
+    #                 "color": COLOR_CONFIG["scatter_angle"],
+    #             },
+    #         ],
+    #     },
+    # ],
+    # 22: [
+    #     "Add Scatter Angle III",
+    #     {"scatter_angle_modifier": 15, "info": "Add scatter angle"},
+    #     {
+    #         "line": [
+    #             {
+    #                 "start_x": 0.50,
+    #                 "start_y": 0.25,
+    #                 "end_x": 0.50,
+    #                 "end_y": 0.75,
+    #                 "width": 0.15,
+    #                 "color": COLOR_CONFIG["scatter_angle"],
+    #             },
+    #             {
+    #                 "start_x": 0.40,
+    #                 "start_y": 0.35,
+    #                 "end_x": 0.50,
+    #                 "end_y": 0.25,
+    #                 "width": 0.15,
+    #                 "color": COLOR_CONFIG["scatter_angle"],
+    #             },
+    #             {
+    #                 "start_x": 0.60,
+    #                 "start_y": 0.35,
+    #                 "end_x": 0.50,
+    #                 "end_y": 0.25,
+    #                 "width": 0.15,
+    #                 "color": COLOR_CONFIG["scatter_angle"],
+    #             },
+    #         ],
+    #     },
+    # ],
+    # 23: [
+    #     "Add Scatter Angle IV",
+    #     {"scatter_angle_modifier": 20, "info": "Add scatter angle"},
+    #     {
+    #         "line": [
+    #             {
+    #                 "start_x": 0.50,
+    #                 "start_y": 0.25,
+    #                 "end_x": 0.50,
+    #                 "end_y": 0.75,
+    #                 "width": 0.2,
+    #                 "color": COLOR_CONFIG["scatter_angle"],
+    #             },
+    #             {
+    #                 "start_x": 0.40,
+    #                 "start_y": 0.35,
+    #                 "end_x": 0.50,
+    #                 "end_y": 0.25,
+    #                 "width": 0.2,
+    #                 "color": COLOR_CONFIG["scatter_angle"],
+    #             },
+    #             {
+    #                 "start_x": 0.60,
+    #                 "start_y": 0.35,
+    #                 "end_x": 0.50,
+    #                 "end_y": 0.25,
+    #                 "width": 0.2,
+    #                 "color": COLOR_CONFIG["scatter_angle"],
+    #             },
+    #         ],
+    #     },
+    # ],
+    # 24: [
+    #     "Add Scatter Angle V",
+    #     {"scatter_angle_modifier": 30, "info": "Add scatter angle"},
+    #     {
+    #         "line": [
+    #             {
+    #                 "start_x": 0.50,
+    #                 "start_y": 0.25,
+    #                 "end_x": 0.50,
+    #                 "end_y": 0.75,
+    #                 "width": 0.25,
+    #                 "color": COLOR_CONFIG["scatter_angle"],
+    #             },
+    #             {
+    #                 "start_x": 0.40,
+    #                 "start_y": 0.35,
+    #                 "end_x": 0.50,
+    #                 "end_y": 0.25,
+    #                 "width": 0.25,
+    #                 "color": COLOR_CONFIG["scatter_angle"],
+    #             },
+    #             {
+    #                 "start_x": 0.60,
+    #                 "start_y": 0.35,
+    #                 "end_x": 0.50,
+    #                 "end_y": 0.25,
+    #                 "width": 0.25,
+    #                 "color": COLOR_CONFIG["scatter_angle"],
+    #             },
+    #         ],
+    #     },
+    # ],
     25: [
-        "Sub Scatter Angel I",
-        {"scatter_angel_modifier": -5, "info": "Subtract scatter angel"},
+        "Sub Scatter Angle I",
+        {"scatter_angle_modifier": -5, "info": "Subtract scatter angle"},
         {
             "line": [
                 {
@@ -985,7 +985,7 @@ ATTRIBUTE_MODIFIER_CONFIG = {
                     "end_x": 0.50,
                     "end_y": 0.75,
                     "width": 0.05,
-                    "color": COLOR_CONFIG["scatter_angel"],
+                    "color": COLOR_CONFIG["scatter_angle"],
                 },
                 {
                     "start_x": 0.40,
@@ -993,7 +993,7 @@ ATTRIBUTE_MODIFIER_CONFIG = {
                     "end_x": 0.50,
                     "end_y": 0.75,
                     "width": 0.05,
-                    "color": COLOR_CONFIG["scatter_angel"],
+                    "color": COLOR_CONFIG["scatter_angle"],
                 },
                 {
                     "start_x": 0.60,
@@ -1001,14 +1001,14 @@ ATTRIBUTE_MODIFIER_CONFIG = {
                     "end_x": 0.50,
                     "end_y": 0.75,
                     "width": 0.05,
-                    "color": COLOR_CONFIG["scatter_angel"],
+                    "color": COLOR_CONFIG["scatter_angle"],
                 },
             ],
         },
     ],
     26: [
-        "Sub Scatter Angel II",
-        {"scatter_angel_modifier": -10, "info": "Subtract scatter angel"},
+        "Sub Scatter Angle II",
+        {"scatter_angle_modifier": -10, "info": "Subtract scatter angle"},
         {
             "line": [
                 {
@@ -1017,7 +1017,7 @@ ATTRIBUTE_MODIFIER_CONFIG = {
                     "end_x": 0.50,
                     "end_y": 0.75,
                     "width": 0.1,
-                    "color": COLOR_CONFIG["scatter_angel"],
+                    "color": COLOR_CONFIG["scatter_angle"],
                 },
                 {
                     "start_x": 0.40,
@@ -1025,7 +1025,7 @@ ATTRIBUTE_MODIFIER_CONFIG = {
                     "end_x": 0.50,
                     "end_y": 0.75,
                     "width": 0.1,
-                    "color": COLOR_CONFIG["scatter_angel"],
+                    "color": COLOR_CONFIG["scatter_angle"],
                 },
                 {
                     "start_x": 0.60,
@@ -1033,14 +1033,14 @@ ATTRIBUTE_MODIFIER_CONFIG = {
                     "end_x": 0.50,
                     "end_y": 0.75,
                     "width": 0.1,
-                    "color": COLOR_CONFIG["scatter_angel"],
+                    "color": COLOR_CONFIG["scatter_angle"],
                 },
             ],
         },
     ],
     27: [
-        "Sub Scatter Angel III",
-        {"scatter_angel_modifier": -15, "info": "Subtract scatter angel"},
+        "Sub Scatter Angle III",
+        {"scatter_angle_modifier": -15, "info": "Subtract scatter angle"},
         {
             "line": [
                 {
@@ -1049,7 +1049,7 @@ ATTRIBUTE_MODIFIER_CONFIG = {
                     "end_x": 0.50,
                     "end_y": 0.75,
                     "width": 0.15,
-                    "color": COLOR_CONFIG["scatter_angel"],
+                    "color": COLOR_CONFIG["scatter_angle"],
                 },
                 {
                     "start_x": 0.40,
@@ -1057,7 +1057,7 @@ ATTRIBUTE_MODIFIER_CONFIG = {
                     "end_x": 0.50,
                     "end_y": 0.75,
                     "width": 0.15,
-                    "color": COLOR_CONFIG["scatter_angel"],
+                    "color": COLOR_CONFIG["scatter_angle"],
                 },
                 {
                     "start_x": 0.60,
@@ -1065,14 +1065,14 @@ ATTRIBUTE_MODIFIER_CONFIG = {
                     "end_x": 0.50,
                     "end_y": 0.75,
                     "width": 0.15,
-                    "color": COLOR_CONFIG["scatter_angel"],
+                    "color": COLOR_CONFIG["scatter_angle"],
                 },
             ],
         },
     ],
     28: [
-        "Sub Scatter Angel IV",
-        {"scatter_angel_modifier": -20, "info": "Subtract scatter angel"},
+        "Sub Scatter Angle IV",
+        {"scatter_angle_modifier": -20, "info": "Subtract scatter angle"},
         {
             "line": [
                 {
@@ -1081,7 +1081,7 @@ ATTRIBUTE_MODIFIER_CONFIG = {
                     "end_x": 0.50,
                     "end_y": 0.75,
                     "width": 0.2,
-                    "color": COLOR_CONFIG["scatter_angel"],
+                    "color": COLOR_CONFIG["scatter_angle"],
                 },
                 {
                     "start_x": 0.40,
@@ -1089,7 +1089,7 @@ ATTRIBUTE_MODIFIER_CONFIG = {
                     "end_x": 0.50,
                     "end_y": 0.75,
                     "width": 0.2,
-                    "color": COLOR_CONFIG["scatter_angel"],
+                    "color": COLOR_CONFIG["scatter_angle"],
                 },
                 {
                     "start_x": 0.60,
@@ -1097,14 +1097,14 @@ ATTRIBUTE_MODIFIER_CONFIG = {
                     "end_x": 0.50,
                     "end_y": 0.75,
                     "width": 0.2,
-                    "color": COLOR_CONFIG["scatter_angel"],
+                    "color": COLOR_CONFIG["scatter_angle"],
                 },
             ],
         },
     ],
     29: [
-        "Sub Scatter Angel V",
-        {"scatter_angel_modifier": -30, "info": "Subtract scatter angel"},
+        "Sub Scatter Angle V",
+        {"scatter_angle_modifier": -30, "info": "Subtract scatter angle"},
         {
             "line": [
                 {
@@ -1113,7 +1113,7 @@ ATTRIBUTE_MODIFIER_CONFIG = {
                     "end_x": 0.50,
                     "end_y": 0.75,
                     "width": 0.25,
-                    "color": COLOR_CONFIG["scatter_angel"],
+                    "color": COLOR_CONFIG["scatter_angle"],
                 },
                 {
                     "start_x": 0.40,
@@ -1121,7 +1121,7 @@ ATTRIBUTE_MODIFIER_CONFIG = {
                     "end_x": 0.50,
                     "end_y": 0.75,
                     "width": 0.25,
-                    "color": COLOR_CONFIG["scatter_angel"],
+                    "color": COLOR_CONFIG["scatter_angle"],
                 },
                 {
                     "start_x": 0.60,
@@ -1129,7 +1129,7 @@ ATTRIBUTE_MODIFIER_CONFIG = {
                     "end_x": 0.50,
                     "end_y": 0.75,
                     "width": 0.25,
-                    "color": COLOR_CONFIG["scatter_angel"],
+                    "color": COLOR_CONFIG["scatter_angle"],
                 },
             ],
         },
@@ -1294,166 +1294,166 @@ ATTRIBUTE_MODIFIER_CONFIG = {
             ],
         },
     ],
-    35: [
-        "Sub Capacity I",
-        {"capacity_modifier": -5, "info": "Subtract capacity"},
-        {
-            "line": [
-                {
-                    "start_x": 0.50,
-                    "start_y": 0.25,
-                    "end_x": 0.50,
-                    "end_y": 0.75,
-                    "width": 0.05,
-                    "color": COLOR_CONFIG["capacity"],
-                },
-                {
-                    "start_x": 0.40,
-                    "start_y": 0.65,
-                    "end_x": 0.50,
-                    "end_y": 0.75,
-                    "width": 0.05,
-                    "color": COLOR_CONFIG["capacity"],
-                },
-                {
-                    "start_x": 0.60,
-                    "start_y": 0.65,
-                    "end_x": 0.50,
-                    "end_y": 0.75,
-                    "width": 0.05,
-                    "color": COLOR_CONFIG["capacity"],
-                },
-            ],
-        },
-    ],
-    36: [
-        "Sub Capacity II",
-        {"capacity_modifier": -10, "info": "Subtract capacity"},
-        {
-            "line": [
-                {
-                    "start_x": 0.50,
-                    "start_y": 0.25,
-                    "end_x": 0.50,
-                    "end_y": 0.75,
-                    "width": 0.1,
-                    "color": COLOR_CONFIG["capacity"],
-                },
-                {
-                    "start_x": 0.40,
-                    "start_y": 0.65,
-                    "end_x": 0.50,
-                    "end_y": 0.75,
-                    "width": 0.1,
-                    "color": COLOR_CONFIG["capacity"],
-                },
-                {
-                    "start_x": 0.60,
-                    "start_y": 0.65,
-                    "end_x": 0.50,
-                    "end_y": 0.75,
-                    "width": 0.1,
-                    "color": COLOR_CONFIG["capacity"],
-                },
-            ],
-        },
-    ],
-    37: [
-        "Sub Capacity III",
-        {"capacity_modifier": -15, "info": "Subtract capacity"},
-        {
-            "line": [
-                {
-                    "start_x": 0.50,
-                    "start_y": 0.25,
-                    "end_x": 0.50,
-                    "end_y": 0.75,
-                    "width": 0.15,
-                    "color": COLOR_CONFIG["capacity"],
-                },
-                {
-                    "start_x": 0.40,
-                    "start_y": 0.65,
-                    "end_x": 0.50,
-                    "end_y": 0.75,
-                    "width": 0.15,
-                    "color": COLOR_CONFIG["capacity"],
-                },
-                {
-                    "start_x": 0.60,
-                    "start_y": 0.65,
-                    "end_x": 0.50,
-                    "end_y": 0.75,
-                    "width": 0.15,
-                    "color": COLOR_CONFIG["capacity"],
-                },
-            ],
-        },
-    ],
-    38: [
-        "Sub Capacity IV",
-        {"capacity_modifier": -20, "info": "Subtract capacity"},
-        {
-            "line": [
-                {
-                    "start_x": 0.50,
-                    "start_y": 0.25,
-                    "end_x": 0.50,
-                    "end_y": 0.75,
-                    "width": 0.2,
-                    "color": COLOR_CONFIG["capacity"],
-                },
-                {
-                    "start_x": 0.40,
-                    "start_y": 0.65,
-                    "end_x": 0.50,
-                    "end_y": 0.75,
-                    "width": 0.2,
-                    "color": COLOR_CONFIG["capacity"],
-                },
-                {
-                    "start_x": 0.60,
-                    "start_y": 0.65,
-                    "end_x": 0.50,
-                    "end_y": 0.75,
-                    "width": 0.2,
-                    "color": COLOR_CONFIG["capacity"],
-                },
-            ],
-        },
-    ],
-    39: [
-        "Sub Capacity V",
-        {"capacity_modifier": -30, "info": "Subtract capacity"},
-        {
-            "line": [
-                {
-                    "start_x": 0.50,
-                    "start_y": 0.25,
-                    "end_x": 0.50,
-                    "end_y": 0.75,
-                    "width": 0.25,
-                    "color": COLOR_CONFIG["capacity"],
-                },
-                {
-                    "start_x": 0.40,
-                    "start_y": 0.65,
-                    "end_x": 0.50,
-                    "end_y": 0.75,
-                    "width": 0.25,
-                    "color": COLOR_CONFIG["capacity"],
-                },
-                {
-                    "start_x": 0.60,
-                    "start_y": 0.65,
-                    "end_x": 0.50,
-                    "end_y": 0.75,
-                    "width": 0.25,
-                    "color": COLOR_CONFIG["capacity"],
-                },
-            ],
-        },
-    ],
+    # 35: [
+    #     "Sub Capacity I",
+    #     {"capacity_modifier": -5, "info": "Subtract capacity"},
+    #     {
+    #         "line": [
+    #             {
+    #                 "start_x": 0.50,
+    #                 "start_y": 0.25,
+    #                 "end_x": 0.50,
+    #                 "end_y": 0.75,
+    #                 "width": 0.05,
+    #                 "color": COLOR_CONFIG["capacity"],
+    #             },
+    #             {
+    #                 "start_x": 0.40,
+    #                 "start_y": 0.65,
+    #                 "end_x": 0.50,
+    #                 "end_y": 0.75,
+    #                 "width": 0.05,
+    #                 "color": COLOR_CONFIG["capacity"],
+    #             },
+    #             {
+    #                 "start_x": 0.60,
+    #                 "start_y": 0.65,
+    #                 "end_x": 0.50,
+    #                 "end_y": 0.75,
+    #                 "width": 0.05,
+    #                 "color": COLOR_CONFIG["capacity"],
+    #             },
+    #         ],
+    #     },
+    # ],
+    # 36: [
+    #     "Sub Capacity II",
+    #     {"capacity_modifier": -10, "info": "Subtract capacity"},
+    #     {
+    #         "line": [
+    #             {
+    #                 "start_x": 0.50,
+    #                 "start_y": 0.25,
+    #                 "end_x": 0.50,
+    #                 "end_y": 0.75,
+    #                 "width": 0.1,
+    #                 "color": COLOR_CONFIG["capacity"],
+    #             },
+    #             {
+    #                 "start_x": 0.40,
+    #                 "start_y": 0.65,
+    #                 "end_x": 0.50,
+    #                 "end_y": 0.75,
+    #                 "width": 0.1,
+    #                 "color": COLOR_CONFIG["capacity"],
+    #             },
+    #             {
+    #                 "start_x": 0.60,
+    #                 "start_y": 0.65,
+    #                 "end_x": 0.50,
+    #                 "end_y": 0.75,
+    #                 "width": 0.1,
+    #                 "color": COLOR_CONFIG["capacity"],
+    #             },
+    #         ],
+    #     },
+    # ],
+    # 37: [
+    #     "Sub Capacity III",
+    #     {"capacity_modifier": -15, "info": "Subtract capacity"},
+    #     {
+    #         "line": [
+    #             {
+    #                 "start_x": 0.50,
+    #                 "start_y": 0.25,
+    #                 "end_x": 0.50,
+    #                 "end_y": 0.75,
+    #                 "width": 0.15,
+    #                 "color": COLOR_CONFIG["capacity"],
+    #             },
+    #             {
+    #                 "start_x": 0.40,
+    #                 "start_y": 0.65,
+    #                 "end_x": 0.50,
+    #                 "end_y": 0.75,
+    #                 "width": 0.15,
+    #                 "color": COLOR_CONFIG["capacity"],
+    #             },
+    #             {
+    #                 "start_x": 0.60,
+    #                 "start_y": 0.65,
+    #                 "end_x": 0.50,
+    #                 "end_y": 0.75,
+    #                 "width": 0.15,
+    #                 "color": COLOR_CONFIG["capacity"],
+    #             },
+    #         ],
+    #     },
+    # ],
+    # 38: [
+    #     "Sub Capacity IV",
+    #     {"capacity_modifier": -20, "info": "Subtract capacity"},
+    #     {
+    #         "line": [
+    #             {
+    #                 "start_x": 0.50,
+    #                 "start_y": 0.25,
+    #                 "end_x": 0.50,
+    #                 "end_y": 0.75,
+    #                 "width": 0.2,
+    #                 "color": COLOR_CONFIG["capacity"],
+    #             },
+    #             {
+    #                 "start_x": 0.40,
+    #                 "start_y": 0.65,
+    #                 "end_x": 0.50,
+    #                 "end_y": 0.75,
+    #                 "width": 0.2,
+    #                 "color": COLOR_CONFIG["capacity"],
+    #             },
+    #             {
+    #                 "start_x": 0.60,
+    #                 "start_y": 0.65,
+    #                 "end_x": 0.50,
+    #                 "end_y": 0.75,
+    #                 "width": 0.2,
+    #                 "color": COLOR_CONFIG["capacity"],
+    #             },
+    #         ],
+    #     },
+    # ],
+    # 39: [
+    #     "Sub Capacity V",
+    #     {"capacity_modifier": -30, "info": "Subtract capacity"},
+    #     {
+    #         "line": [
+    #             {
+    #                 "start_x": 0.50,
+    #                 "start_y": 0.25,
+    #                 "end_x": 0.50,
+    #                 "end_y": 0.75,
+    #                 "width": 0.25,
+    #                 "color": COLOR_CONFIG["capacity"],
+    #             },
+    #             {
+    #                 "start_x": 0.40,
+    #                 "start_y": 0.65,
+    #                 "end_x": 0.50,
+    #                 "end_y": 0.75,
+    #                 "width": 0.25,
+    #                 "color": COLOR_CONFIG["capacity"],
+    #             },
+    #             {
+    #                 "start_x": 0.60,
+    #                 "start_y": 0.65,
+    #                 "end_x": 0.50,
+    #                 "end_y": 0.75,
+    #                 "width": 0.25,
+    #                 "color": COLOR_CONFIG["capacity"],
+    #             },
+    #         ],
+    #     },
+    # ],
     50: [
         "Add Speed I",
         {"bullet_speed_modifier": 3, "info": "Add bullet speed"},
@@ -3260,7 +3260,7 @@ TRAJECTORY_MODIFIER_CONFIG = {
         "Chaotic Trajectory",
         {
             "info": "The velocity of bullet will randomly change every 0.2 second.",
-            "physical_damage": 5,
+            "physical_damage_modifier": 5,
         },
         {
             "line": [
@@ -3317,7 +3317,10 @@ TRAJECTORY_MODIFIER_CONFIG = {
     ],
     1: [
         "Horizontal Trajectory",
-        {"info": "The velocity only available in x-axis.", "physical_damage": 5},
+        {
+            "info": "The velocity only available in x-axis.",
+            "physical_damage_modifier": 5,
+        },
         {
             "line": [
                 {
@@ -3365,7 +3368,10 @@ TRAJECTORY_MODIFIER_CONFIG = {
     ],
     2: [
         "Vertical Trajectory",
-        {"info": "The velocity only available in y-axis.", "physical_damage": 5},
+        {
+            "info": "The velocity only available in y-axis.",
+            "physical_damage_modifier": 5,
+        },
         {
             "line": [
                 {
@@ -3413,7 +3419,7 @@ TRAJECTORY_MODIFIER_CONFIG = {
     ],
     3: [
         "S Shape Trajectory",
-        {"info": "The bullet will move in S shape.", "physical_damage": 5},
+        {"info": "The bullet will move in S shape.", "physical_damage_modifier": 5},
         {
             "line": [
                 {
@@ -3477,7 +3483,7 @@ TRAJECTORY_MODIFIER_CONFIG = {
     ],
     4: [
         "O Shape Trajectory",
-        {"info": "The bullet will move in O shape.", "physical_damage": 5},
+        {"info": "The bullet will move in O shape.", "physical_damage_modifier": 5},
         {
             "circle": [
                 {
@@ -3517,7 +3523,7 @@ TRAJECTORY_MODIFIER_CONFIG = {
         "T Shape Trajectory",
         {
             "info": "The bullet will turn left or right after moving 0.3 second",
-            "physical_damage": 5,
+            "physical_damage_modifier": 5,
         },
         {
             "line": [
@@ -3584,7 +3590,7 @@ TRAJECTORY_MODIFIER_CONFIG = {
         "V Shape Trajectory",
         {
             "info": "The bullet will turn back after moving 0.3 second",
-            "physical_damage": 5,
+            "physical_damage_modifier": 5,
         },
         {
             "line": [
@@ -3651,7 +3657,7 @@ TRAJECTORY_MODIFIER_CONFIG = {
         "Circle",
         {
             "info": "The bullet will surround the player in a circle.",
-            "physical_damage": 5,
+            "physical_damage_modifier": 5,
         },
         {
             "circle": [
@@ -3686,7 +3692,7 @@ TRAJECTORY_MODIFIER_CONFIG = {
         "Accelerate",
         {
             "info": "The bullet will accelerate in a same direction it shoots.",
-            "physical_damage": 5,
+            "physical_damage_modifier": 5,
         },
         {
             "line": [
@@ -3767,7 +3773,10 @@ TRAJECTORY_MODIFIER_CONFIG = {
     ],
     9: [
         "Decelerate",
-        {"info": "The bullet will decelerate until stop.", "physical_damage": 5},
+        {
+            "info": "The bullet will decelerate until stop.",
+            "physical_damage_modifier": 5,
+        },
         {
             "line": [
                 {
@@ -3829,34 +3838,462 @@ TRAJECTORY_MODIFIER_CONFIG = {
             ]
         },
     ],
+    10: [
+        "Tracking by accelerate",
+        {
+            "info": "The bullet will track by add its accelerate.",
+        },
+        {
+            "circle": [
+                {
+                    "pos_x": 0.75,
+                    "pos_y": 0.50,
+                    "size": 0.10,
+                    "color": (255, 80, 80, 255),
+                },
+                {
+                    "pos_x": 0.75,
+                    "pos_y": 0.50,
+                    "size": 0.06,
+                    "color": (30, 30, 30, 255),
+                },
+            ],
+            "line": [
+                # Path segments curving towards target
+                {
+                    "start_x": 0.20,
+                    "start_y": 0.80,
+                    "end_x": 0.25,
+                    "end_y": 0.65,
+                    "width": 0.05,
+                    "color": (255, 100, 220, 255),
+                },
+                {
+                    "start_x": 0.25,
+                    "start_y": 0.65,
+                    "end_x": 0.35,
+                    "end_y": 0.52,
+                    "width": 0.05,
+                    "color": (255, 100, 220, 255),
+                },
+                {
+                    "start_x": 0.35,
+                    "start_y": 0.52,
+                    "end_x": 0.50,
+                    "end_y": 0.42,
+                    "width": 0.05,
+                    "color": (255, 100, 220, 255),
+                },
+                {
+                    "start_x": 0.50,
+                    "start_y": 0.42,
+                    "end_x": 0.68,
+                    "end_y": 0.37,
+                    "width": 0.05,
+                    "color": (255, 100, 220, 255),
+                },
+                # Arrowhead
+                {
+                    "start_x": 0.68,
+                    "start_y": 0.37,
+                    "end_x": 0.57,
+                    "end_y": 0.32,
+                    "width": 0.05,
+                    "color": (255, 100, 220, 255),
+                },
+                {
+                    "start_x": 0.68,
+                    "start_y": 0.37,
+                    "end_x": 0.63,
+                    "end_y": 0.48,
+                    "width": 0.05,
+                    "color": (255, 100, 220, 255),
+                },
+                # Target Reticle (Red)
+                {
+                    "start_x": 0.75,
+                    "start_y": 0.43,
+                    "end_x": 0.75,
+                    "end_y": 0.57,
+                    "width": 0.04,
+                    "color": (255, 80, 80, 255),
+                },
+                {
+                    "start_x": 0.67,
+                    "start_y": 0.50,
+                    "end_x": 0.83,
+                    "end_y": 0.50,
+                    "width": 0.04,
+                    "color": (255, 80, 80, 255),
+                },
+            ],
+        },
+    ],
+    11: [
+        "Tracking by steer",
+        {
+            "info": "The bullet will track by steer algrithm.",
+        },
+        {
+            "circle": [
+                {
+                    "pos_x": 0.75,
+                    "pos_y": 0.50,
+                    "size": 0.10,
+                    "color": (255, 80, 80, 255),
+                },
+                {
+                    "pos_x": 0.75,
+                    "pos_y": 0.50,
+                    "size": 0.06,
+                    "color": (30, 30, 30, 255),
+                },
+            ],
+            "line": [
+                # Steer Path (smooth seek curve)
+                {
+                    "start_x": 0.25,
+                    "start_y": 0.80,
+                    "end_x": 0.18,
+                    "end_y": 0.62,
+                    "width": 0.05,
+                    "color": (255, 100, 220, 255),
+                },
+                {
+                    "start_x": 0.18,
+                    "start_y": 0.62,
+                    "end_x": 0.22,
+                    "end_y": 0.46,
+                    "width": 0.05,
+                    "color": (255, 100, 220, 255),
+                },
+                {
+                    "start_x": 0.22,
+                    "start_y": 0.46,
+                    "end_x": 0.38,
+                    "end_y": 0.36,
+                    "width": 0.05,
+                    "color": (255, 100, 220, 255),
+                },
+                {
+                    "start_x": 0.38,
+                    "start_y": 0.36,
+                    "end_x": 0.66,
+                    "end_y": 0.30,
+                    "width": 0.05,
+                    "color": (255, 100, 220, 255),
+                },
+                # Arrowhead
+                {
+                    "start_x": 0.66,
+                    "start_y": 0.30,
+                    "end_x": 0.56,
+                    "end_y": 0.24,
+                    "width": 0.05,
+                    "color": (255, 100, 220, 255),
+                },
+                {
+                    "start_x": 0.66,
+                    "start_y": 0.30,
+                    "end_x": 0.57,
+                    "end_y": 0.40,
+                    "width": 0.05,
+                    "color": (255, 100, 220, 255),
+                },
+                # Target Reticle (Red)
+                {
+                    "start_x": 0.75,
+                    "start_y": 0.43,
+                    "end_x": 0.75,
+                    "end_y": 0.57,
+                    "width": 0.04,
+                    "color": (255, 80, 80, 255),
+                },
+                {
+                    "start_x": 0.67,
+                    "start_y": 0.50,
+                    "end_x": 0.83,
+                    "end_y": 0.50,
+                    "width": 0.04,
+                    "color": (255, 80, 80, 255),
+                },
+            ],
+        },
+    ],
+    12: [
+        "Tracking by turn",
+        {
+            "info": "The bullet will track by turn its velocity direction.",
+        },
+        {
+            "circle": [
+                {
+                    "pos_x": 0.75,
+                    "pos_y": 0.50,
+                    "size": 0.10,
+                    "color": (255, 80, 80, 255),
+                },
+                {
+                    "pos_x": 0.75,
+                    "pos_y": 0.50,
+                    "size": 0.06,
+                    "color": (30, 30, 30, 255),
+                },
+            ],
+            "line": [
+                # Turn Path (sharp angle turn)
+                {
+                    "start_x": 0.25,
+                    "start_y": 0.80,
+                    "end_x": 0.25,
+                    "end_y": 0.50,
+                    "width": 0.05,
+                    "color": (255, 100, 220, 255),
+                },
+                {
+                    "start_x": 0.25,
+                    "start_y": 0.50,
+                    "end_x": 0.60,
+                    "end_y": 0.50,
+                    "width": 0.05,
+                    "color": (255, 100, 220, 255),
+                },
+                # Arrowhead
+                {
+                    "start_x": 0.62,
+                    "start_y": 0.50,
+                    "end_x": 0.50,
+                    "end_y": 0.58,
+                    "width": 0.05,
+                    "color": (255, 100, 220, 255),
+                },
+                {
+                    "start_x": 0.62,
+                    "start_y": 0.50,
+                    "end_x": 0.50,
+                    "end_y": 0.42,
+                    "width": 0.05,
+                    "color": (255, 100, 220, 255),
+                },
+                # Target Reticle (Red)
+                {
+                    "start_x": 0.75,
+                    "start_y": 0.43,
+                    "end_x": 0.75,
+                    "end_y": 0.57,
+                    "width": 0.04,
+                    "color": (255, 80, 80, 255),
+                },
+                {
+                    "start_x": 0.67,
+                    "start_y": 0.50,
+                    "end_x": 0.83,
+                    "end_y": 0.50,
+                    "width": 0.04,
+                    "color": (255, 80, 80, 255),
+                },
+            ],
+        },
+    ],
+    13: [
+        "Tracking the mouse",
+        {
+            "info": "The bullet will track the mouse position.",
+        },
+        {
+            "line": [
+                # Path towards mouse
+                {
+                    "start_x": 0.20,
+                    "start_y": 0.80,
+                    "end_x": 0.30,
+                    "end_y": 0.60,
+                    "width": 0.05,
+                    "color": (255, 100, 220, 255),
+                },
+                {
+                    "start_x": 0.30,
+                    "start_y": 0.60,
+                    "end_x": 0.50,
+                    "end_y": 0.48,
+                    "width": 0.05,
+                    "color": (255, 100, 220, 255),
+                },
+                {
+                    "start_x": 0.50,
+                    "start_y": 0.48,
+                    "end_x": 0.62,
+                    "end_y": 0.42,
+                    "width": 0.05,
+                    "color": (255, 100, 220, 255),
+                },
+                # Arrowhead
+                {
+                    "start_x": 0.62,
+                    "start_y": 0.42,
+                    "end_x": 0.53,
+                    "end_y": 0.39,
+                    "width": 0.05,
+                    "color": (255, 100, 220, 255),
+                },
+                {
+                    "start_x": 0.62,
+                    "start_y": 0.42,
+                    "end_x": 0.61,
+                    "end_y": 0.52,
+                    "width": 0.05,
+                    "color": (255, 100, 220, 255),
+                },
+                # Mouse Cursor (White)
+                {
+                    "start_x": 0.70,
+                    "start_y": 0.30,
+                    "end_x": 0.70,
+                    "end_y": 0.50,
+                    "width": 0.04,
+                    "color": (255, 255, 255, 255),
+                },
+                {
+                    "start_x": 0.70,
+                    "start_y": 0.50,
+                    "end_x": 0.82,
+                    "end_y": 0.47,
+                    "width": 0.04,
+                    "color": (255, 255, 255, 255),
+                },
+                {
+                    "start_x": 0.82,
+                    "start_y": 0.47,
+                    "end_x": 0.70,
+                    "end_y": 0.30,
+                    "width": 0.04,
+                    "color": (255, 255, 255, 255),
+                },
+                {
+                    "start_x": 0.70,
+                    "start_y": 0.30,
+                    "end_x": 0.78,
+                    "end_y": 0.57,
+                    "width": 0.04,
+                    "color": (255, 255, 255, 255),
+                },
+            ]
+        },
+    ],
 }
 
 PROBABILITY_CONFIG = {
     "T1": {
         "weight": 3,
         "items": [
-            {"type": 0, "id": 0, "unlocked": True},
             {"type": 0, "id": 1, "unlocked": True},
-            {"type": 0, "id": 2, "unlocked": True},
-            {"type": 0, "id": 3, "unlocked": True},
-            {"type": 0, "id": 4, "unlocked": True},
+            {"type": 5, "id": 0, "unlocked": True},
+            {"type": 5, "id": 1, "unlocked": True},
+            {"type": 5, "id": 2, "unlocked": True},
+            {"type": 5, "id": 10, "unlocked": True},
+        ]
+        + [
+            {"type": 1, "id": i * 5, "unlocked": True}
+            for i in range(8)
+            if i * 5 in ATTRIBUTE_MODIFIER_CONFIG.keys()
+        ]
+        + [
+            {"type": 1, "id": i * 5 + 50, "unlocked": True}
+            for i in range(3)
+            if i * 5 + 50 in ATTRIBUTE_MODIFIER_CONFIG.keys()
         ],
     },
     "T2": {
         "weight": 5,
         "items": [
-            {"type": 1, "id": i, "unlocked": True}
-            for i in ATTRIBUTE_MODIFIER_CONFIG.keys()
+            {"type": 0, "id": 0, "unlocked": True},
+            {"type": 0, "id": 2, "unlocked": True},
+            {"type": 2, "id": 0, "unlocked": True},
+            {"type": 2, "id": 1, "unlocked": True},
+            {"type": 4, "id": 0, "unlocked": True},
+            {"type": 5, "id": 3, "unlocked": True},
+            {"type": 5, "id": 4, "unlocked": True},
+            {"type": 5, "id": 5, "unlocked": True},
+            {"type": 5, "id": 6, "unlocked": True},
+            {"type": 5, "id": 7, "unlocked": True},
+            {"type": 5, "id": 11, "unlocked": True},
+        ]
+        + [
+            {"type": 1, "id": i * 5 + 1, "unlocked": True}
+            for i in range(8)
+            if i * 5 + 1 in ATTRIBUTE_MODIFIER_CONFIG.keys()
+        ]
+        + [
+            {"type": 1, "id": i * 5 + 1 + 50, "unlocked": True}
+            for i in range(3)
+            if i * 5 + 1 + 50 in ATTRIBUTE_MODIFIER_CONFIG.keys()
         ],
     },
     "T3": {
         "weight": 10,
         "items": [
-            {"type": 2, "id": i, "unlocked": True}
-            for i in PROJECTILE_MODIFIER_CONFIG.keys()
+            {"type": 0, "id": 3, "unlocked": True},
+            {"type": 0, "id": 4, "unlocked": True},
+            {"type": 1, "id": 100, "unlocked": True},
+            {"type": 1, "id": 101, "unlocked": True},
+            {"type": 2, "id": 2, "unlocked": True},
+            {"type": 2, "id": 3, "unlocked": True},
+            {"type": 3, "id": 0, "unlocked": True},
+            {"type": 3, "id": 1, "unlocked": True},
+            {"type": 3, "id": 2, "unlocked": True},
+            {"type": 3, "id": 3, "unlocked": True},
+            {"type": 3, "id": 4, "unlocked": True},
+            {"type": 5, "id": 12, "unlocked": True},
+        ]
+        + [
+            {"type": 1, "id": i * 5 + 2, "unlocked": True}
+            for i in range(8)
+            if i * 5 + 2 in ATTRIBUTE_MODIFIER_CONFIG.keys()
+        ]
+        + [
+            {"type": 1, "id": i * 5 + 2 + 50, "unlocked": True}
+            for i in range(3)
+            if i * 5 + 2 + 50 in ATTRIBUTE_MODIFIER_CONFIG.keys()
+        ],
+    },
+    "T4": {
+        "weight": 18,
+        "items": [
+            {"type": 2, "id": 4, "unlocked": True},
+            {"type": 4, "id": 1, "unlocked": True},
+            {"type": 4, "id": 2, "unlocked": True},
+            {"type": 4, "id": 3, "unlocked": True},
+            {"type": 5, "id": 8, "unlocked": True},
+            {"type": 5, "id": 9, "unlocked": True},
+            {"type": 5, "id": 13, "unlocked": True},
+        ]
+        + [
+            {"type": 1, "id": i * 5 + 3, "unlocked": True}
+            for i in range(8)
+            if i * 5 + 3 in ATTRIBUTE_MODIFIER_CONFIG.keys()
+        ]
+        + [
+            {"type": 1, "id": i * 5 + 3 + 50, "unlocked": True}
+            for i in range(3)
+            if i * 5 + 3 + 50 in ATTRIBUTE_MODIFIER_CONFIG.keys()
+        ],
+    },
+    "T5": {
+        "weight": 30,
+        "items": []
+        + [
+            {"type": 1, "id": i * 5 + 4, "unlocked": True}
+            for i in range(8)
+            if i * 5 + 4 in ATTRIBUTE_MODIFIER_CONFIG.keys()
+        ]
+        + [
+            {"type": 1, "id": i * 5 + 4 + 50, "unlocked": True}
+            for i in range(3)
+            if i * 5 + 4 + 50 in ATTRIBUTE_MODIFIER_CONFIG.keys()
         ],
     },
 }
+print(PROBABILITY_CONFIG)
 
 UI_CONFIG = {
     "gun_box_w": 620,
@@ -3879,11 +4316,11 @@ ENEMY_CONFIG = {
         "color": (220, 80, 80),
         "image_path": "./Img/enemy_1.png",
         "sprite_height": 56,
-        "max_hp": 30,
+        "max_hp": 20,
         "speed": 55,
         "damage": 10,
         "attack_cooldown": 0.8,
-        "xp_drop": 1,
+        "xp_drop": 2,
         "ai": "chase",
     },
     1: {
@@ -3896,7 +4333,7 @@ ENEMY_CONFIG = {
         "speed": 85,
         "damage": 6,
         "attack_cooldown": 0.5,
-        "xp_drop": 1,
+        "xp_drop": 2,
         "ai": "runner",
     },
     2: {
@@ -3909,7 +4346,7 @@ ENEMY_CONFIG = {
         "speed": 40,
         "damage": 25,
         "attack_cooldown": 1.2,
-        "xp_drop": 4,
+        "xp_drop": 10,
         "ai": "chase",
     },
     3: {
@@ -3922,7 +4359,7 @@ ENEMY_CONFIG = {
         "speed": 90,
         "damage": 8,
         "attack_cooldown": 1.5,
-        "xp_drop": 2,
+        "xp_drop": 4,
         "ai": "shooter",
         "ranged": True,
         "preferred_distance": 350,
@@ -3940,16 +4377,24 @@ BOSS_CONFIG = {
     "speed": 80,
     "damage": 40,
     "attack_cooldown": 2.0,
-    "xp_drop": 50,
+    "xp_drop": 100,
     "ai": "boss",
     "ranged": True,
     "bullet_speed": 220,
 }
 
 GAME_CONFIG = {
-    "boss_spawn_time": 10.0,  # seconds before boss appears (5 minutes)
-    "spawn_base_interval": 1.5,
-    "spawn_min_interval": 0.25,
+    "boss_spawn_time": 300,  # seconds before boss appears (5 minutes)
+    "spawn_base_interval": 1.0,
+    "spawn_min_interval": 2.4,
+    "spawn_ramp_seconds": 120.0,
+    "max_enemies": 45,
+    "enemy_hp_growth_per_boss": 0.5,
+    "enemy_damage_growth_per_boss": 0.25,
+    "flow_field_cell_size": 80,
+    "flow_field_radius_cells": 18,
+    "flow_field_refresh_interval": 0.35,
+    "flow_field_obstacle_padding": 28,
     "altar_charge_time": 3.0,
     "altar_buff_amount": {
         "hp": 25,
@@ -3958,8 +4403,12 @@ GAME_CONFIG = {
     },
     "xp_pickup_radius": 22,
     "xp_attract_radius": 130,
+    "xp_drop_growth_interval": 60.0,
+    "xp_drop_growth_per_interval": 0.25,
+    "xp_drop_max_multiplier": 3.0,
+    "gun_pickup_radius": 48,
     "player_max_hp": 100,
     "player_invincible_time": 0.5,
-    "xp_per_level_base": 10,
+    "xp_per_level_base": 4,
     "card_slot_levels": [10, 20, 30, 40, 50],
 }

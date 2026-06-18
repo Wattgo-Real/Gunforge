@@ -40,6 +40,7 @@ def _ensure_runtime_state(game: "Game"):
     game.bullet_manager = BulletManager(spatial_grid_dict=game.spatial_grid_dict)
     game.world = WorldChunkManager(spatial_grid_dict=game.spatial_grid_dict, seed=42)
     game.xp_orbs = []
+    game.gun_pickups = []
     game.run_start_time = game.now_time
     game.run_summary = None
     game.message_queue = []  # list of [text, timer_left, color]
@@ -56,6 +57,7 @@ def _ensure_runtime_state(game: "Game"):
     game.altar_choosing = False
     game.altar_options = []
     game.active_altar = None
+    game.map_overview_enabled = False
     game._screen1_initialised = True
 
 
@@ -98,6 +100,7 @@ def reset_screen1(game: "Game"):
         )
 
     game.xp_orbs = []
+    game.gun_pickups = []
     game.run_start_time = game.now_time
     game.run_summary = None
     game.message_queue = []
@@ -108,29 +111,79 @@ def reset_screen1(game: "Game"):
     game.altar_choosing = False
     game.altar_options = []
     game.active_altar = None
+    game.map_overview_enabled = False
     game._screen1_initialised = True
 
 
-def _drop_boss_reward(game: "Game"):
-    for i, slot in enumerate(game.player.weapon_list):
-        if slot is None:
-            new_info = {
-                "cooldown": 0.25,
-                "reload": 1.5,
-                "scatter_angel": 8,
-                "capacity": 30,
-                "card_list": [
-                    Card(type=0, inter_type=2),
-                    Card(type=1, inter_type=1),
-                    Card(type=1, inter_type=3),
-                ],
-            }
-            game.player.weapon_list[i] = Gun(new_info)
-            game.message_queue.append(
-                ["BOSS DOWN — new gun acquired!", 5.0, (255, 220, 120)]
-            )
-            return
-    game.message_queue.append(["BOSS DOWN!", 5.0, (255, 220, 120)])
+class GunPickup:
+    def __init__(self, position, gun_info):
+        self.pos2D = pygame.Vector2(position)
+        self.gun_info = gun_info
+        self.radius = 34
+        self.alive = True
+        self.pulse_timer = 0.0
+        self.message_timer = 0.0
+
+    def update(self, delta_time, game: "Game"):
+        self.pulse_timer += delta_time
+        self.message_timer = max(0.0, self.message_timer - delta_time)
+
+        if self.pos2D.distance_to(game.player.pos2D) > GAME_CONFIG["gun_pickup_radius"]:
+            return False
+
+        for i, slot in enumerate(game.player.weapon_list):
+            if slot is None:
+                game.player.weapon_list[i] = Gun(self.gun_info, game.bullet_manager)
+                game.player.weapon_index = i
+                self.alive = False
+                game.message_queue.append(
+                    [f"New gun acquired! Slot {i + 1}", 4.0, (255, 220, 120)]
+                )
+                return True
+
+        if self.message_timer <= 0:
+            self.message_timer = 1.5
+            game.message_queue.append(["Weapon slots full", 1.5, (255, 140, 120)])
+        return False
+
+    def draw(self, screen, game: "Game"):
+        screen_pos = game.to_screen(self.pos2D)
+        pulse = 1.0 + 0.12 * abs(pygame.math.Vector2(1, 0).rotate(self.pulse_timer * 220).y)
+        glow_radius = int(self.radius * 1.35 * pulse)
+        pygame.draw.circle(screen, (255, 210, 90), screen_pos, glow_radius, 2)
+        pygame.draw.circle(screen, (60, 45, 25), screen_pos, self.radius)
+        pygame.draw.circle(screen, (255, 235, 150), screen_pos, self.radius, 2)
+
+        barrel_start = (int(screen_pos.x - 12), int(screen_pos.y + 2))
+        barrel_end = (int(screen_pos.x + 18), int(screen_pos.y - 8))
+        pygame.draw.line(screen, (210, 210, 220), barrel_start, barrel_end, 7)
+        pygame.draw.line(screen, (70, 55, 45), barrel_start, barrel_end, 2)
+        grip_rect = pygame.Rect(0, 0, 12, 20)
+        grip_rect.center = (int(screen_pos.x - 6), int(screen_pos.y + 12))
+        pygame.draw.rect(screen, (140, 85, 45), grip_rect, border_radius=3)
+
+
+def _create_boss_reward_gun_info():
+    return {
+        "cooldown": 0.25,
+        "reload": 1.5,
+        "scatter_angle": 8,
+        "capacity": 30,
+        "max_slots": random.randint(4, 10),
+        "card_list": [
+            Card(type=0, inter_type=2),
+            Card(type=1, inter_type=1),
+            Card(type=1, inter_type=3),
+        ],
+    }
+
+
+def _drop_boss_reward(game: "Game", position):
+    if not hasattr(game, "gun_pickups"):
+        game.gun_pickups = []
+
+    game.gun_pickups.append(GunPickup(position, _create_boss_reward_gun_info()))
+    game.message_queue.append(["BOSS DOWN - gun dropped!", 5.0, (255, 220, 120)])
 
 
 def _get_random_cards(game: "Game", count=3):
@@ -470,12 +523,15 @@ def _handle_player_bullets(game: "Game"):
             ):
                 bullet.triger_hit(entity, effect_queue=game.effects_queue)
                 if not entity.alive:
+                    if getattr(entity, "reward_claimed", False):
+                        continue
+                    entity.reward_claimed = True
                     game.xp_orbs.append(
                         XPOrb(entity.pos2D.copy(), value=entity.xp_drop)
                     )
                     player.add_kill()
                     if entity.is_boss:
-                        _drop_boss_reward(game)
+                        _drop_boss_reward(game, entity.pos2D.copy())
                 break
 
 
@@ -615,6 +671,152 @@ def _draw_messages(game: "Game"):
         y += 32
 
 
+def _draw_map_overview(game: "Game"):
+    world = game.world
+    if not getattr(world, "generated", None):
+        return
+
+    panel_size = min(480, game.screen_width - 40, game.screen_height - 120)
+    if panel_size < 220:
+        return
+
+    panel = pygame.Rect(
+        game.screen_width - panel_size - 20,
+        92,
+        panel_size,
+        panel_size,
+    )
+    pad = 18
+    map_rect = panel.inflate(-pad * 2, -pad * 2 - 42)
+    map_rect.top = panel.top + 46
+
+    chunk_size = world.CHUNK_SIZE
+    chunks = list(world.generated)
+    player_chunk = (
+        int(game.player.pos2D.x // chunk_size),
+        int(game.player.pos2D.y // chunk_size),
+    )
+    chunks.append(player_chunk)
+
+    min_cx = min(cx for cx, _ in chunks) - 1
+    max_cx = max(cx for cx, _ in chunks) + 1
+    min_cy = min(cy for _, cy in chunks) - 1
+    max_cy = max(cy for _, cy in chunks) + 1
+    min_x = min_cx * chunk_size
+    max_x = (max_cx + 1) * chunk_size
+    min_y = min_cy * chunk_size
+    max_y = (max_cy + 1) * chunk_size
+    world_w = max(1.0, max_x - min_x)
+    world_h = max(1.0, max_y - min_y)
+    scale = min(map_rect.width / world_w, map_rect.height / world_h)
+    draw_w = world_w * scale
+    draw_h = world_h * scale
+    origin_x = map_rect.centerx - draw_w / 2
+    origin_y = map_rect.centery - draw_h / 2
+
+    def to_map(pos):
+        return pygame.Vector2(
+            origin_x + (pos.x - min_x) * scale,
+            origin_y + (max_y - pos.y) * scale,
+        )
+
+    overlay = pygame.Surface(panel.size, pygame.SRCALPHA)
+    overlay.fill((10, 12, 18, 222))
+    pygame.draw.rect(overlay, (120, 125, 145, 230), overlay.get_rect(), 2)
+    game.screen.blit(overlay, panel.topleft)
+
+    title = game.font.render("Generated Map", True, (235, 238, 245))
+    game.screen.blit(title, (panel.left + pad, panel.top + 12))
+    obstacle_count = sum(len(records) for records in world.obstacle_records.values())
+    altar_count = sum(
+        1
+        for records in world.altar_records.values()
+        for record in records
+        if not record["used"]
+    )
+    meta = game.HUD_font.render(
+        f"Chunks {len(world.generated)}   Active {len(world.active_chunks)}   Obstacles {obstacle_count}   Altars {altar_count}",
+        True,
+        (185, 190, 205),
+    )
+    game.screen.blit(meta, (panel.left + pad, panel.top + 34))
+
+    pygame.draw.rect(game.screen, (16, 18, 26), map_rect)
+    pygame.draw.rect(game.screen, (62, 68, 82), map_rect, 1)
+
+    for cx, cy in world.generated:
+        left_bottom = pygame.Vector2(cx * chunk_size, cy * chunk_size)
+        right_top = pygame.Vector2((cx + 1) * chunk_size, (cy + 1) * chunk_size)
+        a = to_map(left_bottom)
+        b = to_map(right_top)
+        rect = pygame.Rect(
+            min(a.x, b.x),
+            min(a.y, b.y),
+            max(1, abs(b.x - a.x)),
+            max(1, abs(b.y - a.y)),
+        )
+        fill = (33, 38, 48) if (cx, cy) != player_chunk else (42, 70, 92)
+        pygame.draw.rect(game.screen, fill, rect)
+        pygame.draw.rect(game.screen, (64, 70, 84), rect, 1)
+
+    cam = game.camera_position
+    view_a = to_map(pygame.Vector2(cam.x - game.screen_width / 2, cam.y - game.screen_height / 2))
+    view_b = to_map(pygame.Vector2(cam.x + game.screen_width / 2, cam.y + game.screen_height / 2))
+    view_rect = pygame.Rect(
+        min(view_a.x, view_b.x),
+        min(view_a.y, view_b.y),
+        max(2, abs(view_b.x - view_a.x)),
+        max(2, abs(view_b.y - view_a.y)),
+    )
+    pygame.draw.rect(game.screen, (245, 245, 245), view_rect, 1)
+
+    for records in world.obstacle_records.values():
+        for record in records:
+            pos = pygame.Vector2(record["pos"])
+            size = pygame.Vector2(record["size"])
+            half = size / 2
+            a = to_map(pos + pygame.Vector2(-half.x, -half.y))
+            b = to_map(pos + pygame.Vector2(half.x, half.y))
+            rect = pygame.Rect(
+                min(a.x, b.x),
+                min(a.y, b.y),
+                max(3, abs(b.x - a.x)),
+                max(3, abs(b.y - a.y)),
+            )
+            pygame.draw.rect(game.screen, (120, 105, 145), rect)
+
+    for records in world.altar_records.values():
+        for record in records:
+            if record["used"]:
+                continue
+            pos = to_map(pygame.Vector2(record["pos"]))
+            pygame.draw.circle(game.screen, (245, 210, 95), pos, 4)
+
+    for enemy in game.enemy_manager.enemies:
+        pos = to_map(enemy.pos2D)
+        color = (255, 80, 80) if not enemy.is_boss else (255, 45, 45)
+        radius = 3 if not enemy.is_boss else 6
+        pygame.draw.circle(game.screen, color, pos, radius)
+
+    player_pos = to_map(game.player.pos2D)
+    pygame.draw.circle(game.screen, (70, 180, 255), player_pos, 6)
+    pygame.draw.circle(game.screen, (235, 250, 255), player_pos, 6, 1)
+
+    legend_y = panel.bottom - 22
+    legend_items = [
+        ((70, 180, 255), "Player"),
+        ((255, 80, 80), "Enemy"),
+        ((120, 105, 145), "Obstacle"),
+        ((245, 210, 95), "Altar"),
+    ]
+    x = panel.left + pad
+    for color, label in legend_items:
+        pygame.draw.circle(game.screen, color, (x + 5, legend_y + 6), 4)
+        text = game.HUD_font.render(label, True, (205, 210, 220))
+        game.screen.blit(text, (x + 14, legend_y))
+        x += text.get_width() + 58
+
+
 def _draw_player_invuln_flash(game: "Game"):
     if game.player.invincible_timer > 0:
         screen_pos = game.to_screen(game.player.pos2D)
@@ -655,6 +857,12 @@ def _draw_gun_info_overlay(game: "Game", events, selected_slot: bool):
         (game.screen_width - (box_w + pad_x), pad_y + spacing_y),
     ]
 
+    # Mouse state for click selection
+    mouse_pos = pygame.mouse.get_pos()
+    mouse_clicked = any(
+        event.type == pygame.MOUSEBUTTONDOWN and event.button == 1 for event in events
+    )
+
     # --- Draw Gun Boxes ---
     for i in range(4):
         x, y = positions[i]
@@ -690,7 +898,7 @@ def _draw_gun_info_overlay(game: "Game", events, selected_slot: bool):
             stats = {
                 "Cooldown": round(gun.cooldown, 2),
                 "Reload": round(gun.reload, 2),
-                "Scatter": round(gun.scatter_angel, 2),
+                "Scatter": round(gun.scatter_angle, 2),
                 "Capacity": f"{gun.capacity_left}/{gun.capacity}",
             }
             for j, (key, value) in enumerate(stats.items()):
@@ -699,7 +907,7 @@ def _draw_gun_info_overlay(game: "Game", events, selected_slot: bool):
                 elif key == "Reload":
                     color = COLOR_CONFIG["reload"]
                 elif key == "Scatter":
-                    color = COLOR_CONFIG["scatter_angel"]
+                    color = COLOR_CONFIG["scatter_angle"]
                 elif key == "Capacity":
                     color = COLOR_CONFIG["capacity"]
 
@@ -779,6 +987,13 @@ def _draw_gun_info_overlay(game: "Game", events, selected_slot: bool):
         # Blit box to screen
         game.screen.blit(box_surf, (x, y))
 
+        # Draw highlight if this gun slot is selected for moving
+        selected_gun_slot = getattr(game, "selected_gun_slot", None)
+        if selected_gun_slot is not None and selected_gun_slot == i:
+            pygame.draw.rect(
+                game.screen, (255, 255, 100), (x, y, box_w, box_h), 4
+            )
+
     # --- Draw Inventory Grid ---
     grid_cell_size = UI_CONFIG["grid_cell_size"]
     grid_cols = UI_CONFIG["grid_cols"]
@@ -817,10 +1032,57 @@ def _draw_gun_info_overlay(game: "Game", events, selected_slot: bool):
 
     # --- Draw Tooltip and clicked slot ---
     m_x, m_y = pygame.mouse.get_pos()
-    clicked_slot = None
+
+    # --- Draw Discard Zone (above backpack bottom right) ---
+    discard_w = 220
+    discard_h = 50
+    discard_x = grid_start_x + grid_w - discard_w
+    discard_y = grid_start_y - discard_h - 15
+    discard_rect = pygame.Rect(discard_x, discard_y, discard_w, discard_h)
+
+    # Check hover and determine if discard is valid
+    is_hovered_discard = discard_rect.collidepoint(m_x, m_y)
+    can_discard = False
+    if game.selected_slot_info is not None:
+        can_discard = True
+    elif getattr(game, "selected_gun_slot", None) is not None:
+        gun_count = sum(1 for g in game.player.weapon_list if g is not None)
+        if gun_count > 1:
+            can_discard = True
+
+    # Draw premium styled discard zone
+    if can_discard:
+        bg_color = (180, 50, 50, 220) if is_hovered_discard else (120, 30, 30, 180)
+        border_color = (255, 120, 120) if is_hovered_discard else (180, 60, 60)
+        text_color = (255, 255, 255)
+    else:
+        bg_color = (60, 60, 60, 100) if is_hovered_discard else (40, 40, 40, 80)
+        border_color = (100, 100, 100)
+        text_color = (120, 120, 120)
+
+    discard_surf = pygame.Surface((discard_w, discard_h), pygame.SRCALPHA)
+    discard_surf.fill(bg_color)
+    pygame.draw.rect(discard_surf, border_color, discard_surf.get_rect(), 2)
+
+    label_str = "DISCARD"
+    if game.selected_slot_info is not None:
+        label_str = "DISCARD CARD"
+    elif getattr(game, "selected_gun_slot", None) is not None:
+        label_str = "DISCARD GUN"
+
+    discard_text = game.font.render(label_str, True, text_color)
+    text_rect = discard_text.get_rect(center=(discard_w // 2, discard_h // 2))
+    discard_surf.blit(discard_text, text_rect)
+
+    game.screen.blit(discard_surf, (discard_x, discard_y))
+
+    # --- Click and Hover Detection ---
+    clicked_card_slot = None
+    clicked_gun_idx = None
+    clicked_trash = False
     hovered_card = None
 
-    # Check Gun Slots for hover or check clicked slot
+    # Check gun card slots for hover/click
     for i in range(4):
         gun = game.player.weapon_list[i]
         if not gun:
@@ -836,81 +1098,140 @@ def _draw_gun_info_overlay(game: "Game", events, selected_slot: bool):
                 slot_size,
             )
             if slot_rect.collidepoint(m_x, m_y):
-                clicked_slot = {"type": "gun", "gun_idx": i, "slot_idx": s}
+                clicked_card_slot = {"type": "gun", "gun_idx": i, "slot_idx": s}
                 if gun.card_list[s]:
                     hovered_card = gun.card_list[s]
                 break
-        if hovered_card:
+        if clicked_card_slot:
             break
 
-    # Check Inventory for hover or check clicked slot
-    if not hovered_card:
-        inv_start_x = grid_start_x
-        inv_start_y = grid_start_y
+    # Check inventory grid for hover/click
+    if not clicked_card_slot:
         for idx in range(40):
             r, c = idx // grid_cols, idx % grid_cols
             slot_rect = pygame.Rect(
-                inv_start_x + c * grid_cell_size,
-                inv_start_y + r * grid_cell_size,
+                grid_start_x + c * grid_cell_size,
+                grid_start_y + r * grid_cell_size,
                 grid_cell_size,
                 grid_cell_size,
             )
             if slot_rect.collidepoint(m_x, m_y):
-                clicked_slot = {"type": "inv", "slot_idx": idx}
+                clicked_card_slot = {"type": "inv", "slot_idx": idx}
                 if idx < len(game.player.inventory) and game.player.inventory[idx]:
                     hovered_card = game.player.inventory[idx]
                 break
 
-    # Move the card from the selected sol to the clicked slot.
-    if clicked_slot and selected_slot:
-        if game.selected_slot_info is None:
-            # Select if there is a card
-            has_card = False
-            if clicked_slot["type"] == "gun":
-                has_card = (
-                    game.player.weapon_list[clicked_slot["gun_idx"]].card_list[
-                        clicked_slot["slot_idx"]
-                    ]
-                    is not None
-                )
-            else:
-                has_card = game.player.inventory[clicked_slot["slot_idx"]] is not None
+    # Check click handling
+    if mouse_clicked:
+        if discard_rect.collidepoint(m_x, m_y):
+            clicked_trash = True
+        elif not clicked_card_slot:
+            # Check gun boxes
+            for i in range(4):
+                x, y = positions[i]
+                box_screen_rect = pygame.Rect(x, y, box_w, box_h)
+                if box_screen_rect.collidepoint(m_x, m_y):
+                    clicked_gun_idx = i
+                    break
 
-            if has_card:
-                game.selected_slot_info = clicked_slot
-        else:
-            # Already selected, try to move/swap
-            if game.selected_slot_info == clicked_slot:
-                game.selected_slot_info = None
-            else:
-                # Perform swap
-                # Get source card
+        # Process actions
+        if clicked_trash:
+            if game.selected_slot_info:
+                # Discard Card
                 src = game.selected_slot_info
-                dst = clicked_slot
-
                 if src["type"] == "gun":
-                    src_list = game.player.weapon_list[src["gun_idx"]].card_list
-                else:
-                    src_list = game.player.inventory
-
-                if dst["type"] == "gun":
-                    dst_list = game.player.weapon_list[dst["gun_idx"]].card_list
-                else:
-                    dst_list = game.player.inventory
-
-                # Swap
-                src_list[src["slot_idx"]], dst_list[dst["slot_idx"]] = (
-                    dst_list[dst["slot_idx"]],
-                    src_list[src["slot_idx"]],
-                )
-
-                # Refresh guns if needed
-                if src["type"] == "gun":
+                    game.player.weapon_list[src["gun_idx"]].card_list[src["slot_idx"]] = None
                     game.player.weapon_list[src["gun_idx"]]._refresh()
-                if dst["type"] == "gun":
-                    game.player.weapon_list[dst["gun_idx"]]._refresh()
-
+                else:
+                    game.player.inventory[src["slot_idx"]] = None
                 game.selected_slot_info = None
+                game.message_queue.append(["Card discarded", 2.0, (255, 100, 100)])
+            elif getattr(game, "selected_gun_slot", None) is not None:
+                # Discard Gun
+                gun_idx = game.selected_gun_slot
+                gun_count = sum(1 for g in game.player.weapon_list if g is not None)
+                if gun_count > 1:
+                    game.player.weapon_list[gun_idx] = None
+                    # Update active weapon if we deleted the current one
+                    if game.player.weapon_index == gun_idx:
+                        for idx, w in enumerate(game.player.weapon_list):
+                            if w is not None:
+                                game.player.weapon_index = idx
+                                break
+                    setattr(game, "selected_gun_slot", None)
+                    game.message_queue.append(["Gun discarded", 2.0, (255, 100, 100)])
+                else:
+                    game.message_queue.append(["Cannot discard your last Gun!", 2.5, (255, 100, 100)])
+        elif clicked_card_slot:
+            # Deselect gun slot to prevent simultaneous selection
+            setattr(game, "selected_gun_slot", None)
+
+            if game.selected_slot_info is None:
+                # Select card
+                has_card = False
+                if clicked_card_slot["type"] == "gun":
+                    has_card = (
+                        game.player.weapon_list[clicked_card_slot["gun_idx"]].card_list[
+                            clicked_card_slot["slot_idx"]
+                        ]
+                        is not None
+                    )
+                else:
+                    has_card = clicked_card_slot["slot_idx"] < len(game.player.inventory) and game.player.inventory[clicked_card_slot["slot_idx"]] is not None
+
+                if has_card:
+                    game.selected_slot_info = clicked_card_slot
+            else:
+                # Swap or deselect
+                if game.selected_slot_info == clicked_card_slot:
+                    game.selected_slot_info = None
+                else:
+                    src = game.selected_slot_info
+                    dst = clicked_card_slot
+
+                    if src["type"] == "gun":
+                        src_list = game.player.weapon_list[src["gun_idx"]].card_list
+                    else:
+                        src_list = game.player.inventory
+
+                    if dst["type"] == "gun":
+                        dst_list = game.player.weapon_list[dst["gun_idx"]].card_list
+                    else:
+                        dst_list = game.player.inventory
+
+                    # Perform swap
+                    src_list[src["slot_idx"]], dst_list[dst["slot_idx"]] = (
+                        dst_list[dst["slot_idx"]],
+                        src_list[src["slot_idx"]],
+                    )
+
+                    # Refresh guns if needed
+                    if src["type"] == "gun":
+                        game.player.weapon_list[src["gun_idx"]]._refresh()
+                    if dst["type"] == "gun":
+                        game.player.weapon_list[dst["gun_idx"]]._refresh()
+
+                    game.selected_slot_info = None
+
+        elif clicked_gun_idx is not None:
+            # Deselect card slot to prevent simultaneous selection
+            game.selected_slot_info = None
+
+            cur_selected = getattr(game, "selected_gun_slot", None)
+            if cur_selected is None:
+                if game.player.weapon_list[clicked_gun_idx] is not None:
+                    setattr(game, "selected_gun_slot", clicked_gun_idx)
+            else:
+                if cur_selected != clicked_gun_idx:
+                    game.player.weapon_list[cur_selected], game.player.weapon_list[clicked_gun_idx] = (
+                        game.player.weapon_list[clicked_gun_idx],
+                        game.player.weapon_list[cur_selected],
+                    )
+                    if game.player.weapon_list[cur_selected]:
+                        game.player.weapon_list[cur_selected]._refresh()
+                    if game.player.weapon_list[clicked_gun_idx]:
+                        game.player.weapon_list[clicked_gun_idx]._refresh()
+                setattr(game, "selected_gun_slot", None)
 
     # Draw the tool tip
     if hovered_card:
@@ -996,6 +1317,8 @@ def test_screen1(game: "Game", events):
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_TAB:
                 game.gun_info = not game.gun_info
+            if event.key == pygame.K_m:
+                game.map_overview_enabled = not getattr(game, "map_overview_enabled", False)
             if event.key in (pygame.K_LSHIFT, pygame.K_RSHIFT):
                 game.player.dash()
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
@@ -1035,7 +1358,7 @@ def test_screen1(game: "Game", events):
             game.player.face_direction = diff.normalize()
 
         # ---- 3. Enemies ----
-        game.enemy_manager.update(game.delta_time, game.player.pos2D)
+        game.enemy_manager.update(game.delta_time, game.player.pos2D, game.world)
         for e in game.enemy_manager.enemies:
             # Enemy vs Obstacle collision (spatial grid optimized)
             for obs in Obstacle.get_nearby_obstacles(e.pos2D, game.spatial_grid_dict):
@@ -1074,6 +1397,15 @@ def test_screen1(game: "Game", events):
                 except ValueError:
                     pass
 
+        # ---- 6.5 Gun pickups ----
+        for pickup in list(game.gun_pickups):
+            pickup.update(game.delta_time, game)
+            if not pickup.alive:
+                try:
+                    game.gun_pickups.remove(pickup)
+                except ValueError:
+                    pass
+
         # ---- 7. Death check ----
         if not game.player.alive:
             game.run_summary = {
@@ -1098,6 +1430,8 @@ def test_screen1(game: "Game", events):
         altar.draw(game.screen, game)
     for orb in game.xp_orbs:
         orb.draw(game.screen, game)
+    for pickup in game.gun_pickups:
+        pickup.draw(game.screen, game)
     for e in game.enemy_manager.enemies:
         e.draw(game.screen, game)
 
@@ -1109,6 +1443,8 @@ def test_screen1(game: "Game", events):
     _draw_hud(game)
     _draw_boss_bar(game)
     _draw_messages(game)
+    if getattr(game, "map_overview_enabled", False):
+        _draw_map_overview(game)
 
     if game.gun_info:
         _draw_gun_info_overlay(game, events, selected_slot)
