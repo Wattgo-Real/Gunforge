@@ -6,7 +6,7 @@ if TYPE_CHECKING:
     from Start import Game
 
 import Asset.Function as GF
-from Asset.TestScreen1 import reset_screen1
+from Asset.GameSetting import GAME_CONFIG
 
 
 def _format_time(t: float) -> str:
@@ -24,7 +24,7 @@ def _ensure_best(game: "Game"):
             "points": 0,
         }
     if not hasattr(game, "total_points"):
-        game.total_points = 0
+        game.total_points = GAME_CONFIG["initial_points"]
 
 
 def _commit_summary(game: "Game"):
@@ -64,8 +64,7 @@ def test_screen2(game: "Game", events):
     for event in events:
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             if play_btn.collidepoint(event.pos):
-                reset_screen1(game)
-                game.test_screen = 1
+                game.test_screen = 7
                 return
             if menu_btn.collidepoint(event.pos):
                 game.test_screen = 0

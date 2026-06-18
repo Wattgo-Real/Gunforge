@@ -22,7 +22,9 @@ class Gun():
         '''
         self.basic_cooldown = basic_info["cooldown"]        # Time between shots
         self.basic_reload = basic_info["reload"]  # Time to reload
-        self.basic_scatter_angel = basic_info["scatter_angel"]  # Degree of bullet spread
+        self.basic_scatter_angel = basic_info.get(
+            "scatter_angle", basic_info.get("scatter_angel", 0)
+        )  # Degree of bullet spread
         self.basic_capacity = basic_info["capacity"]  # The maximum number of bullets the gun can hold
         self.card_max_slots = basic_info["max_slots"]     # How many cards can this weapon hold?
         self.card_list = [None] * self.card_max_slots # List of cards attached to the gun
@@ -71,6 +73,7 @@ class Gun():
             self.capacity_left = self.capacity
         if self.scatter_angel < 0:
             self.scatter_angel = 0
+        self.scatter_angle = self.scatter_angel
         if self.reload < 0:
             self.reload = 0
         if self.cooldown < 0:

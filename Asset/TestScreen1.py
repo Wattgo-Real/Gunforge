@@ -20,6 +20,7 @@ from Asset.GameSetting import (
 )
 from Asset.Pickups import Altar, Obstacle, WorldChunkManager, XPOrb
 from Asset.Player import Player
+from Asset.ShopConfig import STAT_UPGRADES, card_key_to_tuple, ensure_shop_state
 from Asset.SpatialGrid import NoneGrid, Quadtree, SpatialGrid
 from Asset.Weapons import BulletManager, Gun
 
@@ -51,6 +52,7 @@ def _ensure_runtime_state(game: "Game"):
         color=(0, 150, 255),
         bullet_manager=game.bullet_manager,
     )
+    _apply_shop_upgrades(game)
     game.leveling_up = False
     game.level_up_options = []
     game.level_up_scroll_offsets = [0, 0, 0]
@@ -98,6 +100,7 @@ def reset_screen1(game: "Game"):
             color=(0, 150, 255),
             bullet_manager=game.bullet_manager,
         )
+    _apply_shop_upgrades(game)
 
     game.xp_orbs = []
     game.gun_pickups = []
@@ -113,6 +116,34 @@ def reset_screen1(game: "Game"):
     game.active_altar = None
     game.map_overview_enabled = False
     game._screen1_initialised = True
+
+
+def _add_card_to_inventory(player, card):
+    for i, slot in enumerate(player.inventory):
+        if slot is None:
+            player.inventory[i] = card
+            return True
+    return False
+
+
+def _apply_shop_upgrades(game: "Game"):
+    ensure_shop_state(game)
+    player = game.player
+
+    hp_level = game.shop_upgrades.get("hp", 0)
+    damage_level = game.shop_upgrades.get("damage", 0)
+    speed_level = game.shop_upgrades.get("speed", 0)
+
+    player.max_hp += hp_level * STAT_UPGRADES["hp"]["amount"]
+    player.hp = player.max_hp
+    player.damage_multiplier += damage_level * STAT_UPGRADES["damage"]["amount"]
+    speed_bonus = speed_level * STAT_UPGRADES["speed"]["amount"]
+    player.bonus_speed += speed_bonus
+    player.max_velocity += speed_bonus
+
+    for key in sorted(game.shop_owned_cards):
+        card_type, card_id = card_key_to_tuple(key)
+        _add_card_to_inventory(player, Card(type=card_type, inter_type=card_id))
 
 
 class GunPickup:

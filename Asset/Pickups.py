@@ -98,7 +98,7 @@ class Altar:
 
     def __init__(self, position, charge_time=None, chunk_key=None, record_index=None):
         self.pos2D = pygame.Vector2(position)
-        self.radius = 70
+        self.radius = GAME_CONFIG["altar_radius"]
         self.charge_time = charge_time if charge_time is not None else GAME_CONFIG["altar_charge_time"]
         self.charge = 0.0
         self.used = False

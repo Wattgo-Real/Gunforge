@@ -4384,9 +4384,10 @@ BOSS_CONFIG = {
 }
 
 GAME_CONFIG = {
+    "initial_points": 0,
     "boss_spawn_time": 300,  # seconds before boss appears (5 minutes)
-    "spawn_base_interval": 1.0,
-    "spawn_min_interval": 2.4,
+    "spawn_base_interval": 1.0,  # diff_factor = 1.0 + self.elapsed / self.spawn_ramp_seconds
+    "spawn_min_interval": 2.0,  # spawn_interval = max(self.min_spawn_interval, self.base_spawn_interval / diff_factor)
     "spawn_ramp_seconds": 120.0,
     "max_enemies": 45,
     "enemy_hp_growth_per_boss": 0.5,
@@ -4396,6 +4397,7 @@ GAME_CONFIG = {
     "flow_field_refresh_interval": 0.35,
     "flow_field_obstacle_padding": 28,
     "altar_charge_time": 3.0,
+    "altar_radius": 120,
     "altar_buff_amount": {
         "hp": 25,
         "damage": 0.15,
@@ -4409,6 +4411,8 @@ GAME_CONFIG = {
     "gun_pickup_radius": 48,
     "player_max_hp": 100,
     "player_invincible_time": 0.5,
+    "player_hp_regen_per_second": 2.0,
+    "player_hp_regen_delay": 3.0,
     "xp_per_level_base": 4,
     "card_slot_levels": [10, 20, 30, 40, 50],
 }

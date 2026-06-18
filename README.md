@@ -41,3 +41,5 @@ Make some numerical adjustments (Altar size, enemy health)
 ### 2026/06/18
 - adjust enemy probability of generation and health,damage,drops
 - update e2 player Range distance
+- add player hp regen
+- add shop page
