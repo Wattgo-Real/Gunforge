@@ -34,3 +34,10 @@ Simple Ui add and value Setting `GameSetting.py、Start.py TestScreen1.py TestSc
 ### 2026/06/06
 - Add obstacles enemys boss Images
 - Update Evaluation1 and Evaluation2
+
+### 2026/06/16
+Make some numerical adjustments (Altar size, enemy health)
+
+### 2026/06/18
+- adjust enemy probability of generation and health,damage,drops
+- update e2 player Range distance
