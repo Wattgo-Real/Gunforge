@@ -7,26 +7,33 @@ import numpy
 import pygame
 
 import Asset.Function as GF
+from Asset.GameSetting import BULLET_CONFIG
 from Asset.ImageLoader import load_image_surface
 
-
-ATTACKS = ("Ring", "Spread", "Spiral", "Dash")
+ATTACKS = ("Ring", "Spread", "Spiral", "Dash", "Charge")
 GOB_WEIGHTS = {
     "Ring": 1.05,
-    "Spread": 0.82,
-    "Spiral": 1.00,
-    "Dash": 0.95,
+    "Spread": 1.00,
+    "Spiral": 0.90,
+    "Dash": 1.05,
+    "Charge": 1.20,
 }
-GOB_REPEAT_PENALTY = 0.22
+GOB_REPEAT_PENALTY = 0.75
 ARENA_HALF_SIZE = 620.0
 ARENA_DRAW_SIZE = ARENA_HALF_SIZE * 2.0
 BOSS_CLOSE_RANGE = 170.0
 BOSS_PREFERRED_RANGE = 260.0
 BOSS_CHASE_SPEED = 205.0
 BOSS_RETREAT_SPEED = 115.0
-PLAYER_BULLET_SPEED = 300.0
-PLAYER_BULLET_LIFETIME = 0.55
-PLAYER_BULLET_RADIUS = 3
+PLAYER_BULLET_INFO = BULLET_CONFIG[0][1]
+PLAYER_BULLET_SPEED = PLAYER_BULLET_INFO["speed"] * 30.0
+PLAYER_BULLET_LIFETIME = PLAYER_BULLET_INFO.get("lifetime", 1.0)
+PLAYER_BULLET_RADIUS = PLAYER_BULLET_INFO["radius"]
+PLAYER_BULLET_DAMAGE = PLAYER_BULLET_INFO["physical_damage"]
+PLAYER_GUN_COOLDOWN = 0.4
+PLAYER_GUN_RELOAD = 2.0
+PLAYER_GUN_CAPACITY = 20
+PLAYER_GUN_SCATTER_ANGLE = 5.0
 PLAYER_BULLET_EFFECTIVE_RANGE = PLAYER_BULLET_SPEED * PLAYER_BULLET_LIFETIME
 PLAYER_MODES = ("Behavior", "Scripted")
 EVAL2_RUN_TARGET = 30
@@ -35,6 +42,7 @@ ATTACK_COLORS = {
     "Spread": (255, 155, 70),
     "Spiral": (235, 80, 230),
     "Dash": (95, 190, 255),
+    "Charge": (255, 235, 90),
 }
 EVAL2_IMAGE_CACHE = {}
 PLAYER_SPRITE_PATH = "./Img/player_sprite.png"
@@ -153,18 +161,21 @@ class BossDecisionEvaluation:
         self.boss_vel = pygame.Vector2(0, 0)
         self.boss_radius = 36
         self.boss_trace = deque(maxlen=120)
-        self.boss_max_hp = 900.0
+        self.boss_max_hp = 200.0
         self.boss_hp = self.boss_max_hp
 
         self.player_pos = pygame.Vector2(310, -40)
         self.scripted_prev_pos = self.player_pos.copy()
         self.player_vel = pygame.Vector2(0, 0)
         self.player_radius = 13
-        self.player_max_hp = 280.0
+        self.player_max_hp = 100.0
         self.player_hp = self.player_max_hp
         self.player_fire_timer = 0.0
+        self.player_reload_timer = 0.0
+        self.player_capacity_left = PLAYER_GUN_CAPACITY
         self.player_strafe_sign = 1 if self.rng.random() > 0.5 else -1
         self.player_strafe_timer = 0.0
+        self.player_state = "Approach"
         self.boss_orbit_sign = 1 if self.rng.random() > 0.5 else -1
         self.camera_pos = self.player_pos.copy()
 
@@ -182,6 +193,11 @@ class BossDecisionEvaluation:
         self.run_distance = 0.0
         self.run_distance_samples = 0
         self.spiral_angle = self.rng.random() * math.tau
+        self.charge_stage = "aim"
+        self.charge_timer = 0.0
+        self.charge_count = 0
+        self.charge_direction = pygame.Vector2(1, 0)
+        self.boss_contact_timer = 0.0
         self.phase_switches = 0
         self.phase_time_run = {name: 0.0 for name in ATTACKS}
         self.fsm_index = -1
@@ -210,6 +226,7 @@ class BossDecisionEvaluation:
         self._update_player_fire(dt)
         self._update_boss_controller(dt)
         self._update_bullets(dt)
+        self._update_boss_contact(dt)
         self._record_heatmap()
         self._record_distance()
         self._update_camera(dt)
@@ -240,32 +257,24 @@ class BossDecisionEvaluation:
         self.camera_pos = self.camera_pos.lerp(target, follow)
 
     def _update_player_agent(self, dt):
-        # Behavior Tree style player:
-        # 1. enter bullet range, 2. evade incoming bullets, 3. keep a useful range.
+        # FSM player model used as the simulated opponent for Evaluation 2.
         to_player = self.player_pos - self.boss_pos
         if to_player.length_squared() == 0:
             to_player = pygame.Vector2(1, 0)
         away = to_player.normalize()
         tangent = pygame.Vector2(-away.y, away.x) * self.player_strafe_sign
         distance = to_player.length()
-        hittable_distance = PLAYER_BULLET_EFFECTIVE_RANGE + self.boss_radius + PLAYER_BULLET_RADIUS
+        hittable_distance = (
+            PLAYER_BULLET_EFFECTIVE_RANGE + self.boss_radius + PLAYER_BULLET_RADIUS
+        )
 
         self.player_strafe_timer -= dt
         if self.player_strafe_timer <= 0:
             self.player_strafe_sign *= -1
             self.player_strafe_timer = self.rng.uniform(1.2, 2.4)
 
-        if distance > hittable_distance:
-            desired = -away * 260.0
-        else:
-            desired = tangent * 180.0
-            if distance < max(115.0, hittable_distance * 0.58):
-                desired += away * 240.0
-            elif distance > hittable_distance * 0.9:
-                desired -= away * 150.0
-
+        evade = pygame.Vector2(0, 0)
         if distance <= hittable_distance:
-            evade = pygame.Vector2(0, 0)
             for bullet in self.boss_bullets:
                 rel = self.player_pos - bullet.pos
                 if rel.length_squared() > 150 * 150:
@@ -274,11 +283,28 @@ class BossDecisionEvaluation:
                     closing = bullet.vel.normalize().dot(rel.normalize())
                     if closing > 0.5:
                         evade += rel.normalize() * (1.1 + closing)
-            if evade.length_squared() > 0:
-                desired = evade.normalize() * 260.0 + tangent * 80.0
 
         if distance < 85:
-            desired += away * 240.0
+            self.player_state = "Retreat"
+        elif evade.length_squared() > 0:
+            self.player_state = "Evade"
+        elif distance > hittable_distance * 0.92:
+            self.player_state = "Approach"
+        else:
+            self.player_state = "Orbit"
+
+        if self.player_state == "Approach":
+            desired = -away * 260.0
+        elif self.player_state == "Evade":
+            desired = evade.normalize() * 260.0 + tangent * 80.0
+        elif self.player_state == "Retreat":
+            desired = away * 260.0 + tangent * 60.0
+        else:
+            desired = tangent * 180.0
+            if distance < max(115.0, hittable_distance * 0.58):
+                desired += away * 240.0
+            elif distance > hittable_distance * 0.9:
+                desired -= away * 150.0
 
         if desired.length() > 240:
             desired.scale_to_length(240)
@@ -291,25 +317,34 @@ class BossDecisionEvaluation:
         self.player_pos += self.player_vel * dt
 
     def _update_player_fire(self, dt):
-        self.player_fire_timer -= dt
-        if self.player_fire_timer > 0:
+        self.player_fire_timer = max(0.0, self.player_fire_timer - dt)
+        self.player_reload_timer = max(0.0, self.player_reload_timer - dt)
+        if self.player_fire_timer > 0 or self.player_reload_timer > 0:
             return
+        if self.player_capacity_left == 0:
+            self.player_capacity_left = PLAYER_GUN_CAPACITY
         direction = self.boss_pos - self.player_pos
         if direction.length_squared() == 0:
             direction = pygame.Vector2(1, 0)
         direction = direction.normalize()
+        direction = direction.rotate(
+            self.rng.uniform(-PLAYER_GUN_SCATTER_ANGLE, PLAYER_GUN_SCATTER_ANGLE)
+        )
         self.player_bullets.append(
             EvalBullet(
                 self.player_pos.copy(),
-                direction * PLAYER_BULLET_SPEED,
+                direction * PLAYER_BULLET_SPEED + self.player_vel,
                 PLAYER_BULLET_RADIUS,
-                5.0,
+                PLAYER_BULLET_DAMAGE,
                 (150, 225, 255),
                 PLAYER_BULLET_LIFETIME,
                 "player",
             )
         )
-        self.player_fire_timer = 0.10
+        self.player_capacity_left -= 1
+        self.player_fire_timer = PLAYER_GUN_COOLDOWN
+        if self.player_capacity_left == 0:
+            self.player_reload_timer = PLAYER_GUN_RELOAD
 
     def _update_boss_controller(self, dt):
         self.attack_cooldown = max(0.0, self.attack_cooldown - dt)
@@ -333,35 +368,56 @@ class BossDecisionEvaluation:
         hp_ratio = self.boss_hp / self.boss_max_hp
 
         if self.controller == "BT":
-            if distance < 210:
+            if distance < 180:
                 return "Ring"
-            if hp_ratio < 0.45 and self.rng.random() < 0.55:
+            if distance > 420:
+                return "Charge"
+            if hp_ratio < 0.45 and self.action != "Spiral":
                 return "Spiral"
-            if distance > 360:
+            if distance > 330:
+                if self.action != "Charge":
+                    return "Charge"
+                return "Dash"
+            if distance < 260:
+                if self.action != "Ring":
+                    return "Ring"
+                return "Dash"
+            if self.action == "Spread":
+                return "Spiral"
+            if self.action == "Spiral":
                 return "Dash"
             return "Spread"
 
-        # Goal Oriented Behavior / utility AI: weighted utility scores.
+        # Goal Oriented Behavior / utility AI, matched to the production boss policy.
         recent_hit_rate = self.total_boss_hits / max(1, self.total_boss_bullets)
         low_hp = 1.0 - hp_ratio
-        near_score = max(0.0, (245.0 - distance) / 125.0)
-        mid_score = max(0.0, 1.0 - abs(distance - 240.0) / 120.0)
-        far_score = max(0.0, (distance - 250.0) / 170.0)
-        too_close_score = max(0.0, (170.0 - distance) / 90.0)
-        dash_reposition_score = max(0.0, 1.0 - abs(distance - 205.0) / 90.0)
-        miss_pressure = max(0.0, (0.16 - recent_hit_rate) / 0.16)
+        near_score = max(0.0, (230.0 - distance) / 120.0)
+        mid_score = max(0.0, 1.0 - abs(distance - 300.0) / 130.0)
+        far_score = max(0.0, (distance - 320.0) / 180.0)
+        too_close_score = max(0.0, (160.0 - distance) / 80.0)
+        miss_pressure = max(0.0, (0.18 - recent_hit_rate) / 0.18)
 
         scores = {
-            "Ring": (0.25 + near_score * 1.15 + low_hp * 0.20) * GOB_WEIGHTS["Ring"],
-            "Spread": (0.35 + mid_score * 0.85) * GOB_WEIGHTS["Spread"],
-            "Spiral": (0.20 + low_hp * 1.10 + miss_pressure * 0.55) * GOB_WEIGHTS["Spiral"],
+            "Ring": (0.28 + near_score * 1.10 + low_hp * 0.25) * GOB_WEIGHTS["Ring"],
+            "Spread": (0.42 + mid_score * 0.75 + self.rng.uniform(0.0, 0.12))
+            * GOB_WEIGHTS["Spread"],
+            "Spiral": (0.22 + low_hp * 1.00 + miss_pressure * 0.45)
+            * GOB_WEIGHTS["Spiral"],
             "Dash": (
-                0.18
+                0.28
                 + far_score * 0.75
-                + too_close_score * 0.75
-                + dash_reposition_score * 0.50
+                + too_close_score * 0.60
+                + self.rng.uniform(0.0, 0.25)
+            )
+            * GOB_WEIGHTS["Dash"],
+            "Charge": (
+                0.30
+                + far_score * 1.10
+                + miss_pressure * 0.35
+                + low_hp * 0.25
                 + self.rng.uniform(0.0, 0.22)
-            ) * GOB_WEIGHTS["Dash"],
+            )
+            * GOB_WEIGHTS["Charge"],
         }
         if self.gob_last_choice:
             scores[self.gob_last_choice] -= GOB_REPEAT_PENALTY
@@ -397,6 +453,17 @@ class BossDecisionEvaluation:
             if direction.length_squared() > 0:
                 self.boss_vel = direction.normalize() * 260.0
             self._fire_spread(5, 20, 260, 8.5, 7)
+        elif action == "Charge":
+            self.action_duration = 1.45
+            self.attack_cooldown = 1.05
+            self.charge_stage = "aim"
+            self.charge_timer = 0.34
+            self.charge_count = 0
+            direction = self.player_pos - self.boss_pos
+            if direction.length_squared() > 0:
+                self.charge_direction = direction.normalize()
+            else:
+                self.charge_direction = pygame.Vector2(1, 0)
 
     def _run_active_action(self, dt):
         to_player = self.player_pos - self.boss_pos
@@ -409,9 +476,15 @@ class BossDecisionEvaluation:
         if self.action == "Dash":
             self.boss_pos += self.boss_vel * dt
             self.boss_vel *= max(0.0, 1.0 - 3.0 * dt)
-            if not self.action_end_fired and self.action_time >= self.action_duration - dt:
+            if (
+                not self.action_end_fired
+                and self.action_time >= self.action_duration - dt
+            ):
                 self._fire_ring(12, 190, 6.0, 6)
                 self.action_end_fired = True
+            return
+        if self.action == "Charge":
+            self._run_charge_action(dt, direction)
             return
 
         if self.action == "Ring":
@@ -433,6 +506,37 @@ class BossDecisionEvaluation:
                     vel = pygame.Vector2(math.cos(angle), math.sin(angle)) * 175.0
                     self._add_boss_bullet(vel, 6.0, 6, ATTACK_COLORS["Spiral"], 4.0)
                 self.action_fire_timer = 0.105
+
+    def _run_charge_action(self, dt, direction):
+        if direction.length_squared() > 0:
+            target_direction = direction
+        else:
+            target_direction = self.charge_direction
+
+        if self.charge_stage == "aim":
+            self.charge_direction = target_direction
+            self.boss_vel *= max(0.0, 1.0 - 6.0 * dt)
+            self._steer_boss(self.charge_direction * 60.0, dt)
+            self.charge_timer -= dt
+            if self.charge_timer <= 0:
+                self.charge_stage = "dash"
+                self.charge_timer = 0.26
+                self.boss_vel = self.charge_direction * 340.0
+        elif self.charge_stage == "dash":
+            self.boss_pos += self.boss_vel * dt
+            self.boss_vel *= max(0.0, 1.0 - 0.9 * dt)
+            self.charge_timer -= dt
+            if self.charge_timer <= 0:
+                self.charge_count += 1
+                if self.charge_count < 2:
+                    self.charge_stage = "aim"
+                    self.charge_timer = 0.25
+                else:
+                    self.charge_stage = "recover"
+                    self.charge_timer = 0.34
+        elif self.charge_stage == "recover":
+            self._steer_boss(target_direction * 35.0, dt)
+            self.charge_timer -= dt
 
     def _boss_chase_velocity(self, direction, distance):
         if distance <= 0:
@@ -476,7 +580,15 @@ class BossDecisionEvaluation:
 
     def _add_boss_bullet(self, vel, damage, radius, color, lifetime):
         self.boss_bullets.append(
-            EvalBullet(self.boss_pos.copy(), pygame.Vector2(vel), radius, damage, color, lifetime, "boss")
+            EvalBullet(
+                self.boss_pos.copy(),
+                pygame.Vector2(vel),
+                radius,
+                damage,
+                color,
+                lifetime,
+                "boss",
+            )
         )
         self.total_boss_bullets += 1
         self.run_boss_bullets += 1
@@ -487,7 +599,10 @@ class BossDecisionEvaluation:
             if bullet.lifetime <= 0:
                 self.boss_bullets.remove(bullet)
                 continue
-            if bullet.pos.distance_to(self.player_pos) <= bullet.radius + self.player_radius:
+            if (
+                bullet.pos.distance_to(self.player_pos)
+                <= bullet.radius + self.player_radius
+            ):
                 self.total_boss_hits += 1
                 self.run_boss_hits += 1
                 self.total_boss_damage += bullet.damage
@@ -500,9 +615,26 @@ class BossDecisionEvaluation:
             if bullet.lifetime <= 0:
                 self.player_bullets.remove(bullet)
                 continue
-            if bullet.pos.distance_to(self.boss_pos) <= bullet.radius + self.boss_radius:
+            if (
+                bullet.pos.distance_to(self.boss_pos)
+                <= bullet.radius + self.boss_radius
+            ):
                 self.boss_hp -= bullet.damage
                 self.player_bullets.remove(bullet)
+
+    def _update_boss_contact(self, dt):
+        self.boss_contact_timer = max(0.0, self.boss_contact_timer - dt)
+        if self.action != "Charge" or self.boss_contact_timer > 0:
+            return
+        if (
+            self.boss_pos.distance_to(self.player_pos)
+            <= self.boss_radius + self.player_radius
+        ):
+            damage = 16.0
+            self.player_hp -= damage
+            self.total_boss_damage += damage
+            self.run_boss_damage += damage
+            self.boss_contact_timer = 0.45
 
     def _record_heatmap(self):
         rel = self.player_pos - self.boss_pos
@@ -523,12 +655,19 @@ class BossDecisionEvaluation:
 
     def current_metric_lines(self, run_target=EVAL2_RUN_TARGET):
         current_dps = self.run_boss_damage / max(self.run_time, 1.0)
-        current_dodge = 100.0 * (1.0 - self.run_boss_hits / max(1, self.run_boss_bullets))
+        current_dodge = 100.0 * (
+            1.0 - self.run_boss_hits / max(1, self.run_boss_bullets)
+        )
         avg_distance = self.run_distance / max(1, self.run_distance_samples)
-        status = "Complete" if self.is_complete(run_target) else f"Run {self.total_runs + 1}/{run_target}"
+        status = (
+            "Complete"
+            if self.is_complete(run_target)
+            else f"Run {self.total_runs + 1}/{run_target}"
+        )
         return [
             ("Status", status),
             ("Time / HP", f"{self.run_time:4.1f}s / {self.player_hp:4.0f}"),
+            ("Player FSM", self.player_state),
             ("Run DPS / dodge", f"{current_dps:4.1f} / {current_dodge:4.0f}%"),
             ("Avg distance", f"{avg_distance:5.0f}"),
         ]
@@ -567,7 +706,9 @@ class BossDecisionEvaluation:
 
 
 def _ensure_eval2_state(game):
-    if getattr(game, "_eval2_initialized", False) and hasattr(game, "eval2_player_mode_idx"):
+    if getattr(game, "_eval2_initialized", False) and hasattr(
+        game, "eval2_player_mode_idx"
+    ):
         return
     game.eval2_player_mode_idx = 0
     game.eval2_sims = [
@@ -666,7 +807,9 @@ def _draw_phase_bar(screen, sim, rect, font):
         ratio = sim.phase_time_total[phase] / total if total > 0 else 0
         width = int(bar.width * ratio)
         if width > 0:
-            pygame.draw.rect(screen, ATTACK_COLORS[phase], (x, bar.top, width, bar.height))
+            pygame.draw.rect(
+                screen, ATTACK_COLORS[phase], (x, bar.top, width, bar.height)
+            )
         x += width
     pygame.draw.rect(screen, (120, 125, 135), bar, 1)
 
@@ -713,7 +856,11 @@ def _draw_panel(game, sim, rect):
     hp_rect = pygame.Rect(rect.left + 16, metrics_y + 4, rect.width - 32, 10)
     pygame.draw.rect(screen, (55, 25, 32), hp_rect)
     hp_ratio = max(0.0, sim.boss_hp / sim.boss_max_hp)
-    pygame.draw.rect(screen, (220, 70, 90), (hp_rect.left, hp_rect.top, int(hp_rect.width * hp_ratio), hp_rect.height))
+    pygame.draw.rect(
+        screen,
+        (220, 70, 90),
+        (hp_rect.left, hp_rect.top, int(hp_rect.width * hp_ratio), hp_rect.height),
+    )
     pygame.draw.rect(screen, (130, 130, 140), hp_rect, 1)
 
     play_area_top = max(rect.top + 142, metrics_y + 22)
@@ -741,15 +888,21 @@ def _draw_panel(game, sim, rect):
         pygame.draw.circle(screen, (42, 46, 56), center, int(radius * scale), 1)
 
     if len(sim.boss_trace) >= 2:
-        trace_points = [_world_to_panel(pos, camera, play_area, scale) for pos in sim.boss_trace]
+        trace_points = [
+            _world_to_panel(pos, camera, play_area, scale) for pos in sim.boss_trace
+        ]
         pygame.draw.lines(screen, (255, 235, 150), False, trace_points, 2)
 
     for bullet in sim.boss_bullets:
         pos = _world_to_panel(bullet.pos, camera, play_area, scale)
-        pygame.draw.circle(screen, bullet.color, pos, max(2, int(bullet.radius * scale)))
+        pygame.draw.circle(
+            screen, bullet.color, pos, max(2, int(bullet.radius * scale))
+        )
     for bullet in sim.player_bullets:
         pos = _world_to_panel(bullet.pos, camera, play_area, scale)
-        pygame.draw.circle(screen, bullet.color, pos, max(2, int(bullet.radius * scale)))
+        pygame.draw.circle(
+            screen, bullet.color, pos, max(2, int(bullet.radius * scale))
+        )
 
     boss_screen = _world_to_panel(sim.boss_pos, camera, play_area, scale)
     player_screen = _world_to_panel(sim.player_pos, camera, play_area, scale)
@@ -758,9 +911,15 @@ def _draw_panel(game, sim, rect):
     if boss_img:
         screen.blit(boss_img, boss_img.get_rect(center=boss_screen))
     else:
-        pygame.draw.circle(screen, (105, 70, 82), boss_screen, int(sim.boss_radius * scale + 5))
-        pygame.draw.circle(screen, sim.accent, boss_screen, int(sim.boss_radius * scale))
-        pygame.draw.circle(screen, (255, 255, 255), boss_screen, int(sim.boss_radius * scale), 2)
+        pygame.draw.circle(
+            screen, (105, 70, 82), boss_screen, int(sim.boss_radius * scale + 5)
+        )
+        pygame.draw.circle(
+            screen, sim.accent, boss_screen, int(sim.boss_radius * scale)
+        )
+        pygame.draw.circle(
+            screen, (255, 255, 255), boss_screen, int(sim.boss_radius * scale), 2
+        )
 
     player_size = max(24, int(sim.player_radius * 6.2 * scale))
     player_direction = sim.boss_pos - sim.player_pos
@@ -802,7 +961,9 @@ def test_screen_eval2(game, events):
 
     game.screen.fill((15, 16, 22))
     title_font = pygame.font.SysFont(["consolas", "monaco", "monospace"], 34, bold=True)
-    title = title_font.render("Evaluation 2 - Boss Decision Systems", True, (245, 245, 245))
+    title = title_font.render(
+        "Evaluation 2 - Boss Decision Systems", True, (245, 245, 245)
+    )
     game.screen.blit(title, (28, 18))
     complete = all(sim.is_complete(EVAL2_RUN_TARGET) for sim in game.eval2_sims)
     state = "Complete" if complete else "Running"
@@ -814,8 +975,12 @@ def test_screen_eval2(game, events):
     )
     game.screen.blit(hint, (30, 54))
 
-    GF.draw_button(game.screen, reset_btn, "Reset", font=game.HUD_font, color=(80, 95, 130))
-    GF.draw_button(game.screen, back_btn, "Back", font=game.HUD_font, color=(80, 95, 130))
+    GF.draw_button(
+        game.screen, reset_btn, "Reset", font=game.HUD_font, color=(80, 95, 130)
+    )
+    GF.draw_button(
+        game.screen, back_btn, "Back", font=game.HUD_font, color=(80, 95, 130)
+    )
 
     margin = 22
     top = 92
