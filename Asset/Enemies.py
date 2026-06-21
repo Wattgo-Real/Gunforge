@@ -1,5 +1,6 @@
 import math
 import random
+import heapq
 
 import pygame
 
@@ -10,6 +11,16 @@ from Asset.SpatialGrid import SpatialGrid
 import uuid
 
 _ENEMY_IMAGE_CACHE = {}
+FLOW_NEIGHBORS_8 = (
+    (1, 0),
+    (-1, 0),
+    (0, 1),
+    (0, -1),
+    (1, 1),
+    (1, -1),
+    (-1, 1),
+    (-1, -1),
+)
 
 
 def _get_enemy_image(path, sprite_height):
@@ -32,6 +43,153 @@ def _get_enemy_image(path, sprite_height):
 
     _ENEMY_IMAGE_CACHE[key] = image
     return image
+
+
+class FlowFieldNavigator:
+    def __init__(self):
+        self.cell_size = GAME_CONFIG["flow_field_cell_size"]
+        self.radius_cells = GAME_CONFIG["flow_field_radius_cells"]
+        self.refresh_interval = GAME_CONFIG["flow_field_refresh_interval"]
+        self.obstacle_padding = GAME_CONFIG["flow_field_obstacle_padding"]
+        self.timer = 0.0
+        self.player_cell = None
+        self.origin_cell = (0, 0)
+        self.grid_size = self.radius_cells * 2 + 1
+        self.blocked = set()
+        self.flow = {}
+
+    def reset(self):
+        self.timer = 0.0
+        self.player_cell = None
+        self.origin_cell = (0, 0)
+        self.blocked.clear()
+        self.flow.clear()
+
+    def update(self, delta_time, player_pos, obstacles):
+        current_cell = self._world_to_cell(player_pos)
+        self.timer -= delta_time
+        if (
+            self.player_cell == current_cell
+            and self.timer > 0
+            and self.flow
+        ):
+            return
+
+        self.player_cell = current_cell
+        self.timer = self.refresh_interval
+        self._build(player_pos, obstacles)
+
+    def direction_at(self, pos):
+        world_cell = self._world_to_cell(pos)
+        local = self._to_local(world_cell)
+        return self.flow.get(local)
+
+    def _build(self, player_pos, obstacles):
+        self.origin_cell = (
+            self.player_cell[0] - self.radius_cells,
+            self.player_cell[1] - self.radius_cells,
+        )
+        self.blocked = self._blocked_cells(obstacles)
+        goal = self._nearest_walkable(self._to_local(self.player_cell))
+
+        frontier = [(0.0, goal)]
+        dist = {goal: 0.0}
+        while frontier:
+            curr_cost, curr = heapq.heappop(frontier)
+            if curr_cost > dist[curr]:
+                continue
+
+            for dx, dy in FLOW_NEIGHBORS_8:
+                nxt = (curr[0] + dx, curr[1] + dy)
+                if not self._is_walkable(nxt):
+                    continue
+                if dx != 0 and dy != 0:
+                    if not self._is_walkable((curr[0] + dx, curr[1])):
+                        continue
+                    if not self._is_walkable((curr[0], curr[1] + dy)):
+                        continue
+
+                new_cost = curr_cost + (math.sqrt(2.0) if dx != 0 and dy != 0 else 1.0)
+                if nxt not in dist or new_cost < dist[nxt]:
+                    dist[nxt] = new_cost
+                    heapq.heappush(frontier, (new_cost, nxt))
+
+        flow = {}
+        for cell, cell_cost in dist.items():
+            if cell == goal:
+                continue
+            best = None
+            best_cost = cell_cost
+            for dx, dy in FLOW_NEIGHBORS_8:
+                nxt = (cell[0] + dx, cell[1] + dy)
+                if nxt in dist and dist[nxt] < best_cost:
+                    best = nxt
+                    best_cost = dist[nxt]
+            if best is not None:
+                direction = pygame.Vector2(best[0] - cell[0], best[1] - cell[1])
+                if direction.length_squared() > 0:
+                    flow[cell] = direction.normalize()
+
+        self.flow = flow
+
+    def _blocked_cells(self, obstacles):
+        blocked = set()
+        for obs in obstacles:
+            half = obs.size / 2
+            min_cell = self._world_to_cell(
+                pygame.Vector2(
+                    obs.pos2D.x - half.x - self.obstacle_padding,
+                    obs.pos2D.y - half.y - self.obstacle_padding,
+                )
+            )
+            max_cell = self._world_to_cell(
+                pygame.Vector2(
+                    obs.pos2D.x + half.x + self.obstacle_padding,
+                    obs.pos2D.y + half.y + self.obstacle_padding,
+                )
+            )
+            min_local = self._to_local(min_cell)
+            max_local = self._to_local(max_cell)
+            for lx in range(max(0, min_local[0]), min(self.grid_size, max_local[0] + 1)):
+                for ly in range(max(0, min_local[1]), min(self.grid_size, max_local[1] + 1)):
+                    blocked.add((lx, ly))
+        return blocked
+
+    def _nearest_walkable(self, cell):
+        if self._is_walkable(cell):
+            return cell
+
+        queue = [cell]
+        seen = {cell}
+        for curr in queue:
+            for dx, dy in FLOW_NEIGHBORS_8[:4]:
+                nxt = (curr[0] + dx, curr[1] + dy)
+                if nxt in seen:
+                    continue
+                if self._is_walkable(nxt):
+                    return nxt
+                if self._in_bounds(nxt):
+                    seen.add(nxt)
+                    queue.append(nxt)
+        return (self.radius_cells, self.radius_cells)
+
+    def _world_to_cell(self, pos):
+        return (
+            math.floor(pos.x / self.cell_size),
+            math.floor(pos.y / self.cell_size),
+        )
+
+    def _to_local(self, world_cell):
+        return (
+            world_cell[0] - self.origin_cell[0],
+            world_cell[1] - self.origin_cell[1],
+        )
+
+    def _in_bounds(self, cell):
+        return 0 <= cell[0] < self.grid_size and 0 <= cell[1] < self.grid_size
+
+    def _is_walkable(self, cell):
+        return self._in_bounds(cell) and cell not in self.blocked
 
 
 class DamageNumber:
@@ -107,6 +265,7 @@ class Enemy:
         self.enemy_bullets = []
         self.damage_numbers = []
         self.alive = True
+        self.reward_claimed = False
         self.dash_state = "approach"
         self.dash_timer = random.uniform(1.0, 2.5)
         self.boss_phase_timer = 0.0
@@ -117,20 +276,24 @@ class Enemy:
         if self.hp <= 0:
             self.alive = False
 
-    def _move_towards(self, target_pos, delta_time, speed=None):
+    def _move_towards(self, target_pos, delta_time, speed=None, flow_field=None):
         speed = self.speed if speed is None else speed
-        diff = target_pos - self.pos2D
-        if diff.length_squared() > 0:
-            self.pos2D += diff.normalize() * speed * delta_time
+        direction = flow_field.direction_at(self.pos2D) if flow_field is not None else None
+        if direction is None:
+            diff = target_pos - self.pos2D
+            if diff.length_squared() == 0:
+                return
+            direction = diff.normalize()
+        self.pos2D += direction * speed * delta_time
 
-    def _move_at_distance(self, target_pos, delta_time, distance):
+    def _move_at_distance(self, target_pos, delta_time, distance, flow_field=None):
         diff = target_pos - self.pos2D
         d = diff.length()
         if d == 0:
             return
         direction = diff.normalize()
         if d > distance + 30:
-            self.pos2D += direction * self.speed * delta_time
+            self._move_towards(target_pos, delta_time, self.speed, flow_field)
         elif d < distance - 30:
             self.pos2D -= direction * self.speed * delta_time
         else:
@@ -144,32 +307,32 @@ class Enemy:
         vel = diff.normalize() * self.bullet_speed * speed_mul
         return EnemyBullet(self.pos2D, vel, self.damage * damage_mul, lifetime=3.5, radius=radius, color=color)
 
-    def update(self, delta_time, player_pos):
+    def update(self, delta_time, player_pos, flow_field=None):
         self.attack_timer = max(0, self.attack_timer - delta_time)
 
         if self.ai == "chase":
-            self._move_towards(player_pos, delta_time)
+            self._move_towards(player_pos, delta_time, flow_field=flow_field)
         elif self.ai == "runner":
             self.dash_timer -= delta_time
             if self.dash_state == "approach":
-                self._move_towards(player_pos, delta_time)
+                self._move_towards(player_pos, delta_time, flow_field=flow_field)
                 if self.dash_timer <= 0:
                     self.dash_state = "dash"
                     self.dash_timer = 0.5
             else:
-                self._move_towards(player_pos, delta_time, self.speed * 2.4)
+                self._move_towards(player_pos, delta_time, self.speed * 2.4, flow_field)
                 if self.dash_timer <= 0:
                     self.dash_state = "approach"
                     self.dash_timer = random.uniform(1.5, 3.0)
         elif self.ai == "shooter":
-            self._move_at_distance(player_pos, delta_time, self.preferred_distance)
+            self._move_at_distance(player_pos, delta_time, self.preferred_distance, flow_field)
             if self.attack_timer <= 0:
                 bullet = self._shoot_at(player_pos)
                 if bullet:
                     self.enemy_bullets.append(bullet)
                     self.attack_timer = self.attack_cooldown
         elif self.ai == "boss":
-            self._update_boss(delta_time, player_pos)
+            self._update_boss(delta_time, player_pos, flow_field)
 
         for b in self.enemy_bullets[:]:
             b.update(delta_time)
@@ -181,13 +344,13 @@ class Enemy:
             if dn.timer <= 0:
                 self.damage_numbers.remove(dn)
 
-    def _update_boss(self, delta_time, player_pos):
+    def _update_boss(self, delta_time, player_pos, flow_field=None):
         self.boss_phase_timer += delta_time
         phase_dur = 5.0
         phase = int(self.boss_phase_timer / phase_dur) % 3
 
         if phase == 0:
-            self._move_towards(player_pos, delta_time, self.speed)
+            self._move_towards(player_pos, delta_time, self.speed, flow_field)
             if self.attack_timer <= 0:
                 num = 18
                 for i in range(num):
@@ -198,7 +361,7 @@ class Enemy:
                     )
                 self.attack_timer = self.attack_cooldown * 1.4
         elif phase == 1:
-            self._move_towards(player_pos, delta_time, self.speed * 0.4)
+            self._move_towards(player_pos, delta_time, self.speed * 0.4, flow_field)
             if self.attack_timer <= 0:
                 diff = player_pos - self.pos2D
                 if diff.length_squared() > 0:
@@ -211,7 +374,7 @@ class Enemy:
                         )
                 self.attack_timer = self.attack_cooldown * 0.6
         else:
-            self._move_towards(player_pos, delta_time, self.speed * 0.5)
+            self._move_towards(player_pos, delta_time, self.speed * 0.5, flow_field)
             if self.attack_timer <= 0:
                 base = self.boss_phase_timer * 180
                 for k in range(4):
@@ -258,10 +421,20 @@ class EnemyManager:
         self.boss = None
         self.boss_spawned = False
         self.boss_defeated = False
+        self.boss_defeat_count = 0
         self.elapsed = 0.0
         self.boss_spawn_time = GAME_CONFIG["boss_spawn_time"]
         self.base_spawn_interval = GAME_CONFIG["spawn_base_interval"]
         self.min_spawn_interval = GAME_CONFIG["spawn_min_interval"]
+        self.spawn_ramp_seconds = GAME_CONFIG["spawn_ramp_seconds"]
+        self.max_enemies = GAME_CONFIG["max_enemies"]
+        self.xp_growth_interval = GAME_CONFIG["xp_drop_growth_interval"]
+        self.xp_growth_per_interval = GAME_CONFIG["xp_drop_growth_per_interval"]
+        self.xp_drop_max_multiplier = GAME_CONFIG["xp_drop_max_multiplier"]
+        self.enemy_hp_growth_per_boss = GAME_CONFIG["enemy_hp_growth_per_boss"]
+        self.enemy_damage_growth_per_boss = GAME_CONFIG["enemy_damage_growth_per_boss"]
+        self.flow_field = FlowFieldNavigator()
+        self.next_chaser_ring_time = GAME_CONFIG["chaser_ring_interval"]
 
         # for spatial partitioning
         self.spatial_grid_dict = spatial_grid_dict
@@ -272,30 +445,54 @@ class EnemyManager:
         self.boss = None
         self.boss_spawned = False
         self.boss_defeated = False
+        self.boss_defeat_count = 0
         self.elapsed = 0.0
+        self.flow_field.reset()
 
-    def update(self, delta_time, player_pos):
+    def update(self, delta_time, player_pos, world=None):
         self.elapsed += delta_time
 
-        diff_factor = 1.0 + self.elapsed / 60.0
+        # After 60s, the enemy spawn rate will gradually increase (quadruple after 300s, but return to the original spawn rate after the boss spawns).
+        if self.elapsed < 60.0:
+            spawn_rate_mult = 1.0
+        elif self.elapsed < 300.0:
+            # Linear scaling from 1.0 (at 60s) to 4.0 (at 300s)
+            spawn_rate_mult = 1.0 + (self.elapsed - 60.0) / 240.0 * 3.0
+        else:
+            spawn_rate_mult = 1.0
+
+        current_max_enemies = self.max_enemies * spawn_rate_mult
+
+        diff_factor = 1.0 + self.elapsed / self.spawn_ramp_seconds
         spawn_interval = max(self.min_spawn_interval, self.base_spawn_interval / diff_factor)
+        spawn_interval /= spawn_rate_mult   # increase spawn interval to decrease spawn rate
 
         self.spawn_timer -= delta_time
-        if self.spawn_timer <= 0 and (self.boss is None or not self.boss.alive or len(self.enemies) < 80):
+        if self.spawn_timer <= 0 and (self.boss is None or not self.boss.alive or len(self.enemies) < current_max_enemies):
             self._spawn_enemy(player_pos)
             self.spawn_timer = spawn_interval
 
         if not self.boss_spawned and self.elapsed >= self.boss_spawn_time:
             self._spawn_boss(player_pos)
 
+        # Chaser ring spawn
+        # After 150 seconds, spawn a ring of 16 chasers around the player every 30 seconds
+        if self.elapsed >= self.next_chaser_ring_time:
+            self._spawn_chaser_ring(player_pos)
+            self.next_chaser_ring_time += 30.0
+
+        obstacles = world.obstacles if world is not None else ()
+        self.flow_field.update(delta_time, player_pos, obstacles)
+
         for e in self.enemies[:]:
-            e.update(delta_time, player_pos)
+            e.update(delta_time, player_pos, self.flow_field)
             if self.spatial_grid_dict is not None:
                 e.grid_pos = self.spatial_grid_dict.update_entity_pos(e, e.grid_pos, e.pos2D)
 
             if not e.alive:
                 if e.is_boss:
                     self.boss_defeated = True
+                    self.boss_defeat_count += 1
 
                 self.spatial_grid_dict.remove_entity(e.grid_pos, e.uuid)
 
@@ -311,24 +508,66 @@ class EnemyManager:
             pool += [3, 3]
         enemy_type = random.choice(pool)
 
-        hp_mul = 1.0 + self.elapsed / 90.0
-        dmg_mul = 1.0 + self.elapsed / 180.0
+        hp_mul, dmg_mul = self._enemy_stat_multipliers()
 
         angle = random.uniform(0, math.tau)
         dist = random.uniform(700, 900)
         spawn_pos = player_pos + pygame.Vector2(math.cos(angle), math.sin(angle)) * dist
         new_enemy = Enemy(spawn_pos, enemy_type=enemy_type, hp_mul=hp_mul, dmg_mul=dmg_mul)
+        new_enemy.xp_drop = self._scaled_xp_drop(new_enemy.xp_drop)
         self.enemies.append(new_enemy)
 
         if self.spatial_grid_dict is not None:
             self.spatial_grid_dict.register_entity(new_enemy)
+
+    def _scaled_xp_drop(self, base_drop):
+        if self.xp_growth_interval <= 0:
+            return base_drop
+
+        growth_tier = int(self.elapsed // self.xp_growth_interval)
+        multiplier = 1.0 + growth_tier * self.xp_growth_per_interval
+        multiplier = min(multiplier, self.xp_drop_max_multiplier)
+        return max(1, int(base_drop * multiplier + 0.5))
+
+    # New: Spawn chaser ring every 150 seconds
+    def _spawn_chaser_ring(self, player_pos):
+        num_chasers = 16
+        radius = 500.0  # Just off-screen / nearby
+        hp_mul, dmg_mul = self._enemy_stat_multipliers()
+        for i in range(num_chasers):
+            angle = math.tau * i / num_chasers
+            spawn_pos = player_pos + pygame.Vector2(math.cos(angle), math.sin(angle)) * radius
+            new_enemy = Enemy(spawn_pos, enemy_type=0, hp_mul=hp_mul, dmg_mul=dmg_mul)
+            new_enemy.xp_drop = self._scaled_xp_drop(new_enemy.xp_drop)
+            self.enemies.append(new_enemy)
+            if self.spatial_grid_dict is not None:
+                self.spatial_grid_dict.register_entity(new_enemy)
+
+    # New: Get enemy stat multipliers with consideration of boss defeats and time
+    def _enemy_stat_multipliers(self):
+        hp_mul = 1.0 + self.boss_defeat_count * self.enemy_hp_growth_per_boss
+        dmg_mul = 1.0 + self.boss_defeat_count * self.enemy_damage_growth_per_boss
+
+        # After 150 seconds, the enemy's health will begin to increase (double after 5 minutes).
+        time_hp_mul = 1.0
+        if self.elapsed >= 150.0:
+            if self.elapsed < 300.0:
+                # Linear scaling from 1.0 (at 150s) to 2.0 (at 300s)
+                time_hp_mul = 1.0 + (self.elapsed - 150.0) / 150.0
+            else:
+                time_hp_mul = 2.0
+        hp_mul *= time_hp_mul
+
+        return hp_mul, dmg_mul
 
 
     def _spawn_boss(self, player_pos):
         self.boss_spawned = True
         angle = random.uniform(0, math.tau)
         spawn_pos = player_pos + pygame.Vector2(math.cos(angle), math.sin(angle)) * 600
-        self.boss = Enemy(spawn_pos, is_boss=True)
+        hp_mul, dmg_mul = self._enemy_stat_multipliers()
+        self.boss = Enemy(spawn_pos, hp_mul=hp_mul, dmg_mul=dmg_mul, is_boss=True)
+        self.boss.xp_drop = self._scaled_xp_drop(self.boss.xp_drop)
         self.enemies.append(self.boss)
 
         if self.spatial_grid_dict is not None:

@@ -25,38 +25,17 @@ class Player:
 
         # The direction the player is facing, it should always be normalized
         self.face_direction : pygame.Vector2 = pygame.Vector2(1, 0)
-        self.inventory : list[Card | None] = [Card(type = 0, inter_type = i) for i in range(5)] + \
-                                            [Card(type = 2, inter_type = i) for i in range(5)] + \
-                                            [Card(type = 1, inter_type = 100),
-                                             Card(type = 1, inter_type = 59),
-                                             Card(type = 1, inter_type = 64)] + \
-                                             [Card(type = 3, inter_type = i) for i in range(6)] + \
-                                             [Card(type = 4, inter_type = i//2) for i in range(6)] + \
-                                             [Card(type = 5, inter_type = i) for i in range(10)]
         self.inventory : list[Card | None] = []
         self.inventory.extend([None] * (40 - len(self.inventory)))
 
         # weapon
-        # basic_info = {
-        #     "cooldown" : 0.4,
-        #     "reload" : 2,
-        #     "scatter_angle" : 5,
-        #     "capacity" : 20,
-        #     "max_slots" : 20,
-        #     "card_list" : [Card(type = 1, inter_type = 9)] +
-        #                   [Card(type = 1, inter_type = 100+i) for i in range(2)] +
-        #                   [Card(type = 3, inter_type = 1)] +
-        #                   [Card(type = 1, inter_type = 19)] +
-        #                   [Card(type = 2, inter_type = 4)] +
-        #                   [Card(type = 0, inter_type = 0)]
-        # }
         basic_info = {
             "cooldown" : 0.4,
             "reload" : 2,
             "scatter_angle" : 5,
             "capacity" : 20,
-            "max_slots" : 20,
-            "card_list" : [Card(type = 0, inter_type = 0)],
+            "max_slots" : 8,
+            "card_list" : [Card(type = 2, inter_type = 3), Card(type = 0, inter_type = 0)],
         }
 
         self.bullet_manager = bullet_manager
@@ -67,11 +46,14 @@ class Player:
         # This is for the player to record its trajectory
         self.history_position : deque = deque(maxlen=50)
         self.total_frame_passed : int = 0
+        self.mouse_pos_world : pygame.Vector2 = pygame.Vector2(0, 0)
+
 
         # Combat / progression stats
         self.max_hp : float = GAME_CONFIG["player_max_hp"]
         self.hp : float = self.max_hp
         self.invincible_timer : float = 0.0
+        self.regen_delay_timer : float = 0.0
         self.alive : bool = True
 
         self.xp : int = 0
@@ -249,18 +231,19 @@ class Player:
             trigger_feedback (bool): Whether to trigger feedback messages
         '''
 
+        spawn_pos = self.pos2D + self.face_direction * 50
         for i, weapon in enumerate(self.weapon_list):
             if weapon is None:
                 continue
 
             if i == self.weapon_index:
                 if fire:
-                    res = weapon.fire(self.face_direction, self.pos2D)
+                    res = weapon.fire(self.face_direction, spawn_pos)
                     if res != "" and trigger_feedback:
                         self.weapon_error_msg = res
                         self.weapon_error_timer = 0.5
             else:
-                weapon.fire(pygame.Vector2(1, 0).rotate(random.random() * 360), self.pos2D)
+                weapon.fire(pygame.Vector2(1, 0).rotate(random.random() * 360), spawn_pos)
             weapon.update(delta_time)
 
 
@@ -269,6 +252,7 @@ class Player:
             return False
         self.hp -= damage
         self.invincible_timer = GAME_CONFIG["player_invincible_time"]
+        self.regen_delay_timer = GAME_CONFIG["player_hp_regen_delay"]
         if self.hp <= 0:
             self.hp = 0
             self.alive = False
@@ -280,6 +264,11 @@ class Player:
     def _update_timers(self, delta_time : float):
         if self.invincible_timer > 0:
             self.invincible_timer = max(0.0, self.invincible_timer - delta_time)
+
+        if self.regen_delay_timer > 0:
+            self.regen_delay_timer = max(0.0, self.regen_delay_timer - delta_time)
+        elif self.alive and self.hp < self.max_hp:
+            self.heal(GAME_CONFIG["player_hp_regen_per_second"] * delta_time)
 
         if self.dash_cooldown_timer > 0:
             self.dash_cooldown_timer = max(0.0, self.dash_cooldown_timer - delta_time)
@@ -339,6 +328,7 @@ class Player:
         self.max_velocity = self.base_max_velocity
         self.max_acceleration = self.base_max_acceleration
         self.invincible_timer = 0.0
+        self.regen_delay_timer = 0.0
         self.alive = True
         self.xp = 0
         self.level = 1
@@ -351,6 +341,16 @@ class Player:
         self.weapon_error_msg = ""
         self.weapon_error_timer = 0.0
         self.history_position.clear()
-
+        self.mouse_pos_world = pygame.Vector2(0, 0)
         self.inventory = []
-        self.inventory.extend([None] * (40 - len(self.inventory)))
+        self.inventory.extend([None] * 40)
+        basic_info = {
+            "cooldown" : 0.4,
+            "reload" : 2,
+            "scatter_angle" : 5,
+            "capacity" : 20,
+            "max_slots" : 8,
+            "card_list" : [Card(type = 0, inter_type = 0)],
+        }
+        self.weapon_list = [Gun(basic_info, self.bullet_manager), None, None, None]
+        self.weapon_index = 0

@@ -11,12 +11,25 @@ from Asset.ImageLoader import load_image_surface
 
 
 ATTACKS = ("Ring", "Spread", "Spiral", "Dash")
+GOB_WEIGHTS = {
+    "Ring": 1.05,
+    "Spread": 0.82,
+    "Spiral": 1.00,
+    "Dash": 0.95,
+}
+GOB_REPEAT_PENALTY = 0.22
 ARENA_HALF_SIZE = 620.0
 ARENA_DRAW_SIZE = ARENA_HALF_SIZE * 2.0
 BOSS_CLOSE_RANGE = 170.0
 BOSS_PREFERRED_RANGE = 260.0
 BOSS_CHASE_SPEED = 205.0
 BOSS_RETREAT_SPEED = 115.0
+PLAYER_BULLET_SPEED = 300.0
+PLAYER_BULLET_LIFETIME = 0.55
+PLAYER_BULLET_RADIUS = 3
+PLAYER_BULLET_EFFECTIVE_RANGE = PLAYER_BULLET_SPEED * PLAYER_BULLET_LIFETIME
+PLAYER_MODES = ("Behavior", "Scripted")
+EVAL2_RUN_TARGET = 30
 ATTACK_COLORS = {
     "Ring": (255, 80, 105),
     "Spread": (255, 155, 70),
@@ -24,6 +37,8 @@ ATTACK_COLORS = {
     "Dash": (95, 190, 255),
 }
 EVAL2_IMAGE_CACHE = {}
+PLAYER_SPRITE_PATH = "./Img/player_sprite.png"
+PLAYER_SPRITE_BASE_ANGLE = 0
 EVAL2_OBSTACLES = (
     (-440, -330, 135, 105, "./Img/obstacle_ruins.png"),
     (410, -285, 115, 145, "./Img/obstacle_roots.png"),
@@ -46,6 +61,29 @@ def _load_eval_image(path, size=None):
         image = None
     EVAL2_IMAGE_CACHE[key] = image
     return image
+
+
+def _draw_player_sprite(screen, center, size, direction):
+    player_img = _load_eval_image(PLAYER_SPRITE_PATH, (size, size))
+    if not player_img:
+        pygame.draw.circle(screen, (80, 170, 255), center, max(4, int(size * 0.28)))
+        pygame.draw.circle(screen, (235, 250, 255), center, max(4, int(size * 0.22)), 1)
+        return
+
+    direction = pygame.Vector2(direction)
+    if direction.length_squared() == 0:
+        direction = pygame.Vector2(1, 0)
+    screen_direction = pygame.Vector2(direction.x, -direction.y)
+    angle = -screen_direction.as_polar()[1] + PLAYER_SPRITE_BASE_ANGLE
+    rotated = pygame.transform.rotozoom(player_img, angle, 1.0)
+    screen.blit(rotated, rotated.get_rect(center=(int(center.x), int(center.y))))
+
+
+def _scripted_player_position(t):
+    return pygame.Vector2(
+        math.cos(t * 0.72) * 190.0 + math.sin(t * 1.31) * 45.0,
+        math.sin(t * 0.72) * 140.0 + math.cos(t * 1.17) * 40.0,
+    )
 
 
 @dataclass
@@ -86,6 +124,9 @@ class BossDecisionEvaluation:
         self.total_phase_switches = 0
         self.total_runs = 0
         self.total_player_losses = 0
+        self.total_distance = 0.0
+        self.total_distance_samples = 0
+        self.survival_samples = []
         self.phase_time_total = {name: 0.0 for name in ATTACKS}
 
         self.reset_run()
@@ -100,6 +141,9 @@ class BossDecisionEvaluation:
         self.total_phase_switches = 0
         self.total_runs = 0
         self.total_player_losses = 0
+        self.total_distance = 0.0
+        self.total_distance_samples = 0
+        self.survival_samples.clear()
         self.phase_time_total = {name: 0.0 for name in ATTACKS}
         self.reset_run()
 
@@ -113,6 +157,7 @@ class BossDecisionEvaluation:
         self.boss_hp = self.boss_max_hp
 
         self.player_pos = pygame.Vector2(310, -40)
+        self.scripted_prev_pos = self.player_pos.copy()
         self.player_vel = pygame.Vector2(0, 0)
         self.player_radius = 13
         self.player_max_hp = 280.0
@@ -131,6 +176,11 @@ class BossDecisionEvaluation:
         self.action_fire_timer = 0.0
         self.action_end_fired = False
         self.attack_cooldown = 0.25
+        self.run_boss_damage = 0.0
+        self.run_boss_bullets = 0
+        self.run_boss_hits = 0
+        self.run_distance = 0.0
+        self.run_distance_samples = 0
         self.spiral_angle = self.rng.random() * math.tau
         self.phase_switches = 0
         self.phase_time_run = {name: 0.0 for name in ATTACKS}
@@ -139,7 +189,13 @@ class BossDecisionEvaluation:
         self.gob_score_snapshot = {name: 0.0 for name in ATTACKS}
         self.boss_trace.append(self.boss_pos.copy())
 
-    def update(self, dt):
+    def is_complete(self, run_target=EVAL2_RUN_TARGET):
+        return run_target is not None and self.total_runs >= run_target
+
+    def update(self, dt, player_mode="Behavior", run_target=EVAL2_RUN_TARGET):
+        if self.is_complete(run_target):
+            return
+
         self.run_time += dt
         self.total_elapsed += dt
 
@@ -147,11 +203,15 @@ class BossDecisionEvaluation:
             self.phase_time_run[self.action] += dt
             self.phase_time_total[self.action] += dt
 
-        self._update_player_agent(dt)
+        if player_mode == "Scripted":
+            self._update_scripted_player(dt)
+        else:
+            self._update_player_agent(dt)
         self._update_player_fire(dt)
         self._update_boss_controller(dt)
         self._update_bullets(dt)
         self._record_heatmap()
+        self._record_distance()
         self._update_camera(dt)
         self.boss_trace.append(self.boss_pos.copy())
 
@@ -160,9 +220,16 @@ class BossDecisionEvaluation:
             self.total_runs += 1
             self.reset_run()
         elif self.player_hp <= 0 or self.run_time >= 55.0:
+            self.survival_samples.append(self.run_time)
             self.total_runs += 1
             self.total_player_losses += 1
             self.reset_run()
+
+    def _update_scripted_player(self, dt):
+        prev = self.player_pos.copy()
+        self.player_pos = _scripted_player_position(self.run_time)
+        self.player_vel = (self.player_pos - prev) / max(dt, 1e-6)
+        self.scripted_prev_pos = prev
 
     def _update_camera(self, dt):
         target = self.player_pos
@@ -174,36 +241,44 @@ class BossDecisionEvaluation:
 
     def _update_player_agent(self, dt):
         # Behavior Tree style player:
-        # 1. evade incoming bullets, 2. keep a useful range, 3. strafe around boss.
+        # 1. enter bullet range, 2. evade incoming bullets, 3. keep a useful range.
         to_player = self.player_pos - self.boss_pos
         if to_player.length_squared() == 0:
             to_player = pygame.Vector2(1, 0)
         away = to_player.normalize()
         tangent = pygame.Vector2(-away.y, away.x) * self.player_strafe_sign
+        distance = to_player.length()
+        hittable_distance = PLAYER_BULLET_EFFECTIVE_RANGE + self.boss_radius + PLAYER_BULLET_RADIUS
 
         self.player_strafe_timer -= dt
         if self.player_strafe_timer <= 0:
             self.player_strafe_sign *= -1
             self.player_strafe_timer = self.rng.uniform(1.2, 2.4)
 
-        desired = tangent * 180.0
-        distance = to_player.length()
-        if distance < 245:
-            desired += away * 240.0
-        elif distance > 375:
-            desired -= away * 170.0
+        if distance > hittable_distance:
+            desired = -away * 260.0
+        else:
+            desired = tangent * 180.0
+            if distance < max(115.0, hittable_distance * 0.58):
+                desired += away * 240.0
+            elif distance > hittable_distance * 0.9:
+                desired -= away * 150.0
 
-        evade = pygame.Vector2(0, 0)
-        for bullet in self.boss_bullets:
-            rel = self.player_pos - bullet.pos
-            if rel.length_squared() > 150 * 150:
-                continue
-            if bullet.vel.length_squared() > 0 and rel.length_squared() > 0:
-                closing = bullet.vel.normalize().dot(rel.normalize())
-                if closing > 0.5:
-                    evade += rel.normalize() * (1.1 + closing)
-        if evade.length_squared() > 0:
-            desired = evade.normalize() * 260.0 + tangent * 80.0
+        if distance <= hittable_distance:
+            evade = pygame.Vector2(0, 0)
+            for bullet in self.boss_bullets:
+                rel = self.player_pos - bullet.pos
+                if rel.length_squared() > 150 * 150:
+                    continue
+                if bullet.vel.length_squared() > 0 and rel.length_squared() > 0:
+                    closing = bullet.vel.normalize().dot(rel.normalize())
+                    if closing > 0.5:
+                        evade += rel.normalize() * (1.1 + closing)
+            if evade.length_squared() > 0:
+                desired = evade.normalize() * 260.0 + tangent * 80.0
+
+        if distance < 85:
+            desired += away * 240.0
 
         if desired.length() > 240:
             desired.scale_to_length(240)
@@ -226,11 +301,11 @@ class BossDecisionEvaluation:
         self.player_bullets.append(
             EvalBullet(
                 self.player_pos.copy(),
-                direction * 540.0,
-                4,
-                6.0,
+                direction * PLAYER_BULLET_SPEED,
+                PLAYER_BULLET_RADIUS,
+                5.0,
                 (150, 225, 255),
-                1.8,
+                PLAYER_BULLET_LIFETIME,
                 "player",
             )
         )
@@ -266,17 +341,30 @@ class BossDecisionEvaluation:
                 return "Dash"
             return "Spread"
 
-        # Goal Oriented Behavior / utility AI: high responsiveness, but it can
-        # change goals often when scores are close.
+        # Goal Oriented Behavior / utility AI: weighted utility scores.
         recent_hit_rate = self.total_boss_hits / max(1, self.total_boss_bullets)
+        low_hp = 1.0 - hp_ratio
+        near_score = max(0.0, (245.0 - distance) / 125.0)
+        mid_score = max(0.0, 1.0 - abs(distance - 240.0) / 120.0)
+        far_score = max(0.0, (distance - 250.0) / 170.0)
+        too_close_score = max(0.0, (170.0 - distance) / 90.0)
+        dash_reposition_score = max(0.0, 1.0 - abs(distance - 205.0) / 90.0)
+        miss_pressure = max(0.0, (0.16 - recent_hit_rate) / 0.16)
+
         scores = {
-            "Ring": max(0.0, (290 - distance) / 170.0) + (1.0 - hp_ratio) * 0.25,
-            "Spread": 0.75 + max(0.0, 1.0 - abs(distance - 320) / 260.0),
-            "Spiral": (1.0 - hp_ratio) * 1.35 + (0.55 if recent_hit_rate < 0.09 else 0.0),
-            "Dash": max(0.0, (distance - 300) / 230.0) + self.rng.uniform(0.0, 0.28),
+            "Ring": (0.25 + near_score * 1.15 + low_hp * 0.20) * GOB_WEIGHTS["Ring"],
+            "Spread": (0.35 + mid_score * 0.85) * GOB_WEIGHTS["Spread"],
+            "Spiral": (0.20 + low_hp * 1.10 + miss_pressure * 0.55) * GOB_WEIGHTS["Spiral"],
+            "Dash": (
+                0.18
+                + far_score * 0.75
+                + too_close_score * 0.75
+                + dash_reposition_score * 0.50
+                + self.rng.uniform(0.0, 0.22)
+            ) * GOB_WEIGHTS["Dash"],
         }
         if self.gob_last_choice:
-            scores[self.gob_last_choice] += 0.12
+            scores[self.gob_last_choice] -= GOB_REPEAT_PENALTY
         self.gob_score_snapshot = scores
         choice = max(scores, key=scores.get)
         self.gob_last_choice = choice
@@ -391,6 +479,7 @@ class BossDecisionEvaluation:
             EvalBullet(self.boss_pos.copy(), pygame.Vector2(vel), radius, damage, color, lifetime, "boss")
         )
         self.total_boss_bullets += 1
+        self.run_boss_bullets += 1
 
     def _update_bullets(self, dt):
         for bullet in self.boss_bullets[:]:
@@ -400,7 +489,9 @@ class BossDecisionEvaluation:
                 continue
             if bullet.pos.distance_to(self.player_pos) <= bullet.radius + self.player_radius:
                 self.total_boss_hits += 1
+                self.run_boss_hits += 1
                 self.total_boss_damage += bullet.damage
+                self.run_boss_damage += bullet.damage
                 self.player_hp -= bullet.damage
                 self.boss_bullets.remove(bullet)
 
@@ -423,14 +514,37 @@ class BossDecisionEvaluation:
         if 0 <= x < self.heatmap_bins and 0 <= y < self.heatmap_bins:
             self.heatmap[y, x] += 1.0
 
-    def metric_lines(self):
+    def _record_distance(self):
+        distance = self.player_pos.distance_to(self.boss_pos)
+        self.run_distance += distance
+        self.run_distance_samples += 1
+        self.total_distance += distance
+        self.total_distance_samples += 1
+
+    def current_metric_lines(self, run_target=EVAL2_RUN_TARGET):
+        current_dps = self.run_boss_damage / max(self.run_time, 1.0)
+        current_dodge = 100.0 * (1.0 - self.run_boss_hits / max(1, self.run_boss_bullets))
+        avg_distance = self.run_distance / max(1, self.run_distance_samples)
+        status = "Complete" if self.is_complete(run_target) else f"Run {self.total_runs + 1}/{run_target}"
+        return [
+            ("Status", status),
+            ("Time / HP", f"{self.run_time:4.1f}s / {self.player_hp:4.0f}"),
+            ("Run DPS / dodge", f"{current_dps:4.1f} / {current_dodge:4.0f}%"),
+            ("Avg distance", f"{avg_distance:5.0f}"),
+        ]
+
+    def aggregate_metric_lines(self):
         ttk = self._ttk_text()
+        survival = self._survival_text()
         dps = self.total_boss_damage / max(1.0, self.total_elapsed)
         dodge = 100.0 * (1.0 - self.total_boss_hits / max(1, self.total_boss_bullets))
+        avg_distance = self.total_distance / max(1, self.total_distance_samples)
         return [
             ("TTK mean / IQR", ttk),
+            ("Survival mean", survival),
             ("Boss DPS", f"{dps:5.1f}"),
             ("Dodge success", f"{dodge:5.1f}%"),
+            ("Avg distance", f"{avg_distance:5.0f}"),
         ]
 
     def _ttk_text(self):
@@ -441,14 +555,21 @@ class BossDecisionEvaluation:
         q1, q3 = numpy.percentile(arr, [25, 75])
         return f"{mean:4.1f}s / {q3 - q1:3.1f}s"
 
+    def _survival_text(self):
+        if not self.survival_samples:
+            return "none"
+        arr = numpy.array(self.survival_samples, dtype=float)
+        return f"{float(arr.mean()):4.1f}s"
+
     def phase_switch_rate(self):
         minutes = max(self.total_elapsed / 60.0, 1.0 / 60.0)
         return self.total_phase_switches / minutes
 
 
 def _ensure_eval2_state(game):
-    if getattr(game, "_eval2_initialized", False):
+    if getattr(game, "_eval2_initialized", False) and hasattr(game, "eval2_player_mode_idx"):
         return
+    game.eval2_player_mode_idx = 0
     game.eval2_sims = [
         BossDecisionEvaluation("FSM Boss", "FSM", (120, 190, 255), 11),
         BossDecisionEvaluation("Behavior Tree Boss", "BT", (130, 230, 155), 22),
@@ -461,6 +582,12 @@ def _reset_eval2(game):
     _ensure_eval2_state(game)
     for sim in game.eval2_sims:
         sim.reset_all()
+
+
+def _switch_eval2_player_mode(game):
+    _ensure_eval2_state(game)
+    game.eval2_player_mode_idx = (game.eval2_player_mode_idx + 1) % len(PLAYER_MODES)
+    _reset_eval2(game)
 
 
 def _world_to_panel(pos, camera, rect, scale):
@@ -566,10 +693,22 @@ def _draw_panel(game, sim, rect):
     screen.blit(subtitle, (rect.left + 16, rect.top + 42))
 
     metrics_y = rect.top + 70
-    for label, value in sim.metric_lines():
+    section = game.HUD_font.render("Current Run", True, (245, 230, 170))
+    screen.blit(section, (rect.left + 16, metrics_y))
+    metrics_y += 18
+    for label, value in sim.current_metric_lines(EVAL2_RUN_TARGET):
         text = game.HUD_font.render(f"{label}: {value}", True, (235, 235, 235))
         screen.blit(text, (rect.left + 16, metrics_y))
-        metrics_y += 20
+        metrics_y += 17
+
+    metrics_y += 4
+    section = game.HUD_font.render("Aggregate", True, (245, 230, 170))
+    screen.blit(section, (rect.left + 16, metrics_y))
+    metrics_y += 18
+    for label, value in sim.aggregate_metric_lines():
+        text = game.HUD_font.render(f"{label}: {value}", True, (215, 220, 230))
+        screen.blit(text, (rect.left + 16, metrics_y))
+        metrics_y += 17
 
     hp_rect = pygame.Rect(rect.left + 16, metrics_y + 4, rect.width - 32, 10)
     pygame.draw.rect(screen, (55, 25, 32), hp_rect)
@@ -577,7 +716,9 @@ def _draw_panel(game, sim, rect):
     pygame.draw.rect(screen, (220, 70, 90), (hp_rect.left, hp_rect.top, int(hp_rect.width * hp_ratio), hp_rect.height))
     pygame.draw.rect(screen, (130, 130, 140), hp_rect, 1)
 
-    play_area = pygame.Rect(rect.left + 12, rect.top + 142, rect.width - 24, rect.height - 214)
+    play_area_top = max(rect.top + 142, metrics_y + 22)
+    play_area_h = max(80, rect.bottom - play_area_top - 72)
+    play_area = pygame.Rect(rect.left + 12, play_area_top, rect.width - 24, play_area_h)
     old_clip = screen.get_clip()
     screen.set_clip(play_area)
     scale = min(play_area.width, play_area.height) / ARENA_DRAW_SIZE
@@ -621,13 +762,11 @@ def _draw_panel(game, sim, rect):
         pygame.draw.circle(screen, sim.accent, boss_screen, int(sim.boss_radius * scale))
         pygame.draw.circle(screen, (255, 255, 255), boss_screen, int(sim.boss_radius * scale), 2)
 
-    player_size = max(14, int(sim.player_radius * 3.2 * scale))
-    player_img = _load_eval_image("./Img/Ball.png", (player_size, player_size))
-    if player_img:
-        screen.blit(player_img, player_img.get_rect(center=player_screen))
-    else:
-        pygame.draw.circle(screen, (80, 170, 255), player_screen, int(sim.player_radius * scale + 3))
-        pygame.draw.circle(screen, (235, 250, 255), player_screen, int(sim.player_radius * scale), 1)
+    player_size = max(24, int(sim.player_radius * 6.2 * scale))
+    player_direction = sim.boss_pos - sim.player_pos
+    if player_direction.length_squared() == 0:
+        player_direction = sim.player_vel
+    _draw_player_sprite(screen, player_screen, player_size, player_direction)
     pygame.draw.line(screen, (90, 120, 150), boss_screen, player_screen, 1)
     screen.set_clip(old_clip)
     pygame.draw.rect(screen, (48, 52, 64), play_area, 1)
@@ -648,6 +787,8 @@ def test_screen_eval2(game, events):
                 return
             if event.key == pygame.K_r:
                 _reset_eval2(game)
+            elif event.key == pygame.K_t:
+                _switch_eval2_player_mode(game)
         elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             if back_btn.collidepoint(event.pos):
                 game.test_screen = 4
@@ -655,14 +796,22 @@ def test_screen_eval2(game, events):
             if reset_btn.collidepoint(event.pos):
                 _reset_eval2(game)
 
+    player_mode = PLAYER_MODES[game.eval2_player_mode_idx]
     for sim in game.eval2_sims:
-        sim.update(game.delta_time)
+        sim.update(game.delta_time, player_mode, EVAL2_RUN_TARGET)
 
     game.screen.fill((15, 16, 22))
     title_font = pygame.font.SysFont(["consolas", "monaco", "monospace"], 34, bold=True)
     title = title_font.render("Evaluation 2 - Boss Decision Systems", True, (245, 245, 245))
     game.screen.blit(title, (28, 18))
-    hint = game.HUD_font.render("Same attack pool. BT player strafes, dodges, and fires continuously. R resets samples.", True, (180, 185, 195))
+    complete = all(sim.is_complete(EVAL2_RUN_TARGET) for sim in game.eval2_sims)
+    state = "Complete" if complete else "Running"
+    hint = game.HUD_font.render(
+        f"{state} | Player mode: {player_mode} | Target {EVAL2_RUN_TARGET} runs. "
+        "T toggles player, R resets samples.",
+        True,
+        (180, 185, 195),
+    )
     game.screen.blit(hint, (30, 54))
 
     GF.draw_button(game.screen, reset_btn, "Reset", font=game.HUD_font, color=(80, 95, 130))

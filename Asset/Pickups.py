@@ -96,13 +96,15 @@ class XPOrb:
 class Altar:
     BUFF_TYPES = ("hp", "damage", "speed")
 
-    def __init__(self, position, charge_time=None):
+    def __init__(self, position, charge_time=None, chunk_key=None, record_index=None):
         self.pos2D = pygame.Vector2(position)
-        self.radius = 120
+        self.radius = GAME_CONFIG["altar_radius"]
         self.charge_time = charge_time if charge_time is not None else GAME_CONFIG["altar_charge_time"]
         self.charge = 0.0
         self.used = False
         self.last_buff = None
+        self.chunk_key = chunk_key
+        self.record_index = record_index
         self.image = _get_altar_image()
 
     def update(self, delta_time, player_pos):
@@ -148,13 +150,14 @@ class Altar:
 
 
 class Obstacle:
-    def __init__(self, position, size, image_path=None, sprite_height=None):
+    def __init__(self, position, size, image_path=None, sprite_height=None, chunk_key=None):
         self.uuid = uuid.uuid4()
         self.entity_type = ENTITY_TYPE["obstacle"]
         self.pos2D = pygame.Vector2(position)
         self.size = pygame.Vector2(size)
         self.color = (90, 90, 100)
         self.registered_cells = []
+        self.chunk_key = chunk_key
         self.image_path = image_path if image_path is not None else random.choice(OBSTACLE_IMAGE_PATHS)
         requested_height = int(sprite_height if sprite_height is not None else max(self.size.x, self.size.y))
         self.sprite_height = min(OBSTACLE_SPRITE_HEIGHTS, key=lambda h: abs(h - requested_height))
@@ -231,6 +234,9 @@ class WorldChunkManager:
         self.spatial_grid_dict = spatial_grid_dict
         self.seed = seed
         self.generated = set()
+        self.active_chunks = set()
+        self.obstacle_records = {}
+        self.altar_records = {}
         self.altars = []
         self.obstacles = []
 
@@ -238,6 +244,9 @@ class WorldChunkManager:
         if seed is not None:
             self.seed = seed
         self.generated.clear()
+        self.active_chunks.clear()
+        self.obstacle_records.clear()
+        self.altar_records.clear()
         self.altars.clear()
         self.obstacles.clear()
 
@@ -250,11 +259,39 @@ class WorldChunkManager:
 
     def _generate_chunk(self, cx, cy):
         key = (cx, cy)
-        if key in self.generated:
+        if key in self.active_chunks:
             return
+        self.active_chunks.add(key)
         self.generated.add(key)
+        self._ensure_chunk_records(cx, cy)
+
+        for record in self.obstacle_records.get(key, []):
+            obs = Obstacle(
+                record["pos"],
+                record["size"],
+                image_path=record["image_path"],
+                sprite_height=record["sprite_height"],
+                chunk_key=key,
+            )
+            self.obstacles.append(obs)
+            if self.spatial_grid_dict is not None:
+                obs.add_to_grid(self.spatial_grid_dict)
+
+        for idx, record in enumerate(self.altar_records.get(key, [])):
+            if record["used"]:
+                continue
+            self.altars.append(
+                Altar(record["pos"], chunk_key=key, record_index=idx)
+            )
+
+    def _ensure_chunk_records(self, cx, cy):
+        key = (cx, cy)
+        if key in self.obstacle_records or key in self.altar_records:
+            return
+
         rng = random.Random((self.seed * 73856093) ^ (cx * 19349663) ^ (cy * 83492791))
 
+        obstacle_records = []
         n_obs = rng.randint(2, 4)
         for _ in range(n_obs):
             x = cx * self.CHUNK_SIZE + rng.uniform(0, self.CHUNK_SIZE)
@@ -264,26 +301,37 @@ class WorldChunkManager:
             h = sprite_height * rng.uniform(0.32, 0.46)
             if abs(x) < 220 and abs(y) < 220:
                 continue
-            obs = Obstacle(
-                (x, y),
-                (w, h),
-                image_path=rng.choice(OBSTACLE_IMAGE_PATHS),
-                sprite_height=sprite_height,
+            obstacle_records.append(
+                {
+                    "pos": (x, y),
+                    "size": (w, h),
+                    "image_path": rng.choice(OBSTACLE_IMAGE_PATHS),
+                    "sprite_height": sprite_height,
+                }
             )
-            self.obstacles.append(obs)
-            if self.spatial_grid_dict is not None:
-                obs.add_to_grid(self.spatial_grid_dict)
+        self.obstacle_records[key] = obstacle_records
 
+        altar_records = []
         if rng.random() < 0.18 and key != (0, 0):
             x = cx * self.CHUNK_SIZE + rng.uniform(150, self.CHUNK_SIZE - 150)
             y = cy * self.CHUNK_SIZE + rng.uniform(150, self.CHUNK_SIZE - 150)
-            self.altars.append(Altar((x, y)))
+            altar_records.append({"pos": (x, y), "used": False})
+        self.altar_records[key] = altar_records
 
     def cull_far(self, player_pos, max_distance=2500):
-        max_sq = max_distance * max_distance
+        max_sq = (max_distance + self.CHUNK_SIZE) * (max_distance + self.CHUNK_SIZE)
+        keep_chunks = set()
+        for key in self.active_chunks:
+            center = pygame.Vector2(
+                (key[0] + 0.5) * self.CHUNK_SIZE,
+                (key[1] + 0.5) * self.CHUNK_SIZE,
+            )
+            if (center - player_pos).length_squared() <= max_sq:
+                keep_chunks.add(key)
+
         new_obstacles = []
         for o in self.obstacles:
-            if (o.pos2D - player_pos).length_squared() <= max_sq:
+            if o.chunk_key in keep_chunks:
                 new_obstacles.append(o)
             else:
                 if self.spatial_grid_dict is not None:
@@ -292,10 +340,15 @@ class WorldChunkManager:
         self.altars = [
             a
             for a in self.altars
-            if not a.used and (a.pos2D - player_pos).length_squared() <= max_sq
+            if not a.used and a.chunk_key in keep_chunks
         ]
+        self.active_chunks = keep_chunks
 
     def remove_altar(self, altar):
+        if altar.chunk_key in self.altar_records and altar.record_index is not None:
+            records = self.altar_records[altar.chunk_key]
+            if 0 <= altar.record_index < len(records):
+                records[altar.record_index]["used"] = True
         try:
             self.altars.remove(altar)
         except ValueError:

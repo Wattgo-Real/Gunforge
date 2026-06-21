@@ -1,13 +1,12 @@
-
+from typing import TYPE_CHECKING
 
 import pygame
 
-from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from Start import Game
 
 import Asset.Function as GF
-from Asset.TestScreen1 import reset_screen1
+from Asset.GameSetting import GAME_CONFIG
 
 
 def _format_time(t: float) -> str:
@@ -17,9 +16,15 @@ def _format_time(t: float) -> str:
 
 def _ensure_best(game: "Game"):
     if not hasattr(game, "best_record"):
-        game.best_record = {"kills": 0, "time": 0.0, "damage": 0, "level": 1, "points": 0}
+        game.best_record = {
+            "kills": 0,
+            "time": 0.0,
+            "damage": 0,
+            "level": 1,
+            "points": 0,
+        }
     if not hasattr(game, "total_points"):
-        game.total_points = 0
+        game.total_points = GAME_CONFIG["initial_points"]
 
 
 def _commit_summary(game: "Game"):
@@ -42,7 +47,13 @@ def _commit_summary(game: "Game"):
 def test_screen2(game: "Game", events):
     _ensure_best(game)
     _commit_summary(game)
-    summary = getattr(game, "run_summary", None) or {"kills": 0, "time": 0.0, "damage": 0, "level": 1, "points": 0}
+    summary = getattr(game, "run_summary", None) or {
+        "kills": 0,
+        "time": 0.0,
+        "damage": 0,
+        "level": 1,
+        "points": 0,
+    }
 
     # Buttons
     cx = game.screen_width // 2
@@ -53,8 +64,7 @@ def test_screen2(game: "Game", events):
     for event in events:
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             if play_btn.collidepoint(event.pos):
-                reset_screen1(game)
-                game.test_screen = 1
+                game.test_screen = 7
                 return
             if menu_btn.collidepoint(event.pos):
                 game.test_screen = 0
@@ -73,11 +83,17 @@ def test_screen2(game: "Game", events):
     panel_x = cx - panel_w // 2
     panel_y = 200
     pygame.draw.rect(game.screen, (30, 30, 40), (panel_x, panel_y, panel_w, panel_h))
-    pygame.draw.rect(game.screen, (180, 180, 200), (panel_x, panel_y, panel_w, panel_h), 2)
+    pygame.draw.rect(
+        game.screen, (180, 180, 200), (panel_x, panel_y, panel_w, panel_h), 2
+    )
 
     rows = [
         ("Kills", f"{summary['kills']}", f"Best {game.best_record['kills']}"),
-        ("Time", _format_time(summary['time']), f"Best {_format_time(game.best_record['time'])}"),
+        (
+            "Time",
+            _format_time(summary["time"]),
+            f"Best {_format_time(game.best_record['time'])}",
+        ),
         ("Total Damage", f"{summary['damage']}", f"Best {game.best_record['damage']}"),
         ("Level", f"{summary['level']}", f"Best {game.best_record['level']}"),
         ("Points Earned", f"{summary['points']}", f"Total {game.total_points}"),
