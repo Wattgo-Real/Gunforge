@@ -22,7 +22,9 @@ class Gun():
         '''
         self.basic_cooldown = basic_info["cooldown"]        # Time between shots
         self.basic_reload = basic_info["reload"]  # Time to reload
-        self.basic_scatter_angle = basic_info["scatter_angle"]  # Degree of bullet spread
+        self.basic_scatter_angel = basic_info.get(
+            "scatter_angle", basic_info.get("scatter_angel", 0)
+        )  # Degree of bullet spread
         self.basic_capacity = basic_info["capacity"]  # The maximum number of bullets the gun can hold
         self.card_max_slots = basic_info["max_slots"]     # How many cards can this weapon hold?
         self.card_list = [None] * self.card_max_slots # List of cards attached to the gun
@@ -44,7 +46,7 @@ class Gun():
     def _refresh(self):
         self.cooldown = self.basic_cooldown
         self.reload= self.basic_reload
-        self.scatter_angle = self.basic_scatter_angle
+        self.scatter_angel = self.basic_scatter_angel
         self.capacity = self.basic_capacity
 
         self.multi_num = 1
@@ -69,8 +71,9 @@ class Gun():
 
         if self.capacity_left > self.capacity:
             self.capacity_left = self.capacity
-        if self.scatter_angle < 0:
-            self.scatter_angle = 0
+        if self.scatter_angel < 0:
+            self.scatter_angel = 0
+        self.scatter_angle = self.scatter_angel
         if self.reload < 0:
             self.reload = 0
         if self.cooldown < 0:
@@ -99,7 +102,7 @@ class Gun():
 
 
             for i, card_to_bullet in enumerate(card_to_bullet_list):
-                direction = direction.rotate(random.uniform(-self.scatter_angle, self.scatter_angle))
+                direction = direction.rotate(random.uniform(-self.scatter_angel, self.scatter_angel))
                 self.bullet_manager.add_bullet(card_to_bullet, bullet_inter_type_list[i], pos2D, direction)
                 self.cooldown_timer = self.cooldown
 
@@ -458,6 +461,11 @@ class BulletManager():
                     break
 
                 elif card.inter_type == 3:  # Bounce
+                    bullet.isKill = False
+                    new_cards = bullet.card_list.copy()
+                    new_cards.remove(card)
+                    bullet.card_list = new_cards
+
                     target = getattr(bullet, "last_hit_target", None)
                     if target is not None:
                         if target.entity_type == ENTITY_TYPE["enemy"]:

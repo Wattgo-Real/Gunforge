@@ -20,6 +20,7 @@ from Asset.GameSetting import (
 )
 from Asset.Pickups import Altar, Obstacle, WorldChunkManager, XPOrb
 from Asset.Player import Player
+from Asset.ShopConfig import STAT_UPGRADES, card_key_to_tuple, ensure_shop_state
 from Asset.SpatialGrid import NoneGrid, Quadtree, SpatialGrid
 from Asset.Weapons import BulletManager, Gun
 
@@ -40,6 +41,7 @@ def _ensure_runtime_state(game: "Game"):
     game.bullet_manager = BulletManager(spatial_grid_dict=game.spatial_grid_dict)
     game.world = WorldChunkManager(spatial_grid_dict=game.spatial_grid_dict, seed=42)
     game.xp_orbs = []
+    game.gun_pickups = []
     game.run_start_time = game.now_time
     game.run_summary = None
     game.message_queue = []  # list of [text, timer_left, color]
@@ -50,12 +52,14 @@ def _ensure_runtime_state(game: "Game"):
         color=(0, 150, 255),
         bullet_manager=game.bullet_manager,
     )
+    _apply_shop_upgrades(game)
     game.leveling_up = False
     game.level_up_options = []
     game.level_up_scroll_offsets = [0, 0, 0]
     game.altar_choosing = False
     game.altar_options = []
     game.active_altar = None
+    game.map_overview_enabled = False
     game._screen1_initialised = True
 
 
@@ -96,8 +100,10 @@ def reset_screen1(game: "Game"):
             color=(0, 150, 255),
             bullet_manager=game.bullet_manager,
         )
+    _apply_shop_upgrades(game)
 
     game.xp_orbs = []
+    game.gun_pickups = []
     game.run_start_time = game.now_time
     game.run_summary = None
     game.message_queue = []
@@ -108,46 +114,133 @@ def reset_screen1(game: "Game"):
     game.altar_choosing = False
     game.altar_options = []
     game.active_altar = None
+    game.map_overview_enabled = False
     game._screen1_initialised = True
 
 
-def _drop_boss_reward(game: "Game"):
-    for i, slot in enumerate(game.player.weapon_list):
+def _add_card_to_inventory(player, card):
+    for i, slot in enumerate(player.inventory):
         if slot is None:
-            new_info = {
-                "cooldown": 0.25,
-                "reload": 1.5,
-                "scatter_angle": 8,
-                "capacity": 30,
-                "max_slots": random.randint(4, 10),
-                "card_list": [
-                    Card(type=0, inter_type=2),
-                    Card(type=1, inter_type=1),
-                    Card(type=1, inter_type=3),
-                ],
-            }
-            game.player.weapon_list[i] = Gun(new_info, game.bullet_manager)
-            game.message_queue.append(
-                ["BOSS DOWN — new gun acquired!", 5.0, (255, 220, 120)]
-            )
-            return
-    game.message_queue.append(["BOSS DOWN!", 5.0, (255, 220, 120)])
+            player.inventory[i] = card
+            return True
+    return False
+
+
+def _apply_shop_upgrades(game: "Game"):
+    ensure_shop_state(game)
+    player = game.player
+
+    hp_level = game.shop_upgrades.get("hp", 0)
+    damage_level = game.shop_upgrades.get("damage", 0)
+    speed_level = game.shop_upgrades.get("speed", 0)
+
+    player.max_hp += hp_level * STAT_UPGRADES["hp"]["amount"]
+    player.hp = player.max_hp
+    player.damage_multiplier += damage_level * STAT_UPGRADES["damage"]["amount"]
+    speed_bonus = speed_level * STAT_UPGRADES["speed"]["amount"]
+    player.bonus_speed += speed_bonus
+    player.max_velocity += speed_bonus
+
+    for key in sorted(game.shop_owned_cards):
+        card_type, card_id = card_key_to_tuple(key)
+        _add_card_to_inventory(player, Card(type=card_type, inter_type=card_id))
+
+
+class GunPickup:
+    def __init__(self, position, gun_info):
+        self.pos2D = pygame.Vector2(position)
+        self.gun_info = gun_info
+        self.radius = 34
+        self.alive = True
+        self.pulse_timer = 0.0
+        self.message_timer = 0.0
+
+    def update(self, delta_time, game: "Game"):
+        self.pulse_timer += delta_time
+        self.message_timer = max(0.0, self.message_timer - delta_time)
+
+        if self.pos2D.distance_to(game.player.pos2D) > GAME_CONFIG["gun_pickup_radius"]:
+            return False
+
+        for i, slot in enumerate(game.player.weapon_list):
+            if slot is None:
+                game.player.weapon_list[i] = Gun(self.gun_info, game.bullet_manager)
+                self.alive = False
+                game.message_queue.append(
+                    [f"New gun acquired! Slot {i + 1}", 4.0, (255, 220, 120)]
+                )
+                return True
+
+        if self.message_timer <= 0:
+            self.message_timer = 1.5
+            game.message_queue.append(["Weapon slots full", 1.5, (255, 140, 120)])
+        return False
+
+    def draw(self, screen, game: "Game"):
+        screen_pos = game.to_screen(self.pos2D)
+        pulse = 1.0 + 0.12 * abs(pygame.math.Vector2(1, 0).rotate(self.pulse_timer * 220).y)
+        glow_radius = int(self.radius * 1.35 * pulse)
+        pygame.draw.circle(screen, (255, 210, 90), screen_pos, glow_radius, 2)
+        pygame.draw.circle(screen, (60, 45, 25), screen_pos, self.radius)
+        pygame.draw.circle(screen, (255, 235, 150), screen_pos, self.radius, 2)
+
+        barrel_start = (int(screen_pos.x - 12), int(screen_pos.y + 2))
+        barrel_end = (int(screen_pos.x + 18), int(screen_pos.y - 8))
+        pygame.draw.line(screen, (210, 210, 220), barrel_start, barrel_end, 7)
+        pygame.draw.line(screen, (70, 55, 45), barrel_start, barrel_end, 2)
+        grip_rect = pygame.Rect(0, 0, 12, 20)
+        grip_rect.center = (int(screen_pos.x - 6), int(screen_pos.y + 12))
+        pygame.draw.rect(screen, (140, 85, 45), grip_rect, border_radius=3)
+
+
+def _create_boss_reward_gun_info(game: "Game"):
+    num_cards = random.randint(2, 5)
+    random_cards = _get_random_cards(game, count=num_cards)
+    return {
+        "cooldown": 0.25,
+        "reload": 1.5,
+        "scatter_angle": 8,
+        "capacity": 30,
+        "max_slots": random.randint(6, 15),
+        "card_list": random_cards + [
+            Card(type=0, inter_type=2),
+        ],
+    }
+
+
+def _drop_boss_reward(game: "Game", position):
+    if not hasattr(game, "gun_pickups"):
+        game.gun_pickups = []
+
+    game.gun_pickups.append(GunPickup(position, _create_boss_reward_gun_info(game)))
+    game.message_queue.append(["BOSS DOWN - gun dropped!", 5.0, (255, 220, 120)])
 
 
 def _get_random_cards(game: "Game", count=3):
-    """Pick cards based on inverse weights in PROBABILITY_CONFIG."""
+    """Pick cards based on inverse weights in PROBABILITY_CONFIG without duplicates."""
     tiers = list(PROBABILITY_CONFIG.keys())
     # weights: higher weight = lower probability (score = 1/weight)
     scores = [1.0 / PROBABILITY_CONFIG[tier]["weight"] for tier in tiers]
 
     selected_cards = []
-    for _ in range(count):
+    selected_keys = set()
+
+    total_available_items = sum(len(PROBABILITY_CONFIG[tier]["items"]) for tier in tiers)
+    max_draws = min(count, total_available_items)
+
+    attempts = 0
+    while len(selected_cards) < max_draws and attempts < 1000:
+        attempts += 1
         chosen_tier_name = random.choices(tiers, weights=scores, k=1)[0]
         tier_data = PROBABILITY_CONFIG[chosen_tier_name]
+        if not tier_data["items"]:
+            continue
         item_config = random.choice(tier_data["items"])
-
-        card = Card(type=item_config["type"], inter_type=item_config["id"])
-        selected_cards.append(card)
+        key = (item_config["type"], item_config["id"])
+        if key not in selected_keys:
+            selected_keys.add(key)
+            card = Card(type=item_config["type"], inter_type=item_config["id"])
+            selected_cards.append(card)
     return selected_cards
 
 
@@ -471,12 +564,15 @@ def _handle_player_bullets(game: "Game"):
             ):
                 bullet.triger_hit(entity, effect_queue=game.effects_queue)
                 if not entity.alive:
+                    if getattr(entity, "reward_claimed", False):
+                        continue
+                    entity.reward_claimed = True
                     game.xp_orbs.append(
                         XPOrb(entity.pos2D.copy(), value=entity.xp_drop)
                     )
                     player.add_kill()
                     if entity.is_boss:
-                        _drop_boss_reward(game)
+                        _drop_boss_reward(game, entity.pos2D.copy())
                 break
 
 
@@ -614,6 +710,152 @@ def _draw_messages(game: "Game"):
         x = (game.screen_width - msg_surf.get_width()) // 2
         game.screen.blit(msg_surf, (x, y))
         y += 32
+
+
+def _draw_map_overview(game: "Game"):
+    world = game.world
+    if not getattr(world, "generated", None):
+        return
+
+    panel_size = min(480, game.screen_width - 40, game.screen_height - 120)
+    if panel_size < 220:
+        return
+
+    panel = pygame.Rect(
+        game.screen_width - panel_size - 20,
+        92,
+        panel_size,
+        panel_size,
+    )
+    pad = 18
+    map_rect = panel.inflate(-pad * 2, -pad * 2 - 42)
+    map_rect.top = panel.top + 46
+
+    chunk_size = world.CHUNK_SIZE
+    chunks = list(world.generated)
+    player_chunk = (
+        int(game.player.pos2D.x // chunk_size),
+        int(game.player.pos2D.y // chunk_size),
+    )
+    chunks.append(player_chunk)
+
+    min_cx = min(cx for cx, _ in chunks) - 1
+    max_cx = max(cx for cx, _ in chunks) + 1
+    min_cy = min(cy for _, cy in chunks) - 1
+    max_cy = max(cy for _, cy in chunks) + 1
+    min_x = min_cx * chunk_size
+    max_x = (max_cx + 1) * chunk_size
+    min_y = min_cy * chunk_size
+    max_y = (max_cy + 1) * chunk_size
+    world_w = max(1.0, max_x - min_x)
+    world_h = max(1.0, max_y - min_y)
+    scale = min(map_rect.width / world_w, map_rect.height / world_h)
+    draw_w = world_w * scale
+    draw_h = world_h * scale
+    origin_x = map_rect.centerx - draw_w / 2
+    origin_y = map_rect.centery - draw_h / 2
+
+    def to_map(pos):
+        return pygame.Vector2(
+            origin_x + (pos.x - min_x) * scale,
+            origin_y + (max_y - pos.y) * scale,
+        )
+
+    overlay = pygame.Surface(panel.size, pygame.SRCALPHA)
+    overlay.fill((10, 12, 18, 222))
+    pygame.draw.rect(overlay, (120, 125, 145, 230), overlay.get_rect(), 2)
+    game.screen.blit(overlay, panel.topleft)
+
+    title = game.font.render("Generated Map", True, (235, 238, 245))
+    game.screen.blit(title, (panel.left + pad, panel.top + 12))
+    obstacle_count = sum(len(records) for records in world.obstacle_records.values())
+    altar_count = sum(
+        1
+        for records in world.altar_records.values()
+        for record in records
+        if not record["used"]
+    )
+    meta = game.HUD_font.render(
+        f"Chunks {len(world.generated)}   Active {len(world.active_chunks)}   Obstacles {obstacle_count}   Altars {altar_count}",
+        True,
+        (185, 190, 205),
+    )
+    game.screen.blit(meta, (panel.left + pad, panel.top + 34))
+
+    pygame.draw.rect(game.screen, (16, 18, 26), map_rect)
+    pygame.draw.rect(game.screen, (62, 68, 82), map_rect, 1)
+
+    for cx, cy in world.generated:
+        left_bottom = pygame.Vector2(cx * chunk_size, cy * chunk_size)
+        right_top = pygame.Vector2((cx + 1) * chunk_size, (cy + 1) * chunk_size)
+        a = to_map(left_bottom)
+        b = to_map(right_top)
+        rect = pygame.Rect(
+            min(a.x, b.x),
+            min(a.y, b.y),
+            max(1, abs(b.x - a.x)),
+            max(1, abs(b.y - a.y)),
+        )
+        fill = (33, 38, 48) if (cx, cy) != player_chunk else (42, 70, 92)
+        pygame.draw.rect(game.screen, fill, rect)
+        pygame.draw.rect(game.screen, (64, 70, 84), rect, 1)
+
+    cam = game.camera_position
+    view_a = to_map(pygame.Vector2(cam.x - game.screen_width / 2, cam.y - game.screen_height / 2))
+    view_b = to_map(pygame.Vector2(cam.x + game.screen_width / 2, cam.y + game.screen_height / 2))
+    view_rect = pygame.Rect(
+        min(view_a.x, view_b.x),
+        min(view_a.y, view_b.y),
+        max(2, abs(view_b.x - view_a.x)),
+        max(2, abs(view_b.y - view_a.y)),
+    )
+    pygame.draw.rect(game.screen, (245, 245, 245), view_rect, 1)
+
+    for records in world.obstacle_records.values():
+        for record in records:
+            pos = pygame.Vector2(record["pos"])
+            size = pygame.Vector2(record["size"])
+            half = size / 2
+            a = to_map(pos + pygame.Vector2(-half.x, -half.y))
+            b = to_map(pos + pygame.Vector2(half.x, half.y))
+            rect = pygame.Rect(
+                min(a.x, b.x),
+                min(a.y, b.y),
+                max(3, abs(b.x - a.x)),
+                max(3, abs(b.y - a.y)),
+            )
+            pygame.draw.rect(game.screen, (120, 105, 145), rect)
+
+    for records in world.altar_records.values():
+        for record in records:
+            if record["used"]:
+                continue
+            pos = to_map(pygame.Vector2(record["pos"]))
+            pygame.draw.circle(game.screen, (245, 210, 95), pos, 4)
+
+    for enemy in game.enemy_manager.enemies:
+        pos = to_map(enemy.pos2D)
+        color = (255, 80, 80) if not enemy.is_boss else (255, 45, 45)
+        radius = 3 if not enemy.is_boss else 6
+        pygame.draw.circle(game.screen, color, pos, radius)
+
+    player_pos = to_map(game.player.pos2D)
+    pygame.draw.circle(game.screen, (70, 180, 255), player_pos, 6)
+    pygame.draw.circle(game.screen, (235, 250, 255), player_pos, 6, 1)
+
+    legend_y = panel.bottom - 22
+    legend_items = [
+        ((70, 180, 255), "Player"),
+        ((255, 80, 80), "Enemy"),
+        ((120, 105, 145), "Obstacle"),
+        ((245, 210, 95), "Altar"),
+    ]
+    x = panel.left + pad
+    for color, label in legend_items:
+        pygame.draw.circle(game.screen, color, (x + 5, legend_y + 6), 4)
+        text = game.HUD_font.render(label, True, (205, 210, 220))
+        game.screen.blit(text, (x + 14, legend_y))
+        x += text.get_width() + 58
 
 
 def _draw_player_invuln_flash(game: "Game"):
@@ -1116,6 +1358,8 @@ def test_screen1(game: "Game", events):
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_TAB:
                 game.gun_info = not game.gun_info
+            if event.key == pygame.K_m:
+                game.map_overview_enabled = not getattr(game, "map_overview_enabled", False)
             if event.key in (pygame.K_LSHIFT, pygame.K_RSHIFT):
                 game.player.dash()
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
@@ -1130,6 +1374,7 @@ def test_screen1(game: "Game", events):
     mouse_buttons = pygame.mouse.get_pressed()
 
     mouse_pos_world = game.to_world(pygame.mouse.get_pos())
+    game.player.mouse_pos_world = mouse_pos_world
     if not game.leveling_up and not game.altar_choosing:
         # ---- 1. World streaming ----
         game.world.ensure_around(game.player.pos2D)
@@ -1155,7 +1400,7 @@ def test_screen1(game: "Game", events):
             game.player.face_direction = diff.normalize()
 
         # ---- 3. Enemies ----
-        game.enemy_manager.update(game.delta_time, game.player.pos2D)
+        game.enemy_manager.update(game.delta_time, game.player.pos2D, game.world)
         for e in game.enemy_manager.enemies:
             # Enemy vs Obstacle collision (spatial grid optimized)
             for obs in Obstacle.get_nearby_obstacles(e.pos2D, game.spatial_grid_dict):
@@ -1194,6 +1439,15 @@ def test_screen1(game: "Game", events):
                 except ValueError:
                     pass
 
+        # ---- 6.5 Gun pickups ----
+        for pickup in list(game.gun_pickups):
+            pickup.update(game.delta_time, game)
+            if not pickup.alive:
+                try:
+                    game.gun_pickups.remove(pickup)
+                except ValueError:
+                    pass
+
         # ---- 7. Death check ----
         if not game.player.alive:
             game.run_summary = {
@@ -1218,6 +1472,8 @@ def test_screen1(game: "Game", events):
         altar.draw(game.screen, game)
     for orb in game.xp_orbs:
         orb.draw(game.screen, game)
+    for pickup in game.gun_pickups:
+        pickup.draw(game.screen, game)
     for e in game.enemy_manager.enemies:
         e.draw(game.screen, game)
 
@@ -1229,6 +1485,8 @@ def test_screen1(game: "Game", events):
     _draw_hud(game)
     _draw_boss_bar(game)
     _draw_messages(game)
+    if getattr(game, "map_overview_enabled", False):
+        _draw_map_overview(game)
 
     if game.gun_info:
         _draw_gun_info_overlay(game, events, selected_slot)

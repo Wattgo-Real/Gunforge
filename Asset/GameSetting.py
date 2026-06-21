@@ -2214,6 +2214,346 @@ ATTRIBUTE_MODIFIER_CONFIG = {
             ],
         },
     ],
+    65: [
+        "Add Lifetime I",
+        {"lifetime_modifier": 0.4, "info": "Add bullet lifetime"},
+        {
+            "circle": [
+                {
+                    "pos_x": 0.30,
+                    "pos_y": 0.50,
+                    "size": 0.30,
+                    "color": (180, 100, 255, 255),
+                },
+                {
+                    "pos_x": 0.30,
+                    "pos_y": 0.50,
+                    "size": 0.26,
+                    "color": (30, 30, 30, 255),
+                },
+                {
+                    "pos_x": 0.30,
+                    "pos_y": 0.50,
+                    "size": 0.05,
+                    "color": (255, 255, 255, 255),
+                },
+            ],
+            "line": [
+                {
+                    "start_x": 0.30,
+                    "start_y": 0.50,
+                    "end_x": 0.30,
+                    "end_y": 0.40,
+                    "width": 0.03,
+                    "color": (255, 255, 255, 255),
+                },
+                {
+                    "start_x": 0.30,
+                    "start_y": 0.50,
+                    "end_x": 0.38,
+                    "end_y": 0.50,
+                    "width": 0.02,
+                    "color": (255, 255, 255, 255),
+                },
+                {
+                    "start_x": 0.70,
+                    "start_y": 0.20,
+                    "end_x": 0.70,
+                    "end_y": 0.80,
+                    "width": 0.05,
+                    "color": (255, 255, 255, 255),
+                },
+                {
+                    "start_x": 0.60,
+                    "start_y": 0.30,
+                    "end_x": 0.70,
+                    "end_y": 0.20,
+                    "width": 0.05,
+                    "color": (255, 255, 255, 255),
+                },
+                {
+                    "start_x": 0.80,
+                    "start_y": 0.30,
+                    "end_x": 0.70,
+                    "end_y": 0.20,
+                    "width": 0.05,
+                    "color": (255, 255, 255, 255),
+                },
+            ],
+        },
+    ],
+    66: [
+        "Add Lifetime II",
+        {"lifetime_modifier": 0.7, "info": "Add bullet lifetime"},
+        {
+            "circle": [
+                {
+                    "pos_x": 0.30,
+                    "pos_y": 0.50,
+                    "size": 0.30,
+                    "color": (180, 100, 255, 255),
+                },
+                {
+                    "pos_x": 0.30,
+                    "pos_y": 0.50,
+                    "size": 0.26,
+                    "color": (30, 30, 30, 255),
+                },
+                {
+                    "pos_x": 0.30,
+                    "pos_y": 0.50,
+                    "size": 0.05,
+                    "color": (255, 255, 255, 255),
+                },
+            ],
+            "line": [
+                {
+                    "start_x": 0.30,
+                    "start_y": 0.50,
+                    "end_x": 0.30,
+                    "end_y": 0.40,
+                    "width": 0.03,
+                    "color": (255, 255, 255, 255),
+                },
+                {
+                    "start_x": 0.30,
+                    "start_y": 0.50,
+                    "end_x": 0.38,
+                    "end_y": 0.50,
+                    "width": 0.02,
+                    "color": (255, 255, 255, 255),
+                },
+                {
+                    "start_x": 0.70,
+                    "start_y": 0.20,
+                    "end_x": 0.70,
+                    "end_y": 0.80,
+                    "width": 0.10,
+                    "color": (255, 255, 255, 255),
+                },
+                {
+                    "start_x": 0.60,
+                    "start_y": 0.30,
+                    "end_x": 0.70,
+                    "end_y": 0.20,
+                    "width": 0.10,
+                    "color": (255, 255, 255, 255),
+                },
+                {
+                    "start_x": 0.80,
+                    "start_y": 0.30,
+                    "end_x": 0.70,
+                    "end_y": 0.20,
+                    "width": 0.10,
+                    "color": (255, 255, 255, 255),
+                },
+            ],
+        },
+    ],
+    67: [
+        "Add Lifetime III",
+        {"lifetime_modifier": 1.0, "info": "Add bullet lifetime"},
+        {
+            "circle": [
+                {
+                    "pos_x": 0.30,
+                    "pos_y": 0.50,
+                    "size": 0.30,
+                    "color": (180, 100, 255, 255),
+                },
+                {
+                    "pos_x": 0.30,
+                    "pos_y": 0.50,
+                    "size": 0.26,
+                    "color": (30, 30, 30, 255),
+                },
+                {
+                    "pos_x": 0.30,
+                    "pos_y": 0.50,
+                    "size": 0.05,
+                    "color": (255, 255, 255, 255),
+                },
+            ],
+            "line": [
+                {
+                    "start_x": 0.30,
+                    "start_y": 0.50,
+                    "end_x": 0.30,
+                    "end_y": 0.40,
+                    "width": 0.03,
+                    "color": (255, 255, 255, 255),
+                },
+                {
+                    "start_x": 0.30,
+                    "start_y": 0.50,
+                    "end_x": 0.38,
+                    "end_y": 0.50,
+                    "width": 0.02,
+                    "color": (255, 255, 255, 255),
+                },
+                {
+                    "start_x": 0.70,
+                    "start_y": 0.20,
+                    "end_x": 0.70,
+                    "end_y": 0.80,
+                    "width": 0.15,
+                    "color": (255, 255, 255, 255),
+                },
+                {
+                    "start_x": 0.60,
+                    "start_y": 0.30,
+                    "end_x": 0.70,
+                    "end_y": 0.20,
+                    "width": 0.15,
+                    "color": (255, 255, 255, 255),
+                },
+                {
+                    "start_x": 0.80,
+                    "start_y": 0.30,
+                    "end_x": 0.70,
+                    "end_y": 0.20,
+                    "width": 0.15,
+                    "color": (255, 255, 255, 255),
+                },
+            ],
+        },
+    ],
+    68: [
+        "Add Lifetime IV",
+        {"lifetime_modifier": 1.5, "info": "Add bullet lifetime"},
+        {
+            "circle": [
+                {
+                    "pos_x": 0.30,
+                    "pos_y": 0.50,
+                    "size": 0.30,
+                    "color": (180, 100, 255, 255),
+                },
+                {
+                    "pos_x": 0.30,
+                    "pos_y": 0.50,
+                    "size": 0.26,
+                    "color": (30, 30, 30, 255),
+                },
+                {
+                    "pos_x": 0.30,
+                    "pos_y": 0.50,
+                    "size": 0.05,
+                    "color": (255, 255, 255, 255),
+                },
+            ],
+            "line": [
+                {
+                    "start_x": 0.30,
+                    "start_y": 0.50,
+                    "end_x": 0.30,
+                    "end_y": 0.40,
+                    "width": 0.03,
+                    "color": (255, 255, 255, 255),
+                },
+                {
+                    "start_x": 0.30,
+                    "start_y": 0.50,
+                    "end_x": 0.38,
+                    "end_y": 0.50,
+                    "width": 0.02,
+                    "color": (255, 255, 255, 255),
+                },
+                {
+                    "start_x": 0.70,
+                    "start_y": 0.20,
+                    "end_x": 0.70,
+                    "end_y": 0.80,
+                    "width": 0.20,
+                    "color": (255, 255, 255, 255),
+                },
+                {
+                    "start_x": 0.60,
+                    "start_y": 0.30,
+                    "end_x": 0.70,
+                    "end_y": 0.20,
+                    "width": 0.20,
+                    "color": (255, 255, 255, 255),
+                },
+                {
+                    "start_x": 0.80,
+                    "start_y": 0.30,
+                    "end_x": 0.70,
+                    "end_y": 0.20,
+                    "width": 0.20,
+                    "color": (255, 255, 255, 255),
+                },
+            ],
+        },
+    ],
+    69: [
+        "Add Lifetime V",
+        {"lifetime_modifier": 2.0, "info": "Add bullet lifetime"},
+        {
+            "circle": [
+                {
+                    "pos_x": 0.30,
+                    "pos_y": 0.50,
+                    "size": 0.30,
+                    "color": (180, 100, 255, 255),
+                },
+                {
+                    "pos_x": 0.30,
+                    "pos_y": 0.50,
+                    "size": 0.26,
+                    "color": (30, 30, 30, 255),
+                },
+                {
+                    "pos_x": 0.30,
+                    "pos_y": 0.50,
+                    "size": 0.05,
+                    "color": (255, 255, 255, 255),
+                },
+            ],
+            "line": [
+                {
+                    "start_x": 0.30,
+                    "start_y": 0.50,
+                    "end_x": 0.30,
+                    "end_y": 0.40,
+                    "width": 0.03,
+                    "color": (255, 255, 255, 255),
+                },
+                {
+                    "start_x": 0.30,
+                    "start_y": 0.50,
+                    "end_x": 0.38,
+                    "end_y": 0.50,
+                    "width": 0.02,
+                    "color": (255, 255, 255, 255),
+                },
+                {
+                    "start_x": 0.70,
+                    "start_y": 0.20,
+                    "end_x": 0.70,
+                    "end_y": 0.80,
+                    "width": 0.25,
+                    "color": (255, 255, 255, 255),
+                },
+                {
+                    "start_x": 0.60,
+                    "start_y": 0.30,
+                    "end_x": 0.70,
+                    "end_y": 0.20,
+                    "width": 0.25,
+                    "color": (255, 255, 255, 255),
+                },
+                {
+                    "start_x": 0.80,
+                    "start_y": 0.30,
+                    "end_x": 0.70,
+                    "end_y": 0.20,
+                    "width": 0.25,
+                    "color": (255, 255, 255, 255),
+                },
+            ],
+        },
+    ],
     100: [
         "Speed damage bonus",
         {
@@ -3317,7 +3657,10 @@ TRAJECTORY_MODIFIER_CONFIG = {
     ],
     1: [
         "Horizontal Trajectory",
-        {"info": "The velocity only available in x-axis.", "physical_damage_modifier": 5},
+        {
+            "info": "The velocity only available in x-axis.",
+            "physical_damage_modifier": 5,
+        },
         {
             "line": [
                 {
@@ -3365,7 +3708,10 @@ TRAJECTORY_MODIFIER_CONFIG = {
     ],
     2: [
         "Vertical Trajectory",
-        {"info": "The velocity only available in y-axis.", "physical_damage_modifier": 5},
+        {
+            "info": "The velocity only available in y-axis.",
+            "physical_damage_modifier": 5,
+        },
         {
             "line": [
                 {
@@ -3767,7 +4113,10 @@ TRAJECTORY_MODIFIER_CONFIG = {
     ],
     9: [
         "Decelerate",
-        {"info": "The bullet will decelerate until stop.", "physical_damage_modifier": 5},
+        {
+            "info": "The bullet will decelerate until stop.",
+            "physical_damage_modifier": 5,
+        },
         {
             "line": [
                 {
@@ -3828,163 +4177,466 @@ TRAJECTORY_MODIFIER_CONFIG = {
                 },
             ]
         },
-    ], 
-    10 : [
+    ],
+    10: [
         "Tracking by accelerate",
         {
-            "info" : "The bullet will track by add its accelerate.",
+            "info": "The bullet will track by increase its accelerate, and detect enemy in 40 radius range.",
+            "capacity_modifier": -5,
         },
         {
             "circle": [
-                {"pos_x": 0.75, "pos_y": 0.50, "size": 0.10, "color": (255, 80, 80, 255)},
-                {"pos_x": 0.75, "pos_y": 0.50, "size": 0.06, "color": (30, 30, 30, 255)}
+                {
+                    "pos_x": 0.75,
+                    "pos_y": 0.50,
+                    "size": 0.10,
+                    "color": (255, 80, 80, 255),
+                },
+                {
+                    "pos_x": 0.75,
+                    "pos_y": 0.50,
+                    "size": 0.06,
+                    "color": (30, 30, 30, 255),
+                },
             ],
-            "line" : [
+            "line": [
                 # Path segments curving towards target
-                {"start_x": 0.20, "start_y": 0.80, "end_x": 0.25, "end_y": 0.65, "width": 0.05, "color": (255, 100, 220, 255)},
-                {"start_x": 0.25, "start_y": 0.65, "end_x": 0.35, "end_y": 0.52, "width": 0.05, "color": (255, 100, 220, 255)},
-                {"start_x": 0.35, "start_y": 0.52, "end_x": 0.50, "end_y": 0.42, "width": 0.05, "color": (255, 100, 220, 255)},
-                {"start_x": 0.50, "start_y": 0.42, "end_x": 0.68, "end_y": 0.37, "width": 0.05, "color": (255, 100, 220, 255)},
+                {
+                    "start_x": 0.20,
+                    "start_y": 0.80,
+                    "end_x": 0.25,
+                    "end_y": 0.65,
+                    "width": 0.05,
+                    "color": (255, 100, 220, 255),
+                },
+                {
+                    "start_x": 0.25,
+                    "start_y": 0.65,
+                    "end_x": 0.35,
+                    "end_y": 0.52,
+                    "width": 0.05,
+                    "color": (255, 100, 220, 255),
+                },
+                {
+                    "start_x": 0.35,
+                    "start_y": 0.52,
+                    "end_x": 0.50,
+                    "end_y": 0.42,
+                    "width": 0.05,
+                    "color": (255, 100, 220, 255),
+                },
+                {
+                    "start_x": 0.50,
+                    "start_y": 0.42,
+                    "end_x": 0.68,
+                    "end_y": 0.37,
+                    "width": 0.05,
+                    "color": (255, 100, 220, 255),
+                },
                 # Arrowhead
-                {"start_x": 0.68, "start_y": 0.37, "end_x": 0.57, "end_y": 0.32, "width": 0.05, "color": (255, 100, 220, 255)},
-                {"start_x": 0.68, "start_y": 0.37, "end_x": 0.63, "end_y": 0.48, "width": 0.05, "color": (255, 100, 220, 255)},
+                {
+                    "start_x": 0.68,
+                    "start_y": 0.37,
+                    "end_x": 0.57,
+                    "end_y": 0.32,
+                    "width": 0.05,
+                    "color": (255, 100, 220, 255),
+                },
+                {
+                    "start_x": 0.68,
+                    "start_y": 0.37,
+                    "end_x": 0.63,
+                    "end_y": 0.48,
+                    "width": 0.05,
+                    "color": (255, 100, 220, 255),
+                },
                 # Target Reticle (Red)
-                {"start_x": 0.75, "start_y": 0.43, "end_x": 0.75, "end_y": 0.57, "width": 0.04, "color": (255, 80, 80, 255)},
-                {"start_x": 0.67, "start_y": 0.50, "end_x": 0.83, "end_y": 0.50, "width": 0.04, "color": (255, 80, 80, 255)}
-            ]
-        }
+                {
+                    "start_x": 0.75,
+                    "start_y": 0.43,
+                    "end_x": 0.75,
+                    "end_y": 0.57,
+                    "width": 0.04,
+                    "color": (255, 80, 80, 255),
+                },
+                {
+                    "start_x": 0.67,
+                    "start_y": 0.50,
+                    "end_x": 0.83,
+                    "end_y": 0.50,
+                    "width": 0.04,
+                    "color": (255, 80, 80, 255),
+                },
+            ],
+        },
     ],
-    11 : [
+    11: [
         "Tracking by steer",
         {
-            "info" : "The bullet will track by steer algrithm.",
+            "info": "The bullet will track by steer algrithm, and detect enemy in 40 radius range.",
+            "capacity_modifier": -5,
         },
         {
             "circle": [
-                {"pos_x": 0.75, "pos_y": 0.50, "size": 0.10, "color": (255, 80, 80, 255)},
-                {"pos_x": 0.75, "pos_y": 0.50, "size": 0.06, "color": (30, 30, 30, 255)}
+                {
+                    "pos_x": 0.75,
+                    "pos_y": 0.50,
+                    "size": 0.10,
+                    "color": (255, 80, 80, 255),
+                },
+                {
+                    "pos_x": 0.75,
+                    "pos_y": 0.50,
+                    "size": 0.06,
+                    "color": (30, 30, 30, 255),
+                },
             ],
-            "line" : [
+            "line": [
                 # Steer Path (smooth seek curve)
-                {"start_x": 0.25, "start_y": 0.80, "end_x": 0.18, "end_y": 0.62, "width": 0.05, "color": (255, 100, 220, 255)},
-                {"start_x": 0.18, "start_y": 0.62, "end_x": 0.22, "end_y": 0.46, "width": 0.05, "color": (255, 100, 220, 255)},
-                {"start_x": 0.22, "start_y": 0.46, "end_x": 0.38, "end_y": 0.36, "width": 0.05, "color": (255, 100, 220, 255)},
-                {"start_x": 0.38, "start_y": 0.36, "end_x": 0.66, "end_y": 0.30, "width": 0.05, "color": (255, 100, 220, 255)},
+                {
+                    "start_x": 0.25,
+                    "start_y": 0.80,
+                    "end_x": 0.18,
+                    "end_y": 0.62,
+                    "width": 0.05,
+                    "color": (255, 100, 220, 255),
+                },
+                {
+                    "start_x": 0.18,
+                    "start_y": 0.62,
+                    "end_x": 0.22,
+                    "end_y": 0.46,
+                    "width": 0.05,
+                    "color": (255, 100, 220, 255),
+                },
+                {
+                    "start_x": 0.22,
+                    "start_y": 0.46,
+                    "end_x": 0.38,
+                    "end_y": 0.36,
+                    "width": 0.05,
+                    "color": (255, 100, 220, 255),
+                },
+                {
+                    "start_x": 0.38,
+                    "start_y": 0.36,
+                    "end_x": 0.66,
+                    "end_y": 0.30,
+                    "width": 0.05,
+                    "color": (255, 100, 220, 255),
+                },
                 # Arrowhead
-                {"start_x": 0.66, "start_y": 0.30, "end_x": 0.56, "end_y": 0.24, "width": 0.05, "color": (255, 100, 220, 255)},
-                {"start_x": 0.66, "start_y": 0.30, "end_x": 0.57, "end_y": 0.40, "width": 0.05, "color": (255, 100, 220, 255)},
+                {
+                    "start_x": 0.66,
+                    "start_y": 0.30,
+                    "end_x": 0.56,
+                    "end_y": 0.24,
+                    "width": 0.05,
+                    "color": (255, 100, 220, 255),
+                },
+                {
+                    "start_x": 0.66,
+                    "start_y": 0.30,
+                    "end_x": 0.57,
+                    "end_y": 0.40,
+                    "width": 0.05,
+                    "color": (255, 100, 220, 255),
+                },
                 # Target Reticle (Red)
-                {"start_x": 0.75, "start_y": 0.43, "end_x": 0.75, "end_y": 0.57, "width": 0.04, "color": (255, 80, 80, 255)},
-                {"start_x": 0.67, "start_y": 0.50, "end_x": 0.83, "end_y": 0.50, "width": 0.04, "color": (255, 80, 80, 255)}
-            ]
-        }
+                {
+                    "start_x": 0.75,
+                    "start_y": 0.43,
+                    "end_x": 0.75,
+                    "end_y": 0.57,
+                    "width": 0.04,
+                    "color": (255, 80, 80, 255),
+                },
+                {
+                    "start_x": 0.67,
+                    "start_y": 0.50,
+                    "end_x": 0.83,
+                    "end_y": 0.50,
+                    "width": 0.04,
+                    "color": (255, 80, 80, 255),
+                },
+            ],
+        },
     ],
-    12 : [
+    12: [
         "Tracking by turn",
         {
-            "info" : "The bullet will track by turn its velocity direction.",
+            "info": "The bullet will track by turn its velocity direction, and detect enemy in 40 radius range.",
+            "capacity_modifier": -5,
         },
         {
             "circle": [
-                {"pos_x": 0.75, "pos_y": 0.50, "size": 0.10, "color": (255, 80, 80, 255)},
-                {"pos_x": 0.75, "pos_y": 0.50, "size": 0.06, "color": (30, 30, 30, 255)}
+                {
+                    "pos_x": 0.75,
+                    "pos_y": 0.50,
+                    "size": 0.10,
+                    "color": (255, 80, 80, 255),
+                },
+                {
+                    "pos_x": 0.75,
+                    "pos_y": 0.50,
+                    "size": 0.06,
+                    "color": (30, 30, 30, 255),
+                },
             ],
-            "line" : [
+            "line": [
                 # Turn Path (sharp angle turn)
-                {"start_x": 0.25, "start_y": 0.80, "end_x": 0.25, "end_y": 0.50, "width": 0.05, "color": (255, 100, 220, 255)},
-                {"start_x": 0.25, "start_y": 0.50, "end_x": 0.60, "end_y": 0.50, "width": 0.05, "color": (255, 100, 220, 255)},
+                {
+                    "start_x": 0.25,
+                    "start_y": 0.80,
+                    "end_x": 0.25,
+                    "end_y": 0.50,
+                    "width": 0.05,
+                    "color": (255, 100, 220, 255),
+                },
+                {
+                    "start_x": 0.25,
+                    "start_y": 0.50,
+                    "end_x": 0.60,
+                    "end_y": 0.50,
+                    "width": 0.05,
+                    "color": (255, 100, 220, 255),
+                },
                 # Arrowhead
-                {"start_x": 0.62, "start_y": 0.50, "end_x": 0.50, "end_y": 0.58, "width": 0.05, "color": (255, 100, 220, 255)},
-                {"start_x": 0.62, "start_y": 0.50, "end_x": 0.50, "end_y": 0.42, "width": 0.05, "color": (255, 100, 220, 255)},
+                {
+                    "start_x": 0.62,
+                    "start_y": 0.50,
+                    "end_x": 0.50,
+                    "end_y": 0.58,
+                    "width": 0.05,
+                    "color": (255, 100, 220, 255),
+                },
+                {
+                    "start_x": 0.62,
+                    "start_y": 0.50,
+                    "end_x": 0.50,
+                    "end_y": 0.42,
+                    "width": 0.05,
+                    "color": (255, 100, 220, 255),
+                },
                 # Target Reticle (Red)
-                {"start_x": 0.75, "start_y": 0.43, "end_x": 0.75, "end_y": 0.57, "width": 0.04, "color": (255, 80, 80, 255)},
-                {"start_x": 0.67, "start_y": 0.50, "end_x": 0.83, "end_y": 0.50, "width": 0.04, "color": (255, 80, 80, 255)}
-            ]
-        }
+                {
+                    "start_x": 0.75,
+                    "start_y": 0.43,
+                    "end_x": 0.75,
+                    "end_y": 0.57,
+                    "width": 0.04,
+                    "color": (255, 80, 80, 255),
+                },
+                {
+                    "start_x": 0.67,
+                    "start_y": 0.50,
+                    "end_x": 0.83,
+                    "end_y": 0.50,
+                    "width": 0.04,
+                    "color": (255, 80, 80, 255),
+                },
+            ],
+        },
     ],
-    13 : [
+    13: [
         "Tracking the mouse",
         {
-            "info" : "The bullet will track the mouse position.",
+            "info": "The bullet will track the mouse position.",
+            "capacity_modifier": -5,
         },
         {
-            "line" : [
+            "line": [
                 # Path towards mouse
-                {"start_x": 0.20, "start_y": 0.80, "end_x": 0.30, "end_y": 0.60, "width": 0.05, "color": (255, 100, 220, 255)},
-                {"start_x": 0.30, "start_y": 0.60, "end_x": 0.50, "end_y": 0.48, "width": 0.05, "color": (255, 100, 220, 255)},
-                {"start_x": 0.50, "start_y": 0.48, "end_x": 0.62, "end_y": 0.42, "width": 0.05, "color": (255, 100, 220, 255)},
+                {
+                    "start_x": 0.20,
+                    "start_y": 0.80,
+                    "end_x": 0.30,
+                    "end_y": 0.60,
+                    "width": 0.05,
+                    "color": (255, 100, 220, 255),
+                },
+                {
+                    "start_x": 0.30,
+                    "start_y": 0.60,
+                    "end_x": 0.50,
+                    "end_y": 0.48,
+                    "width": 0.05,
+                    "color": (255, 100, 220, 255),
+                },
+                {
+                    "start_x": 0.50,
+                    "start_y": 0.48,
+                    "end_x": 0.62,
+                    "end_y": 0.42,
+                    "width": 0.05,
+                    "color": (255, 100, 220, 255),
+                },
                 # Arrowhead
-                {"start_x": 0.62, "start_y": 0.42, "end_x": 0.53, "end_y": 0.39, "width": 0.05, "color": (255, 100, 220, 255)},
-                {"start_x": 0.62, "start_y": 0.42, "end_x": 0.61, "end_y": 0.52, "width": 0.05, "color": (255, 100, 220, 255)},
+                {
+                    "start_x": 0.62,
+                    "start_y": 0.42,
+                    "end_x": 0.53,
+                    "end_y": 0.39,
+                    "width": 0.05,
+                    "color": (255, 100, 220, 255),
+                },
+                {
+                    "start_x": 0.62,
+                    "start_y": 0.42,
+                    "end_x": 0.61,
+                    "end_y": 0.52,
+                    "width": 0.05,
+                    "color": (255, 100, 220, 255),
+                },
                 # Mouse Cursor (White)
-                {"start_x": 0.70, "start_y": 0.30, "end_x": 0.70, "end_y": 0.50, "width": 0.04, "color": (255, 255, 255, 255)},
-                {"start_x": 0.70, "start_y": 0.50, "end_x": 0.82, "end_y": 0.47, "width": 0.04, "color": (255, 255, 255, 255)},
-                {"start_x": 0.82, "start_y": 0.47, "end_x": 0.70, "end_y": 0.30, "width": 0.04, "color": (255, 255, 255, 255)},
-                {"start_x": 0.70, "start_y": 0.30, "end_x": 0.78, "end_y": 0.57, "width": 0.04, "color": (255, 255, 255, 255)}
+                {
+                    "start_x": 0.70,
+                    "start_y": 0.30,
+                    "end_x": 0.70,
+                    "end_y": 0.50,
+                    "width": 0.04,
+                    "color": (255, 255, 255, 255),
+                },
+                {
+                    "start_x": 0.70,
+                    "start_y": 0.50,
+                    "end_x": 0.82,
+                    "end_y": 0.47,
+                    "width": 0.04,
+                    "color": (255, 255, 255, 255),
+                },
+                {
+                    "start_x": 0.82,
+                    "start_y": 0.47,
+                    "end_x": 0.70,
+                    "end_y": 0.30,
+                    "width": 0.04,
+                    "color": (255, 255, 255, 255),
+                },
+                {
+                    "start_x": 0.70,
+                    "start_y": 0.30,
+                    "end_x": 0.78,
+                    "end_y": 0.57,
+                    "width": 0.04,
+                    "color": (255, 255, 255, 255),
+                },
             ]
-        }
-    ]
+        },
+    ],
 }
 
 PROBABILITY_CONFIG = {
-    "T1" : {"weight" : 3,"items" : [
-        {"type" : 0, "id" : 1, "unlocked" : True},
-        {"type" : 5, "id" : 0, "unlocked" : True},
-        {"type" : 5, "id" : 1, "unlocked" : True},
-        {"type" : 5, "id" : 2, "unlocked" : True},
-        {"type" : 5, "id" : 10, "unlocked" : True}] + 
-        [{"type" : 1, "id" : i*5, "unlocked" : True} for i in range(8) if i*5 in ATTRIBUTE_MODIFIER_CONFIG.keys()] + 
-        [{"type" : 1, "id" : i*5 + 50, "unlocked" : True} for i in range(3) if i*5 + 50 in ATTRIBUTE_MODIFIER_CONFIG.keys()]
+    "T1": {
+        "weight": 3,
+        "items": [
+            {"type": 0, "id": 1, "unlocked": True},
+            {"type": 5, "id": 0, "unlocked": True},
+            {"type": 5, "id": 1, "unlocked": True},
+            {"type": 5, "id": 2, "unlocked": True},
+            {"type": 5, "id": 10, "unlocked": True},
+        ]
+        + [
+            {"type": 1, "id": i * 5, "unlocked": True}
+            for i in range(8)
+            if i * 5 in ATTRIBUTE_MODIFIER_CONFIG.keys()
+        ]
+        + [
+            {"type": 1, "id": i * 5 + 50, "unlocked": True}
+            for i in range(4)
+            if i * 5 + 50 in ATTRIBUTE_MODIFIER_CONFIG.keys()
+        ],
     },
-    "T2" : {"weight" : 5 ,"items" : [
-        {"type" : 0, "id" : 0, "unlocked" : True},
-        {"type" : 0, "id" : 2, "unlocked" : True},
-        {"type" : 2, "id" : 0, "unlocked" : True},
-        {"type" : 2, "id" : 1, "unlocked" : True},
-        {"type" : 4, "id" : 0, "unlocked" : True}, 
-        {"type" : 5, "id" : 3, "unlocked" : True},
-        {"type" : 5, "id" : 4, "unlocked" : True},
-        {"type" : 5, "id" : 5, "unlocked" : True},
-        {"type" : 5, "id" : 6, "unlocked" : True},
-        {"type" : 5, "id" : 7, "unlocked" : True},
-        {"type" : 5, "id" : 11, "unlocked" : True}] + 
-        [{"type" : 1, "id" : i*5+1, "unlocked" : True} for i in range(8) if i*5+1 in ATTRIBUTE_MODIFIER_CONFIG.keys()] +
-        [{"type" : 1, "id" : i*5+1 + 50, "unlocked" : True} for i in range(3) if i*5+1 + 50 in ATTRIBUTE_MODIFIER_CONFIG.keys()]
+    "T2": {
+        "weight": 5,
+        "items": [
+            {"type": 0, "id": 0, "unlocked": True},
+            {"type": 0, "id": 2, "unlocked": True},
+            {"type": 2, "id": 0, "unlocked": True},
+            {"type": 2, "id": 1, "unlocked": True},
+            {"type": 4, "id": 0, "unlocked": True},
+            {"type": 5, "id": 3, "unlocked": True},
+            {"type": 5, "id": 4, "unlocked": True},
+            {"type": 5, "id": 5, "unlocked": True},
+            {"type": 5, "id": 6, "unlocked": True},
+            {"type": 5, "id": 7, "unlocked": True},
+            {"type": 5, "id": 11, "unlocked": True},
+        ]
+        + [
+            {"type": 1, "id": i * 5 + 1, "unlocked": True}
+            for i in range(8)
+            if i * 5 + 1 in ATTRIBUTE_MODIFIER_CONFIG.keys()
+        ]
+        + [
+            {"type": 1, "id": i * 5 + 1 + 50, "unlocked": True}
+            for i in range(4)
+            if i * 5 + 1 + 50 in ATTRIBUTE_MODIFIER_CONFIG.keys()
+        ],
     },
-    "T3" : {"weight" : 10 ,"items" : [
-        {"type" : 0, "id" : 3, "unlocked" : True},
-        {"type" : 0, "id" : 4, "unlocked" : True},
-        {"type" : 1, "id" : 100, "unlocked" : True},
-        {"type" : 1, "id" : 101, "unlocked" : True},
-        {"type" : 2, "id" : 2, "unlocked" : True},
-        {"type" : 2, "id" : 3, "unlocked" : True}, 
-        {"type" : 3, "id" : 0, "unlocked" : True}, 
-        {"type" : 3, "id" : 1, "unlocked" : True},
-        {"type" : 3, "id" : 2, "unlocked" : True},
-        {"type" : 3, "id" : 3, "unlocked" : True},
-        {"type" : 3, "id" : 4, "unlocked" : True},
-        {"type" : 5, "id" : 12, "unlocked" : True}] +
-         
-        [{"type" : 1, "id" : i*5+2, "unlocked" : True} for i in range(8) if i*5+2 in ATTRIBUTE_MODIFIER_CONFIG.keys()] +
-        [{"type" : 1, "id" : i*5+2 + 50, "unlocked" : True} for i in range(3) if i*5+2 + 50 in ATTRIBUTE_MODIFIER_CONFIG.keys()]
+    "T3": {
+        "weight": 10,
+        "items": [
+            {"type": 0, "id": 3, "unlocked": True},
+            {"type": 0, "id": 4, "unlocked": True},
+            {"type": 1, "id": 100, "unlocked": True},
+            {"type": 1, "id": 101, "unlocked": True},
+            {"type": 2, "id": 2, "unlocked": True},
+            {"type": 2, "id": 3, "unlocked": True},
+            {"type": 3, "id": 0, "unlocked": True},
+            {"type": 3, "id": 1, "unlocked": True},
+            {"type": 3, "id": 2, "unlocked": True},
+            {"type": 3, "id": 3, "unlocked": True},
+            {"type": 3, "id": 4, "unlocked": True},
+            {"type": 5, "id": 12, "unlocked": True},
+        ]
+        + [
+            {"type": 1, "id": i * 5 + 2, "unlocked": True}
+            for i in range(8)
+            if i * 5 + 2 in ATTRIBUTE_MODIFIER_CONFIG.keys()
+        ]
+        + [
+            {"type": 1, "id": i * 5 + 2 + 50, "unlocked": True}
+            for i in range(4)
+            if i * 5 + 2 + 50 in ATTRIBUTE_MODIFIER_CONFIG.keys()
+        ],
     },
-    "T4" : {"weight" : 18, "items" : [
-        {"type" : 2, "id" : 4, "unlocked" : True},
-        {"type" : 4, "id" : 1, "unlocked" : True},
-        {"type" : 4, "id" : 2, "unlocked" : True},
-        {"type" : 4, "id" : 3, "unlocked" : True},
-        {"type" : 5, "id" : 8, "unlocked" : True},
-        {"type" : 5, "id" : 9, "unlocked" : True},
-        {"type" : 5, "id" : 13, "unlocked" : True}] +
-        [{"type" : 1, "id" : i*5+3, "unlocked" : True} for i in range(8) if i*5+3 in ATTRIBUTE_MODIFIER_CONFIG.keys()] +
-        [{"type" : 1, "id" : i*5+3 + 50, "unlocked" : True} for i in range(3) if i*5+3 + 50 in ATTRIBUTE_MODIFIER_CONFIG.keys()]
+    "T4": {
+        "weight": 18,
+        "items": [
+            {"type": 2, "id": 4, "unlocked": True},
+            {"type": 4, "id": 1, "unlocked": True},
+            {"type": 4, "id": 2, "unlocked": True},
+            {"type": 4, "id": 3, "unlocked": True},
+            {"type": 5, "id": 8, "unlocked": True},
+            {"type": 5, "id": 9, "unlocked": True},
+            {"type": 5, "id": 13, "unlocked": True},
+        ]
+        + [
+            {"type": 1, "id": i * 5 + 3, "unlocked": True}
+            for i in range(8)
+            if i * 5 + 3 in ATTRIBUTE_MODIFIER_CONFIG.keys()
+        ]
+        + [
+            {"type": 1, "id": i * 5 + 3 + 50, "unlocked": True}
+            for i in range(4)
+            if i * 5 + 3 + 50 in ATTRIBUTE_MODIFIER_CONFIG.keys()
+        ],
     },
-    "T5" : {"weight" : 30, "items" : [] + 
-        [{"type" : 1, "id" : i*5+4, "unlocked" : True} for i in range(8) if i*5+4 in ATTRIBUTE_MODIFIER_CONFIG.keys()] +
-        [{"type" : 1, "id" : i*5+4 + 50, "unlocked" : True} for i in range(3) if i*5+4 + 50 in ATTRIBUTE_MODIFIER_CONFIG.keys()]
-    }
+    "T5": {
+        "weight": 30,
+        "items": []
+        + [
+            {"type": 1, "id": i * 5 + 4, "unlocked": True}
+            for i in range(8)
+            if i * 5 + 4 in ATTRIBUTE_MODIFIER_CONFIG.keys()
+        ]
+        + [
+            {"type": 1, "id": i * 5 + 4 + 50, "unlocked": True}
+            for i in range(4)
+            if i * 5 + 4 + 50 in ATTRIBUTE_MODIFIER_CONFIG.keys()
+        ],
+    },
 }
-print(PROBABILITY_CONFIG)
 
 UI_CONFIG = {
     "gun_box_w": 620,
@@ -3994,7 +4646,7 @@ UI_CONFIG = {
     "grid_cell_size": 60,
     "grid_cols": 20,
     "grid_rows": 2,
-    "inv_bottom_padding": 20,
+    "inv_bottom_padding": 80,
     "gun_box_padding_x": 50,
     "gun_box_padding_y": 120,
     "gun_box_spacing_y": 270,
@@ -4011,7 +4663,7 @@ ENEMY_CONFIG = {
         "speed": 55,
         "damage": 10,
         "attack_cooldown": 0.8,
-        "xp_drop": 1,
+        "xp_drop": 2,
         "ai": "chase",
     },
     1: {
@@ -4024,7 +4676,7 @@ ENEMY_CONFIG = {
         "speed": 85,
         "damage": 6,
         "attack_cooldown": 0.5,
-        "xp_drop": 1,
+        "xp_drop": 2,
         "ai": "runner",
     },
     2: {
@@ -4037,7 +4689,7 @@ ENEMY_CONFIG = {
         "speed": 40,
         "damage": 25,
         "attack_cooldown": 1.2,
-        "xp_drop": 4,
+        "xp_drop": 10,
         "ai": "chase",
     },
     3: {
@@ -4050,7 +4702,7 @@ ENEMY_CONFIG = {
         "speed": 90,
         "damage": 8,
         "attack_cooldown": 1.5,
-        "xp_drop": 2,
+        "xp_drop": 4,
         "ai": "shooter",
         "ranged": True,
         "preferred_distance": 350,
@@ -4068,17 +4720,28 @@ BOSS_CONFIG = {
     "speed": 80,
     "damage": 40,
     "attack_cooldown": 2.0,
-    "xp_drop": 50,
+    "xp_drop": 100,
     "ai": "boss",
     "ranged": True,
     "bullet_speed": 220,
 }
 
 GAME_CONFIG = {
-    "boss_spawn_time": 10.0,  # seconds before boss appears (5 minutes)
-    "spawn_base_interval": 1.5,
-    "spawn_min_interval": 0.25,
+    "initial_points": 0,
+    "boss_spawn_time": 300,  # seconds before boss appears (5 minutes)
+    "spawn_base_interval": 1.0,  # diff_factor = 1.0 + self.elapsed / self.spawn_ramp_seconds
+    "spawn_min_interval": 2.0,  # spawn_interval = max(self.min_spawn_interval, self.base_spawn_interval / diff_factor)
+    "spawn_ramp_seconds": 120.0,
+    "max_enemies": 45,
+    "enemy_hp_growth_per_boss": 0.5,
+    "enemy_damage_growth_per_boss": 0.25,
+    "chaser_ring_interval": 150.0,
+    "flow_field_cell_size": 80,
+    "flow_field_radius_cells": 18,
+    "flow_field_refresh_interval": 0.35,
+    "flow_field_obstacle_padding": 28,
     "altar_charge_time": 3.0,
+    "altar_radius": 120,
     "altar_buff_amount": {
         "hp": 25,
         "damage": 0.15,
@@ -4086,8 +4749,14 @@ GAME_CONFIG = {
     },
     "xp_pickup_radius": 22,
     "xp_attract_radius": 130,
+    "xp_drop_growth_interval": 60.0,
+    "xp_drop_growth_per_interval": 0.25,
+    "xp_drop_max_multiplier": 3.0,
+    "gun_pickup_radius": 48,
     "player_max_hp": 100,
     "player_invincible_time": 0.5,
+    "player_hp_regen_per_second": 2.0,
+    "player_hp_regen_delay": 3.0,
     "xp_per_level_base": 4,
     "card_slot_levels": [10, 20, 30, 40, 50],
 }

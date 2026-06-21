@@ -11,7 +11,7 @@ from Asset.ImageLoader import load_image_surface
 
 
 METHODS = ("Steering", "A*", "Dijkstra", "Flow Field")
-N_VALUES = (10, 30, 60, 120)
+N_VALUES = (10, 30, 60, 120, 200, 300)
 DT = 1.0 / 60.0
 CELL_SIZE = 32
 GRID_W = 42
@@ -29,6 +29,8 @@ METHOD_COLORS = {
     "Flow Field": (235, 135, 245),
 }
 EVAL1_IMAGE_CACHE = {}
+PLAYER_SPRITE_PATH = "./Img/player_sprite.png"
+PLAYER_SPRITE_BASE_ANGLE = 0
 OBSTACLE_IMAGE_PATHS = (
     "./Img/obstacle_ruins.png",
     "./Img/obstacle_roots.png",
@@ -50,6 +52,22 @@ def _load_eval_image(path, size=None):
         image = None
     EVAL1_IMAGE_CACHE[key] = image
     return image
+
+
+def _draw_player_sprite(screen, center, size, direction):
+    player_img = _load_eval_image(PLAYER_SPRITE_PATH, (size, size))
+    if not player_img:
+        pygame.draw.circle(screen, (80, 185, 255), center, max(4, int(size * 0.3)))
+        pygame.draw.circle(screen, (235, 250, 255), center, max(4, int(size * 0.3)), 1)
+        return
+
+    direction = pygame.Vector2(direction)
+    if direction.length_squared() == 0:
+        direction = pygame.Vector2(1, 0)
+    screen_direction = pygame.Vector2(direction.x, -direction.y)
+    angle = -screen_direction.as_polar()[1] + PLAYER_SPRITE_BASE_ANGLE
+    rotated = pygame.transform.rotozoom(player_img, angle, 1.0)
+    screen.blit(rotated, rotated.get_rect(center=(int(center.x), int(center.y))))
 
 
 def _fixed_obstacles():
@@ -416,20 +434,34 @@ class LivePathEvaluation:
 
 
 def _ensure_eval1_state(game):
-    if getattr(game, "_eval1_initialized", False):
+    if getattr(game, "_eval1_initialized", False) and hasattr(game, "eval1_sim"):
         return
     game.eval1_enemy_idx = 1
+    game.eval1_method_idx = 0
     game.eval1_paused = False
     enemy_count = N_VALUES[game.eval1_enemy_idx]
-    game.eval1_sims = [LivePathEvaluation(method, enemy_count) for method in METHODS]
+    method = METHODS[game.eval1_method_idx]
+    game.eval1_sim = LivePathEvaluation(method, enemy_count)
     game._eval1_initialized = True
 
 
 def _reset_eval1(game):
     _ensure_eval1_state(game)
     enemy_count = N_VALUES[game.eval1_enemy_idx]
-    for sim in game.eval1_sims:
-        sim.reset(enemy_count)
+    method = METHODS[game.eval1_method_idx]
+    game.eval1_sim = LivePathEvaluation(method, enemy_count)
+
+
+def _switch_eval1_method(game, step):
+    _ensure_eval1_state(game)
+    game.eval1_method_idx = (game.eval1_method_idx + step) % len(METHODS)
+    _reset_eval1(game)
+
+
+def _switch_eval1_enemy_count(game, step):
+    _ensure_eval1_state(game)
+    game.eval1_enemy_idx = (game.eval1_enemy_idx + step) % len(N_VALUES)
+    _reset_eval1(game)
 
 
 def _draw_text(game, text, x, y, color=(230, 230, 230), font=None):
@@ -546,13 +578,12 @@ def _draw_panel(game, sim, rect):
     _draw_steering_rays(game.screen, sim, player_pos, area)
 
     player_screen = _world_to_rect(player_pos, area)[0]
-    player_size = max(12, int(30 * scale))
-    player_img = _load_eval_image("./Img/Ball.png", (player_size, player_size))
-    if player_img:
-        game.screen.blit(player_img, player_img.get_rect(center=player_screen))
+    player_size = max(24, int(96 * scale))
+    if len(sim.player_trace) >= 2:
+        player_direction = sim.player_trace[-1] - sim.player_trace[-2]
     else:
-        pygame.draw.circle(game.screen, (80, 185, 255), player_screen, max(4, int(9 * scale)))
-        pygame.draw.circle(game.screen, (235, 250, 255), player_screen, max(4, int(9 * scale)), 1)
+        player_direction = pygame.Vector2(1, 0)
+    _draw_player_sprite(game.screen, player_screen, player_size, player_direction)
 
     enemy_size = max(12, int(42 * scale))
     enemy_img = _load_eval_image("./Img/enemy_1.png", (enemy_size, enemy_size))
@@ -572,37 +603,38 @@ def _draw_panel(game, sim, rect):
 
 def _draw_eval1(game):
     game.screen.fill((15, 17, 23))
-    title = game.font.render("Evaluation 1 - Pathfinding Methods Live Comparison", True, (255, 230, 140))
+    sim = game.eval1_sim
+    title = game.font.render("Evaluation 1 - Pathfinding Stress Test", True, (255, 230, 140))
     game.screen.blit(title, (28, 18))
 
     enemy_count = N_VALUES[game.eval1_enemy_idx]
     state = "Paused" if game.eval1_paused else "Running"
     hint = (
-        f"{state} | Same obstacle map, same scripted player, N={enemy_count}. "
-        "E changes N, P pauses, R resets, ESC returns."
+        f"{state} | Method {sim.method} ({game.eval1_method_idx + 1}/{len(METHODS)}) | "
+        f"N={enemy_count} ({game.eval1_enemy_idx + 1}/{len(N_VALUES)}) | "
+        "Left/Right method, Up/Down N, P pause, R reset, ESC back."
     )
     _draw_text(game, hint, 30, 54, (180, 190, 205))
+    design = (
+        "N sweep: 10, 30, 60, 120, 200, 300. "
+        "300 is the max stress point for this 1260-cell map while staying readable."
+    )
+    _draw_text(game, design, 30, 74, (145, 154, 170))
 
     reset_btn = pygame.Rect(game.screen_width - 290, 18, 120, 42)
     back_btn = pygame.Rect(game.screen_width - 150, 18, 120, 42)
     GF.draw_button(game.screen, reset_btn, "Reset", font=game.HUD_font)
     GF.draw_button(game.screen, back_btn, "Back", font=game.HUD_font)
 
-    margin = 22
-    top = 88
-    gap = 14
-    panel_w = (game.screen_width - margin * 2 - gap) // 2
-    panel_h = (game.screen_height - top - margin - gap) // 2
-    for idx, sim in enumerate(game.eval1_sims):
-        col = idx % 2
-        row = idx // 2
-        rect = pygame.Rect(
-            margin + col * (panel_w + gap),
-            top + row * (panel_h + gap),
-            panel_w,
-            panel_h,
-        )
-        _draw_panel(game, sim, rect)
+    margin = 24
+    top = 106
+    rect = pygame.Rect(
+        margin,
+        top,
+        game.screen_width - margin * 2,
+        game.screen_height - top - margin,
+    )
+    _draw_panel(game, sim, rect)
 
     return reset_btn, back_btn
 
@@ -622,9 +654,14 @@ def test_screen_eval1(game, events):
                 _reset_eval1(game)
             elif event.key == pygame.K_p:
                 game.eval1_paused = not game.eval1_paused
-            elif event.key == pygame.K_e:
-                game.eval1_enemy_idx = (game.eval1_enemy_idx + 1) % len(N_VALUES)
-                _reset_eval1(game)
+            elif event.key in (pygame.K_RIGHT, pygame.K_d):
+                _switch_eval1_method(game, 1)
+            elif event.key in (pygame.K_LEFT, pygame.K_a):
+                _switch_eval1_method(game, -1)
+            elif event.key in (pygame.K_UP, pygame.K_w):
+                _switch_eval1_enemy_count(game, 1)
+            elif event.key in (pygame.K_DOWN, pygame.K_s):
+                _switch_eval1_enemy_count(game, -1)
         elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             if back_btn.collidepoint(event.pos):
                 game.test_screen = 4
@@ -633,7 +670,6 @@ def test_screen_eval1(game, events):
                 _reset_eval1(game)
 
     if not game.eval1_paused:
-        for sim in game.eval1_sims:
-            sim.update()
+        game.eval1_sim.update()
 
     _draw_eval1(game)

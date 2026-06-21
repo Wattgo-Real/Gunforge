@@ -36,4 +36,17 @@ Simple Ui add and value Setting `GameSetting.py、Start.py TestScreen1.py TestSc
 - Update Evaluation1 and Evaluation2
 
 ### 2026/06/16
-- Make some numerical adjustments (Altar size, enemy health)
+Make some numerical adjustments (Altar size, enemy health)
+
+### 2026/06/18
+- adjust enemy probability of generation and health,damage,drops
+- update e2 player Range distance
+- add player hp regen
+- add shop page
+
+### 2026/06/20
+- adjust game balance
+> - After 60s, the enemy spawn rate will gradually increase (quadruple after 300s, but return to the original spawn rate after the boss spawns).
+> - After 150 seconds, spawn a ring of 16 chasers around the player every 30 seconds.
+> - After 150 seconds, the enemy's health will begin to increase (double after 5 minutes).
+- fix some bug
