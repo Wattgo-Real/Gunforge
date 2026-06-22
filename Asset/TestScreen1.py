@@ -165,7 +165,6 @@ class GunPickup:
         for i, slot in enumerate(game.player.weapon_list):
             if slot is None:
                 game.player.weapon_list[i] = Gun(self.gun_info, game.bullet_manager)
-                game.player.weapon_index = i
                 self.alive = False
                 game.message_queue.append(
                     [f"New gun acquired! Slot {i + 1}", 4.0, (255, 220, 120)]
@@ -194,17 +193,17 @@ class GunPickup:
         pygame.draw.rect(screen, (140, 85, 45), grip_rect, border_radius=3)
 
 
-def _create_boss_reward_gun_info():
+def _create_boss_reward_gun_info(game: "Game"):
+    num_cards = random.randint(2, 5)
+    random_cards = _get_random_cards(game, count=num_cards)
     return {
         "cooldown": 0.25,
         "reload": 1.5,
         "scatter_angle": 8,
         "capacity": 30,
-        "max_slots": random.randint(4, 10),
-        "card_list": [
+        "max_slots": random.randint(6, 15),
+        "card_list": random_cards + [
             Card(type=0, inter_type=2),
-            Card(type=1, inter_type=1),
-            Card(type=1, inter_type=3),
         ],
     }
 
@@ -213,24 +212,35 @@ def _drop_boss_reward(game: "Game", position):
     if not hasattr(game, "gun_pickups"):
         game.gun_pickups = []
 
-    game.gun_pickups.append(GunPickup(position, _create_boss_reward_gun_info()))
+    game.gun_pickups.append(GunPickup(position, _create_boss_reward_gun_info(game)))
     game.message_queue.append(["BOSS DOWN - gun dropped!", 5.0, (255, 220, 120)])
 
 
 def _get_random_cards(game: "Game", count=3):
-    """Pick cards based on inverse weights in PROBABILITY_CONFIG."""
+    """Pick cards based on inverse weights in PROBABILITY_CONFIG without duplicates."""
     tiers = list(PROBABILITY_CONFIG.keys())
     # weights: higher weight = lower probability (score = 1/weight)
     scores = [1.0 / PROBABILITY_CONFIG[tier]["weight"] for tier in tiers]
 
     selected_cards = []
-    for _ in range(count):
+    selected_keys = set()
+
+    total_available_items = sum(len(PROBABILITY_CONFIG[tier]["items"]) for tier in tiers)
+    max_draws = min(count, total_available_items)
+
+    attempts = 0
+    while len(selected_cards) < max_draws and attempts < 1000:
+        attempts += 1
         chosen_tier_name = random.choices(tiers, weights=scores, k=1)[0]
         tier_data = PROBABILITY_CONFIG[chosen_tier_name]
+        if not tier_data["items"]:
+            continue
         item_config = random.choice(tier_data["items"])
-
-        card = Card(type=item_config["type"], inter_type=item_config["id"])
-        selected_cards.append(card)
+        key = (item_config["type"], item_config["id"])
+        if key not in selected_keys:
+            selected_keys.add(key)
+            card = Card(type=item_config["type"], inter_type=item_config["id"])
+            selected_cards.append(card)
     return selected_cards
 
 
@@ -1364,6 +1374,7 @@ def test_screen1(game: "Game", events):
     mouse_buttons = pygame.mouse.get_pressed()
 
     mouse_pos_world = game.to_world(pygame.mouse.get_pos())
+    game.player.mouse_pos_world = mouse_pos_world
     if not game.leveling_up and not game.altar_choosing:
         # ---- 1. World streaming ----
         game.world.ensure_around(game.player.pos2D)

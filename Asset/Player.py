@@ -34,8 +34,8 @@ class Player:
             "reload" : 2,
             "scatter_angle" : 5,
             "capacity" : 20,
-            "max_slots" : 20,
-            "card_list" : [Card(type = 0, inter_type = 0)],
+            "max_slots" : 8,
+            "card_list" : [Card(type = 2, inter_type = 3), Card(type = 0, inter_type = 0)],
         }
 
         self.bullet_manager = bullet_manager
@@ -46,6 +46,40 @@ class Player:
         # This is for the player to record its trajectory
         self.history_position : deque = deque(maxlen=50)
         self.total_frame_passed : int = 0
+        self.mouse_pos_world : pygame.Vector2 = pygame.Vector2(0, 0)
+
+
+        # Combat / progression stats
+        self.max_hp : float = GAME_CONFIG["player_max_hp"]
+        self.hp : float = self.max_hp
+        self.invincible_timer : float = 0.0
+        self.regen_delay_timer : float = 0.0
+        self.alive : bool = True
+
+        self.xp : int = 0
+        self.level : int = 1
+        self.xp_to_next : int = GAME_CONFIG["xp_per_level_base"]
+
+        # Run-time stat modifiers (granted by altars)
+        self.damage_multiplier : float = 1.0
+        self.bonus_speed : float = 0.0
+
+        # Stat tracking (for end-of-run summary)
+        self.kills : int = 0
+        self.damage_dealt : float = 0.0
+        self.points : int = 0
+
+        # Dash mechanic
+        self.dash_cooldown : float = 5.0
+        self.dash_cooldown_timer : float = 0.0
+        self.dash_duration : float = 0.2
+        self.dash_timer : float = 0.0
+        self.dash_speed_boost : float = 600.0  # Added to max velocity
+        self.dash_acc_boost : float = 20000.0 # Added to max acceleration
+
+        # Weapon feedback
+        self.weapon_error_msg : str = ""
+        self.weapon_error_timer : float = 0.0
 
         # Combat / progression stats
         self.max_hp : float = GAME_CONFIG["player_max_hp"]
@@ -229,18 +263,19 @@ class Player:
             trigger_feedback (bool): Whether to trigger feedback messages
         '''
 
+        spawn_pos = self.pos2D + self.face_direction * 50
         for i, weapon in enumerate(self.weapon_list):
             if weapon is None:
                 continue
 
             if i == self.weapon_index:
                 if fire:
-                    res = weapon.fire(self.face_direction, self.pos2D)
+                    res = weapon.fire(self.face_direction, spawn_pos)
                     if res != "" and trigger_feedback:
                         self.weapon_error_msg = res
                         self.weapon_error_timer = 0.5
             else:
-                weapon.fire(pygame.Vector2(1, 0).rotate(random.random() * 360), self.pos2D)
+                weapon.fire(pygame.Vector2(1, 0).rotate(random.random() * 360), spawn_pos)
             weapon.update(delta_time)
 
 
@@ -338,6 +373,7 @@ class Player:
         self.weapon_error_msg = ""
         self.weapon_error_timer = 0.0
         self.history_position.clear()
+        self.mouse_pos_world = pygame.Vector2(0, 0)
         self.inventory = []
         self.inventory.extend([None] * 40)
         basic_info = {
@@ -345,7 +381,7 @@ class Player:
             "reload" : 2,
             "scatter_angle" : 5,
             "capacity" : 20,
-            "max_slots" : 20,
+            "max_slots" : 8,
             "card_list" : [Card(type = 0, inter_type = 0)],
         }
         self.weapon_list = [Gun(basic_info, self.bullet_manager), None, None, None]

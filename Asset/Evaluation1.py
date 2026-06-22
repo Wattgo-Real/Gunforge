@@ -7,22 +7,19 @@ from collections import deque
 import pygame
 
 import Asset.Function as GF
-from Asset.GameSetting import GAME_CONFIG
 from Asset.ImageLoader import load_image_surface
-from Asset.Pickups import WorldChunkManager
 
 
 METHODS = ("Steering", "A*", "Dijkstra", "Flow Field")
 N_VALUES = (10, 30, 60, 120, 200, 300)
 DT = 1.0 / 60.0
-CELL_SIZE = GAME_CONFIG["flow_field_cell_size"]
-RADIUS_CELLS = GAME_CONFIG["flow_field_radius_cells"]
-GRID_W = RADIUS_CELLS * 2 + 1
-GRID_H = RADIUS_CELLS * 2 + 1
-VIEW_W = GRID_W * CELL_SIZE
-VIEW_H = GRID_H * CELL_SIZE
-OBSTACLE_PADDING = GAME_CONFIG["flow_field_obstacle_padding"]
+CELL_SIZE = 32
+GRID_W = 42
+GRID_H = 30
+WORLD_W = GRID_W * CELL_SIZE
+WORLD_H = GRID_H * CELL_SIZE
 ENEMY_SPEED = 92.0
+PATH_REFRESH_FRAMES = 18
 FRAME_BUDGET_MS = 16.0
 
 METHOD_COLORS = {
@@ -73,6 +70,27 @@ def _draw_player_sprite(screen, center, size, direction):
     screen.blit(rotated, rotated.get_rect(center=(int(center.x), int(center.y))))
 
 
+def _fixed_obstacles():
+    rects = [
+        (6, 5, 6, 5),
+        (17, 3, 7, 4),
+        (29, 6, 7, 5),
+        (8, 15, 8, 4),
+        (23, 13, 6, 7),
+        (32, 18, 6, 5),
+        (13, 24, 8, 4),
+        (4, 22, 5, 5),
+        (30, 25, 7, 3),
+    ]
+    blocked = set()
+    for x, y, w, h in rects:
+        for cx in range(x, x + w):
+            for cy in range(y, y + h):
+                blocked.add((cx, cy))
+    return blocked, rects
+
+
+BLOCKED_CELLS, OBSTACLE_RECTS = _fixed_obstacles()
 NEIGHBORS_4 = ((1, 0), (-1, 0), (0, 1), (0, -1))
 NEIGHBORS_8 = (
     (1, 0),
@@ -86,70 +104,24 @@ NEIGHBORS_8 = (
 )
 
 
+def _cell_to_world(cell):
+    return pygame.Vector2((cell[0] + 0.5) * CELL_SIZE, (cell[1] + 0.5) * CELL_SIZE)
+
+
 def _world_to_cell(pos):
     return (
-        math.floor(pos.x / CELL_SIZE),
-        math.floor(pos.y / CELL_SIZE),
+        max(0, min(GRID_W - 1, int(pos.x // CELL_SIZE))),
+        max(0, min(GRID_H - 1, int(pos.y // CELL_SIZE))),
     )
 
 
-def _to_local(world_cell, origin_cell):
-    return (
-        world_cell[0] - origin_cell[0],
-        world_cell[1] - origin_cell[1],
-    )
-
-
-def _to_world_cell(local_cell, origin_cell):
-    return (
-        local_cell[0] + origin_cell[0],
-        local_cell[1] + origin_cell[1],
-    )
-
-
-def _cell_to_world(local_cell, origin_cell):
-    world_cell = _to_world_cell(local_cell, origin_cell)
-    return pygame.Vector2(
-        (world_cell[0] + 0.5) * CELL_SIZE,
-        (world_cell[1] + 0.5) * CELL_SIZE,
-    )
-
-
-def _in_bounds(cell):
+def _is_walkable(cell):
     x, y = cell
-    return 0 <= x < GRID_W and 0 <= y < GRID_H
+    return 0 <= x < GRID_W and 0 <= y < GRID_H and cell not in BLOCKED_CELLS
 
 
-def _is_walkable(cell, blocked):
-    return _in_bounds(cell) and cell not in blocked
-
-
-def _blocked_cells(obstacles, origin_cell):
-    blocked = set()
-    for obs in obstacles:
-        half = obs.size / 2
-        min_cell = _world_to_cell(
-            pygame.Vector2(
-                obs.pos2D.x - half.x - OBSTACLE_PADDING,
-                obs.pos2D.y - half.y - OBSTACLE_PADDING,
-            )
-        )
-        max_cell = _world_to_cell(
-            pygame.Vector2(
-                obs.pos2D.x + half.x + OBSTACLE_PADDING,
-                obs.pos2D.y + half.y + OBSTACLE_PADDING,
-            )
-        )
-        min_local = _to_local(min_cell, origin_cell)
-        max_local = _to_local(max_cell, origin_cell)
-        for lx in range(max(0, min_local[0]), min(GRID_W, max_local[0] + 1)):
-            for ly in range(max(0, min_local[1]), min(GRID_H, max_local[1] + 1)):
-                blocked.add((lx, ly))
-    return blocked
-
-
-def _nearest_walkable(cell, blocked):
-    if _is_walkable(cell, blocked):
+def _nearest_walkable(cell):
+    if _is_walkable(cell):
         return cell
     queue = [cell]
     seen = {cell}
@@ -159,12 +131,12 @@ def _nearest_walkable(cell, blocked):
             nxt = (curr[0] + dx, curr[1] + dy)
             if nxt in seen:
                 continue
-            if _is_walkable(nxt, blocked):
+            if _is_walkable(nxt):
                 return nxt
-            if _in_bounds(nxt):
+            if 0 <= nxt[0] < GRID_W and 0 <= nxt[1] < GRID_H:
                 seen.add(nxt)
                 queue.append(nxt)
-    return (RADIUS_CELLS, RADIUS_CELLS)
+    return (0, 0)
 
 
 def _heuristic(a, b):
@@ -187,9 +159,9 @@ def _reconstruct(came_from, start, goal):
     return path
 
 
-def _search_path(start, goal, blocked, use_heuristic):
-    start = _nearest_walkable(start, blocked)
-    goal = _nearest_walkable(goal, blocked)
+def _search_path(start, goal, use_heuristic):
+    start = _nearest_walkable(start)
+    goal = _nearest_walkable(goal)
     frontier = [(0.0, start)]
     came_from = {}
     cost_so_far = {start: 0.0}
@@ -203,13 +175,8 @@ def _search_path(start, goal, blocked, use_heuristic):
 
         for dx, dy in NEIGHBORS_8:
             nxt = (curr[0] + dx, curr[1] + dy)
-            if not _is_walkable(nxt, blocked):
+            if not _is_walkable(nxt):
                 continue
-            if dx != 0 and dy != 0:
-                if not _is_walkable((curr[0] + dx, curr[1]), blocked):
-                    continue
-                if not _is_walkable((curr[0], curr[1] + dy), blocked):
-                    continue
             new_cost = cost_so_far[curr] + _edge_cost(curr, nxt)
             if nxt not in cost_so_far or new_cost < cost_so_far[nxt]:
                 cost_so_far[nxt] = new_cost
@@ -220,8 +187,8 @@ def _search_path(start, goal, blocked, use_heuristic):
     return _reconstruct(came_from, start, goal), cost_so_far.get(goal), expanded
 
 
-def _build_flow_field(goal, blocked):
-    goal = _nearest_walkable(goal, blocked)
+def _build_flow_field(goal):
+    goal = _nearest_walkable(goal)
     frontier = [(0.0, goal)]
     dist = {goal: 0.0}
     expanded = 0
@@ -233,13 +200,8 @@ def _build_flow_field(goal, blocked):
         expanded += 1
         for dx, dy in NEIGHBORS_8:
             nxt = (curr[0] + dx, curr[1] + dy)
-            if not _is_walkable(nxt, blocked):
+            if not _is_walkable(nxt):
                 continue
-            if dx != 0 and dy != 0:
-                if not _is_walkable((curr[0] + dx, curr[1]), blocked):
-                    continue
-                if not _is_walkable((curr[0], curr[1] + dy), blocked):
-                    continue
             new_cost = curr_cost + _edge_cost(curr, nxt)
             if nxt not in dist or new_cost < dist[nxt]:
                 dist[nxt] = new_cost
@@ -257,7 +219,7 @@ def _build_flow_field(goal, blocked):
                 best = nxt
                 best_cost = dist[nxt]
         if best is not None:
-            direction = pygame.Vector2(best[0] - cell[0], best[1] - cell[1])
+            direction = _cell_to_world(best) - _cell_to_world(cell)
             if direction.length_squared() > 0:
                 flow[cell] = direction.normalize()
     return dist, flow, expanded
@@ -265,24 +227,27 @@ def _build_flow_field(goal, blocked):
 
 def _scripted_player(frame):
     t = frame / 60.0
+    cx = WORLD_W * 0.5
+    cy = WORLD_H * 0.5
     return pygame.Vector2(
-        t * 155.0 + math.sin(t * 0.9) * 360 + math.sin(t * 1.7) * 120,
-        t * 95.0 + math.cos(t * 0.7) * 250,
+        cx + math.sin(t * 0.9) * 360 + math.sin(t * 1.7) * 120,
+        cy + math.cos(t * 0.7) * 250,
     )
 
 
-def _position_is_free(pos, origin_cell, blocked):
-    local = _to_local(_world_to_cell(pos), origin_cell)
-    return not (_in_bounds(local) and local in blocked)
-
-
-def _spawn_enemy_from_rng(rng, player_pos, origin_cell, blocked):
+def _spawn_enemy_from_rng(rng):
     for _ in range(80):
-        angle = rng.uniform(0, math.tau)
-        dist = rng.uniform(700, 900)
-        pos = player_pos + pygame.Vector2(math.cos(angle), math.sin(angle)) * dist
-        if not _position_is_free(pos, origin_cell, blocked):
-            continue
+        edge = rng.randrange(4)
+        if edge == 0:
+            cell = (rng.randrange(GRID_W), 1)
+        elif edge == 1:
+            cell = (rng.randrange(GRID_W), GRID_H - 2)
+        elif edge == 2:
+            cell = (1, rng.randrange(GRID_H))
+        else:
+            cell = (GRID_W - 2, rng.randrange(GRID_H))
+        cell = _nearest_walkable(cell)
+        pos = _cell_to_world(cell)
         return {
             "pos": pos,
             "start": pos.copy(),
@@ -292,10 +257,9 @@ def _spawn_enemy_from_rng(rng, player_pos, origin_cell, blocked):
             "stuck_counted": False,
             "path_len": 0.0,
         }
-    pos = player_pos + pygame.Vector2(820, 0)
     return {
-        "pos": pos,
-        "start": pos.copy(),
+        "pos": pygame.Vector2(16, 16),
+        "start": pygame.Vector2(16, 16),
         "path": [],
         "path_idx": 0,
         "stuck_time": 0.0,
@@ -304,39 +268,39 @@ def _spawn_enemy_from_rng(rng, player_pos, origin_cell, blocked):
     }
 
 
-def _spawn_enemies(count, rng, player_pos, origin_cell, blocked):
-    return [_spawn_enemy_from_rng(rng, player_pos, origin_cell, blocked) for _ in range(count)]
+def _spawn_enemies(count):
+    rng = random.Random(42 + count * 17)
+    return [_spawn_enemy_from_rng(rng) for _ in range(count)]
 
 
-def _near_obstacle(cell, blocked):
+def _near_obstacle(cell):
     for dx, dy in NEIGHBORS_8:
-        if (cell[0] + dx, cell[1] + dy) in blocked:
+        if (cell[0] + dx, cell[1] + dy) in BLOCKED_CELLS:
             return True
     return False
 
 
-def _line_crosses_obstacle(start_pos, end_pos, origin_cell, blocked):
+def _line_crosses_obstacle(start_pos, end_pos):
     distance = max(1.0, start_pos.distance_to(end_pos))
     steps = max(2, int(distance / (CELL_SIZE * 0.5)))
     for i in range(1, steps + 1):
         pos = start_pos.lerp(end_pos, i / steps)
-        local = _to_local(_world_to_cell(pos), origin_cell)
-        if _in_bounds(local) and local in blocked:
+        if _world_to_cell(pos) in BLOCKED_CELLS:
             return True
     return False
 
 
-def _try_move(pos, velocity, origin_cell, blocked):
+def _try_move(pos, velocity):
     next_pos = pos + velocity
-    if _position_is_free(next_pos, origin_cell, blocked):
+    if _is_walkable(_world_to_cell(next_pos)):
         return next_pos
 
     slide_x = pygame.Vector2(pos.x + velocity.x, pos.y)
-    if _position_is_free(slide_x, origin_cell, blocked):
+    if _is_walkable(_world_to_cell(slide_x)):
         return slide_x
 
     slide_y = pygame.Vector2(pos.x, pos.y + velocity.y)
-    if _position_is_free(slide_y, origin_cell, blocked):
+    if _is_walkable(_world_to_cell(slide_y)):
         return slide_y
 
     return pos
@@ -348,40 +312,17 @@ class LivePathEvaluation:
         self.enemy_count = enemy_count
         self.rng = random.Random(9000 + enemy_count * 13 + METHODS.index(method))
         self.player_trace = deque(maxlen=180)
-        self.world = WorldChunkManager(spatial_grid_dict=None, seed=42)
-        self.origin_cell = (0, 0)
-        self.blocked = set()
         self.reset(enemy_count)
-
-    def _refresh_world(self, player_pos):
-        self.world.ensure_around(player_pos, view_chunks=2)
-        self.world.cull_far(player_pos, max_distance=2500)
-        player_cell = _world_to_cell(player_pos)
-        self.origin_cell = (
-            player_cell[0] - RADIUS_CELLS,
-            player_cell[1] - RADIUS_CELLS,
-        )
-        self.blocked = _blocked_cells(self.world.obstacles, self.origin_cell)
-        return player_cell, _to_local(player_cell, self.origin_cell)
 
     def reset(self, enemy_count=None):
         if enemy_count is not None:
             self.enemy_count = enemy_count
         self.frame = 0
-        self.world.reset(seed=42)
-        initial_player = _scripted_player(self.frame)
-        self.player_cell, self.player_local = self._refresh_world(initial_player)
-        self.enemies = _spawn_enemies(
-            self.enemy_count,
-            self.rng,
-            initial_player,
-            self.origin_cell,
-            self.blocked,
-        )
+        self.enemies = _spawn_enemies(self.enemy_count)
         self.flow_dist = {}
         self.flow = {}
         self.flow_goal = None
-        self.flow_timer = 0.0
+        self.path_cache = {}
         self.recomputes = 0
         self.expanded_this_frame = 0
         self.reached = 0
@@ -399,31 +340,20 @@ class LivePathEvaluation:
         detour_values = []
 
         player_pos = _scripted_player(self.frame)
-        player_world_cell, player_cell = self._refresh_world(player_pos)
-        player_cell = _nearest_walkable(player_cell, self.blocked)
+        player_cell = _nearest_walkable(_world_to_cell(player_pos))
         self.player_trace.append(player_pos.copy())
 
-        self.flow_timer -= DT
-        if (
-            self.method == "Flow Field"
-            and (
-                self.flow_goal != player_world_cell
-                or self.flow_timer <= 0
-                or not self.flow
-            )
-        ):
+        if self.method == "Flow Field" and self.flow_goal != player_cell:
             t0 = time.perf_counter()
-            self.flow_dist, self.flow, expanded = _build_flow_field(player_cell, self.blocked)
+            self.flow_dist, self.flow, expanded = _build_flow_field(player_cell)
             path_ms += (time.perf_counter() - t0) * 1000.0
             self.expanded_this_frame += expanded
-            self.flow_goal = player_world_cell
-            self.flow_timer = GAME_CONFIG["flow_field_refresh_interval"]
+            self.flow_goal = player_cell
             self.recomputes += 1
 
         for idx, enemy in enumerate(self.enemies):
             pos = enemy["pos"]
-            start_world_cell = _world_to_cell(pos)
-            start_cell = _nearest_walkable(_to_local(start_world_cell, self.origin_cell), self.blocked)
+            start_cell = _nearest_walkable(_world_to_cell(pos))
             direction = pygame.Vector2(0, 0)
 
             if self.method == "Steering":
@@ -431,32 +361,32 @@ class LivePathEvaluation:
                 direction = target - pos
                 if direction.length_squared() > 0:
                     direction = direction.normalize()
-                detour_values.append(
-                    1.65 if _line_crosses_obstacle(pos, player_pos, self.origin_cell, self.blocked) else 1.0
-                )
+                detour_values.append(1.65 if _line_crosses_obstacle(pos, player_pos) else 1.0)
 
             elif self.method in ("A*", "Dijkstra"):
-                needs_path = True
+                needs_path = self.frame % PATH_REFRESH_FRAMES == idx % PATH_REFRESH_FRAMES
+                needs_path = needs_path or not enemy["path"] or enemy["path_idx"] >= len(enemy["path"])
                 if needs_path:
-                    t0 = time.perf_counter()
-                    path, cost, expanded = _search_path(
-                        start_cell,
-                        player_cell,
-                        self.blocked,
-                        self.method == "A*",
-                    )
-                    path_ms += (time.perf_counter() - t0) * 1000.0
+                    cache_key = (self.method, start_cell, player_cell)
+                    if cache_key in self.path_cache:
+                        path, cost = self.path_cache[cache_key]
+                        expanded = 0
+                    else:
+                        t0 = time.perf_counter()
+                        path, cost, expanded = _search_path(start_cell, player_cell, self.method == "A*")
+                        path_ms += (time.perf_counter() - t0) * 1000.0
+                        self.path_cache[cache_key] = (path, cost)
+                        if len(self.path_cache) > 500:
+                            self.path_cache.clear()
                     self.expanded_this_frame += expanded
                     enemy["path"] = path
                     enemy["path_idx"] = 1 if len(path) > 1 else 0
-                    if cost is not None and cost > 0:
-                        start_center = _cell_to_world(start_cell, self.origin_cell)
-                        goal_center = _cell_to_world(player_cell, self.origin_cell)
-                        euclid = max(1.0, start_center.distance_to(goal_center))
+                    if cost is not None:
+                        euclid = max(1.0, pos.distance_to(player_pos))
                         detour_values.append((cost * CELL_SIZE) / euclid)
 
                 if enemy["path"] and enemy["path_idx"] < len(enemy["path"]):
-                    target = _cell_to_world(enemy["path"][enemy["path_idx"]], self.origin_cell)
+                    target = _cell_to_world(enemy["path"][enemy["path_idx"]])
                     if pos.distance_to(target) < CELL_SIZE * 0.35:
                         enemy["path_idx"] += 1
                 else:
@@ -468,20 +398,17 @@ class LivePathEvaluation:
 
             else:
                 direction = self.flow.get(start_cell, pygame.Vector2(0, 0))
-                if start_cell in self.flow_dist and self.flow_dist[start_cell] > 0:
-                    start_center = _cell_to_world(start_cell, self.origin_cell)
-                    goal_center = _cell_to_world(player_cell, self.origin_cell)
-                    euclid = max(1.0, start_center.distance_to(goal_center))
+                if start_cell in self.flow_dist:
+                    euclid = max(1.0, pos.distance_to(player_pos))
                     detour_values.append((self.flow_dist[start_cell] * CELL_SIZE) / euclid)
 
             old_pos = pos.copy()
-            new_pos = _try_move(pos, direction * ENEMY_SPEED * DT, self.origin_cell, self.blocked)
+            new_pos = _try_move(pos, direction * ENEMY_SPEED * DT)
             moved = old_pos.distance_to(new_pos)
             enemy["pos"] = new_pos
             enemy["path_len"] += moved
 
-            new_cell = _to_local(_world_to_cell(new_pos), self.origin_cell)
-            if _near_obstacle(new_cell, self.blocked) and moved < ENEMY_SPEED * DT * 0.35:
+            if _near_obstacle(_world_to_cell(new_pos)) and moved < ENEMY_SPEED * DT * 0.35:
                 enemy["stuck_time"] += DT
                 if enemy["stuck_time"] > 2.0 and not enemy["stuck_counted"]:
                     enemy["stuck_counted"] = True
@@ -490,12 +417,7 @@ class LivePathEvaluation:
 
             if new_pos.distance_to(player_pos) < 22:
                 self.reached += 1
-                self.enemies[idx] = _spawn_enemy_from_rng(
-                    self.rng,
-                    player_pos,
-                    self.origin_cell,
-                    self.blocked,
-                )
+                self.enemies[idx] = _spawn_enemy_from_rng(self.rng)
 
         total_ms = (time.perf_counter() - t_total) * 1000.0
         alpha = 0.08
@@ -548,90 +470,34 @@ def _draw_text(game, text, x, y, color=(230, 230, 230), font=None):
     return surf.get_height()
 
 
-def _world_to_rect(pos, area, sim):
-    scale = min(area.width / VIEW_W, area.height / VIEW_H)
-    draw_w = VIEW_W * scale
-    draw_h = VIEW_H * scale
+def _world_to_rect(pos, area):
+    scale = min(area.width / WORLD_W, area.height / WORLD_H)
+    draw_w = WORLD_W * scale
+    draw_h = WORLD_H * scale
     left = area.left + (area.width - draw_w) * 0.5
     top = area.top + (area.height - draw_h) * 0.5
-    player_pos = _scripted_player(sim.frame)
-    view_left = player_pos.x - VIEW_W * 0.5
-    view_top = player_pos.y - VIEW_H * 0.5
-    return pygame.Vector2(
-        left + (pos.x - view_left) * scale,
-        top + (pos.y - view_top) * scale,
-    ), scale, left, top
+    return pygame.Vector2(left + pos.x * scale, top + pos.y * scale), scale, left, top
 
 
-def _draw_world_background(screen, map_rect, scale, sim):
-    background = _load_eval_image("./Img/background.png")
-    if not background:
+def _draw_obstacles(screen, area):
+    _, scale, left, top = _world_to_rect(pygame.Vector2(0, 0), area)
+    map_rect = pygame.Rect(left, top, WORLD_W * scale, WORLD_H * scale)
+    background = _load_eval_image("./Img/background.png", map_rect.size)
+    if background:
+        screen.blit(background, map_rect)
+    else:
         pygame.draw.rect(screen, (14, 17, 24), map_rect)
-        return
-
-    player_pos = _scripted_player(sim.frame)
-    view_left = player_pos.x - VIEW_W * 0.5
-    view_top = player_pos.y - VIEW_H * 0.5
-    tile_world = WorldChunkManager.CHUNK_SIZE
-    tile_px = max(1, int(tile_world * scale))
-    tile = _load_eval_image("./Img/background.png", (tile_px, tile_px))
-    if not tile:
-        pygame.draw.rect(screen, (14, 17, 24), map_rect)
-        return
-
-    start_x = math.floor(view_left / tile_world) * tile_world
-    start_y = math.floor(view_top / tile_world) * tile_world
-    end_x = view_left + VIEW_W
-    end_y = view_top + VIEW_H
-
-    old_clip = screen.get_clip()
-    screen.set_clip(map_rect)
-    wx = start_x
-    while wx < end_x:
-        wy = start_y
-        while wy < end_y:
-            sx = map_rect.left + int((wx - view_left) * scale)
-            sy = map_rect.top + int((wy - view_top) * scale)
-            screen.blit(tile, (sx, sy))
-            wy += tile_world
-        wx += tile_world
-
-    grid_color = (38, 45, 55)
-    wx = start_x
-    while wx <= end_x:
-        sx = map_rect.left + int((wx - view_left) * scale)
-        pygame.draw.line(screen, grid_color, (sx, map_rect.top), (sx, map_rect.bottom), 1)
-        wx += tile_world
-    wy = start_y
-    while wy <= end_y:
-        sy = map_rect.top + int((wy - view_top) * scale)
-        pygame.draw.line(screen, grid_color, (map_rect.left, sy), (map_rect.right, sy), 1)
-        wy += tile_world
-    screen.set_clip(old_clip)
-
-
-def _draw_obstacles(screen, area, sim):
-    _, scale, left, top = _world_to_rect(_scripted_player(sim.frame), area, sim)
-    map_rect = pygame.Rect(left, top, VIEW_W * scale, VIEW_H * scale)
-    _draw_world_background(screen, map_rect, scale, sim)
     pygame.draw.rect(screen, (58, 64, 78), map_rect, 1)
 
-    player_pos = _scripted_player(sim.frame)
-    view_rect = pygame.Rect(
-        player_pos.x - VIEW_W * 0.5,
-        player_pos.y - VIEW_H * 0.5,
-        VIEW_W,
-        VIEW_H,
-    )
-    for obs in sim.world.obstacles:
-        half = obs.size / 2
-        obs_rect = pygame.Rect(obs.pos2D.x - half.x, obs.pos2D.y - half.y, obs.size.x, obs.size.y)
-        if not view_rect.colliderect(obs_rect):
-            continue
-        center, _, _, _ = _world_to_rect(obs.pos2D, area, sim)
-        rect = pygame.Rect(0, 0, obs.size.x * scale, obs.size.y * scale)
-        rect.center = center
-        obstacle = _load_eval_image(obs.image_path, (rect.width * 1.45, rect.height * 1.65))
+    for idx, (ox, oy, ow, oh) in enumerate(OBSTACLE_RECTS):
+        rect = pygame.Rect(
+            left + ox * CELL_SIZE * scale,
+            top + oy * CELL_SIZE * scale,
+            ow * CELL_SIZE * scale,
+            oh * CELL_SIZE * scale,
+        )
+        obstacle_path = OBSTACLE_IMAGE_PATHS[idx % len(OBSTACLE_IMAGE_PATHS)]
+        obstacle = _load_eval_image(obstacle_path, (rect.width * 1.45, rect.height * 1.65))
         if obstacle:
             image_rect = obstacle.get_rect(center=rect.center)
             screen.blit(obstacle, image_rect)
@@ -647,7 +513,7 @@ def _draw_flow_arrows(screen, sim, area):
     for cell, direction in sim.flow.items():
         if cell[0] % 4 != 0 or cell[1] % 4 != 0:
             continue
-        start, scale, _, _ = _world_to_rect(_cell_to_world(cell, sim.origin_cell), area, sim)
+        start, scale, _, _ = _world_to_rect(_cell_to_world(cell), area)
         end = start + pygame.Vector2(direction.x, -direction.y) * CELL_SIZE * scale * 0.55
         pygame.draw.line(screen, (210, 130, 230), start, end, 1)
 
@@ -660,10 +526,7 @@ def _draw_paths(screen, sim, area):
     for enemy in sim.enemies:
         if len(enemy["path"]) < 2:
             continue
-        points = [
-            _world_to_rect(_cell_to_world(cell, sim.origin_cell), area, sim)[0]
-            for cell in enemy["path"]
-        ]
+        points = [_world_to_rect(_cell_to_world(cell), area)[0] for cell in enemy["path"]]
         if len(points) >= 2:
             pygame.draw.lines(screen, color, False, points, 1)
             drawn += 1
@@ -675,8 +538,8 @@ def _draw_steering_rays(screen, sim, player_pos, area):
     if sim.method != "Steering":
         return
     for enemy in sim.enemies[:10]:
-        start = _world_to_rect(enemy["pos"], area, sim)[0]
-        end = _world_to_rect(player_pos, area, sim)[0]
+        start = _world_to_rect(enemy["pos"], area)[0]
+        end = _world_to_rect(player_pos, area)[0]
         pygame.draw.line(screen, (190, 125, 80), start, end, 1)
 
 
@@ -701,20 +564,20 @@ def _draw_panel(game, sim, rect):
         _draw_text(game, line, rect.left + 14, metric_y + idx * 18, line_color)
 
     area = pygame.Rect(rect.left + 12, rect.top + 102, rect.width - 24, rect.height - 116)
-    scale, left, top, map_rect = _draw_obstacles(game.screen, area, sim)
+    scale, left, top, map_rect = _draw_obstacles(game.screen, area)
     old_clip = game.screen.get_clip()
     game.screen.set_clip(map_rect)
 
     player_pos = _scripted_player(sim.frame)
     if len(sim.player_trace) >= 2:
-        points = [_world_to_rect(pos, area, sim)[0] for pos in sim.player_trace]
+        points = [_world_to_rect(pos, area)[0] for pos in sim.player_trace]
         pygame.draw.lines(game.screen, (90, 180, 255), False, points, 2)
 
     _draw_flow_arrows(game.screen, sim, area)
     _draw_paths(game.screen, sim, area)
     _draw_steering_rays(game.screen, sim, player_pos, area)
 
-    player_screen = _world_to_rect(player_pos, area, sim)[0]
+    player_screen = _world_to_rect(player_pos, area)[0]
     player_size = max(24, int(96 * scale))
     if len(sim.player_trace) >= 2:
         player_direction = sim.player_trace[-1] - sim.player_trace[-2]
@@ -725,7 +588,7 @@ def _draw_panel(game, sim, rect):
     enemy_size = max(12, int(42 * scale))
     enemy_img = _load_eval_image("./Img/enemy_1.png", (enemy_size, enemy_size))
     for enemy in sim.enemies:
-        pos = _world_to_rect(enemy["pos"], area, sim)[0]
+        pos = _world_to_rect(enemy["pos"], area)[0]
         if enemy_img:
             image = enemy_img.copy()
             if enemy["stuck_counted"]:
@@ -754,7 +617,7 @@ def _draw_eval1(game):
     _draw_text(game, hint, 30, 54, (180, 190, 205))
     design = (
         "N sweep: 10, 30, 60, 120, 200, 300. "
-        "Uses production chunk obstacles and the same local flow-field window as gameplay."
+        "300 is the max stress point for this 1260-cell map while staying readable."
     )
     _draw_text(game, design, 30, 74, (145, 154, 170))
 

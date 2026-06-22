@@ -356,10 +356,10 @@ class Game:
 
         # --- 2. Draw player. ---
         # Draw Trajectory Trail
-        if len(self.player.history_position) > 1:
-            points = [self.to_screen(p) for p in self.player.history_position]
-            if len(points) >= 2:
-                pygame.draw.lines(self.screen, (70, 70, 70), False, points, 2)
+        # if len(self.player.history_position) > 1:
+        #     points = [self.to_screen(p) for p in self.player.history_position]
+        #     if len(points) >= 2:
+        #         pygame.draw.lines(self.screen, (70, 70, 70), False, points, 2)
 
         self._draw_player_sprite()
 

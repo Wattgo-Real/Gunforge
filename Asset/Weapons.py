@@ -461,6 +461,11 @@ class BulletManager():
                     break
 
                 elif card.inter_type == 3:  # Bounce
+                    bullet.isKill = False
+                    new_cards = bullet.card_list.copy()
+                    new_cards.remove(card)
+                    bullet.card_list = new_cards
+
                     target = getattr(bullet, "last_hit_target", None)
                     if target is not None:
                         if target.entity_type == ENTITY_TYPE["enemy"]:

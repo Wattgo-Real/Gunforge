@@ -303,8 +303,17 @@ def test_screen_shop(game: "Game", events):
 
     for key, config, rect in stat_rects:
         _draw_upgrade_row(game, rect, key, config, mouse_pos)
-    _draw_card_grid(game, grid_rect, mouse_pos)
+    card_rects = _draw_card_grid(game, grid_rect, mouse_pos)
     buy_card_btn = _draw_selected_card(game, detail_rect)
+
+    hovered_card = None
+    if grid_rect.collidepoint(mouse_pos):
+        for card_info, rect in card_rects:
+            if rect.bottom < grid_rect.top or rect.top > grid_rect.bottom:
+                continue
+            if rect.collidepoint(mouse_pos):
+                hovered_card = Card(type=card_info["type"], inter_type=card_info["id"])
+                break
 
     if game.shop_message:
         text, timer, color = game.shop_message
@@ -318,6 +327,78 @@ def test_screen_shop(game: "Game", events):
 
     GF.draw_button(game.screen, back_btn, "Back", font=game.font, color=(75, 82, 105))
     GF.draw_button(game.screen, enter_btn, "Enter Game", font=game.font, color=(100, 100, 255))
+
+    if hovered_card:
+        name, info = hovered_card.get_info()
+
+        # Tooltip parameters
+        padding = 10
+        line_spacing = 4
+        max_w = 300
+
+        # Helper for text wrapping
+        def get_wrapped_lines(text, font, max_width):
+            lines = []
+            for paragraph in text.split("\n"):
+                words = paragraph.split(" ")
+                curr = []
+                for w in words:
+                    if not w:
+                        continue
+                    test = " ".join(curr + [w])
+                    if font.size(test)[0] <= max_width:
+                        curr.append(w)
+                    else:
+                        lines.append(" ".join(curr))
+                        curr = [w]
+                lines.append(" ".join(curr))
+            return [l for l in lines if l]
+
+        name_surf = game.font.render(name, True, (255, 255, 255))
+        wrapped_info = get_wrapped_lines(info, game.HUD_font, max_w - 2 * padding)
+        info_surfs = [
+            game.HUD_font.render(line, True, (200, 200, 200)) for line in wrapped_info
+        ]
+
+        # Calculate total size
+        total_h = name_surf.get_height() + padding
+        for s in info_surfs:
+            total_h += s.get_height() + line_spacing
+
+        total_w = (
+            max(name_surf.get_width(), *(s.get_width() for s in info_surfs))
+            + 2 * padding
+        )
+        total_h += padding  # Bottom padding
+
+        # Draw Tooltip Box
+        tip_x = mouse_pos[0] + 15
+        tip_y = mouse_pos[1] + 15
+
+        # Adjust if off-screen
+        if tip_x + total_w > game.screen_width:
+            tip_x = mouse_pos[0] - total_w - 5
+        if tip_y + total_h > game.screen_height:
+            tip_y = mouse_pos[1] - total_h - 5
+
+        tip_surf = pygame.Surface((total_w, total_h), pygame.SRCALPHA)
+        tip_surf.fill((20, 20, 20, 230))
+        pygame.draw.rect(tip_surf, (200, 200, 200), tip_surf.get_rect(), 1)
+
+        # Blit text to tip surface
+        curr_y = padding
+        tip_surf.blit(name_surf, (padding, curr_y))
+        curr_y += name_surf.get_height() + padding // 2
+        pygame.draw.line(
+            tip_surf, (100, 100, 100), (padding, curr_y), (total_w - padding, curr_y), 1
+        )
+        curr_y += padding // 2
+
+        for s in info_surfs:
+            tip_surf.blit(s, (padding, curr_y))
+            curr_y += s.get_height() + line_spacing
+
+        game.screen.blit(tip_surf, (tip_x, tip_y))
 
 
 def _selected_buy_button_rect(detail_rect):

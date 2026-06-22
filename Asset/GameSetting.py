@@ -2214,6 +2214,346 @@ ATTRIBUTE_MODIFIER_CONFIG = {
             ],
         },
     ],
+    65: [
+        "Add Lifetime I",
+        {"lifetime_modifier": 0.4, "info": "Add bullet lifetime"},
+        {
+            "circle": [
+                {
+                    "pos_x": 0.30,
+                    "pos_y": 0.50,
+                    "size": 0.30,
+                    "color": (180, 100, 255, 255),
+                },
+                {
+                    "pos_x": 0.30,
+                    "pos_y": 0.50,
+                    "size": 0.26,
+                    "color": (30, 30, 30, 255),
+                },
+                {
+                    "pos_x": 0.30,
+                    "pos_y": 0.50,
+                    "size": 0.05,
+                    "color": (255, 255, 255, 255),
+                },
+            ],
+            "line": [
+                {
+                    "start_x": 0.30,
+                    "start_y": 0.50,
+                    "end_x": 0.30,
+                    "end_y": 0.40,
+                    "width": 0.03,
+                    "color": (255, 255, 255, 255),
+                },
+                {
+                    "start_x": 0.30,
+                    "start_y": 0.50,
+                    "end_x": 0.38,
+                    "end_y": 0.50,
+                    "width": 0.02,
+                    "color": (255, 255, 255, 255),
+                },
+                {
+                    "start_x": 0.70,
+                    "start_y": 0.20,
+                    "end_x": 0.70,
+                    "end_y": 0.80,
+                    "width": 0.05,
+                    "color": (255, 255, 255, 255),
+                },
+                {
+                    "start_x": 0.60,
+                    "start_y": 0.30,
+                    "end_x": 0.70,
+                    "end_y": 0.20,
+                    "width": 0.05,
+                    "color": (255, 255, 255, 255),
+                },
+                {
+                    "start_x": 0.80,
+                    "start_y": 0.30,
+                    "end_x": 0.70,
+                    "end_y": 0.20,
+                    "width": 0.05,
+                    "color": (255, 255, 255, 255),
+                },
+            ],
+        },
+    ],
+    66: [
+        "Add Lifetime II",
+        {"lifetime_modifier": 0.7, "info": "Add bullet lifetime"},
+        {
+            "circle": [
+                {
+                    "pos_x": 0.30,
+                    "pos_y": 0.50,
+                    "size": 0.30,
+                    "color": (180, 100, 255, 255),
+                },
+                {
+                    "pos_x": 0.30,
+                    "pos_y": 0.50,
+                    "size": 0.26,
+                    "color": (30, 30, 30, 255),
+                },
+                {
+                    "pos_x": 0.30,
+                    "pos_y": 0.50,
+                    "size": 0.05,
+                    "color": (255, 255, 255, 255),
+                },
+            ],
+            "line": [
+                {
+                    "start_x": 0.30,
+                    "start_y": 0.50,
+                    "end_x": 0.30,
+                    "end_y": 0.40,
+                    "width": 0.03,
+                    "color": (255, 255, 255, 255),
+                },
+                {
+                    "start_x": 0.30,
+                    "start_y": 0.50,
+                    "end_x": 0.38,
+                    "end_y": 0.50,
+                    "width": 0.02,
+                    "color": (255, 255, 255, 255),
+                },
+                {
+                    "start_x": 0.70,
+                    "start_y": 0.20,
+                    "end_x": 0.70,
+                    "end_y": 0.80,
+                    "width": 0.10,
+                    "color": (255, 255, 255, 255),
+                },
+                {
+                    "start_x": 0.60,
+                    "start_y": 0.30,
+                    "end_x": 0.70,
+                    "end_y": 0.20,
+                    "width": 0.10,
+                    "color": (255, 255, 255, 255),
+                },
+                {
+                    "start_x": 0.80,
+                    "start_y": 0.30,
+                    "end_x": 0.70,
+                    "end_y": 0.20,
+                    "width": 0.10,
+                    "color": (255, 255, 255, 255),
+                },
+            ],
+        },
+    ],
+    67: [
+        "Add Lifetime III",
+        {"lifetime_modifier": 1.0, "info": "Add bullet lifetime"},
+        {
+            "circle": [
+                {
+                    "pos_x": 0.30,
+                    "pos_y": 0.50,
+                    "size": 0.30,
+                    "color": (180, 100, 255, 255),
+                },
+                {
+                    "pos_x": 0.30,
+                    "pos_y": 0.50,
+                    "size": 0.26,
+                    "color": (30, 30, 30, 255),
+                },
+                {
+                    "pos_x": 0.30,
+                    "pos_y": 0.50,
+                    "size": 0.05,
+                    "color": (255, 255, 255, 255),
+                },
+            ],
+            "line": [
+                {
+                    "start_x": 0.30,
+                    "start_y": 0.50,
+                    "end_x": 0.30,
+                    "end_y": 0.40,
+                    "width": 0.03,
+                    "color": (255, 255, 255, 255),
+                },
+                {
+                    "start_x": 0.30,
+                    "start_y": 0.50,
+                    "end_x": 0.38,
+                    "end_y": 0.50,
+                    "width": 0.02,
+                    "color": (255, 255, 255, 255),
+                },
+                {
+                    "start_x": 0.70,
+                    "start_y": 0.20,
+                    "end_x": 0.70,
+                    "end_y": 0.80,
+                    "width": 0.15,
+                    "color": (255, 255, 255, 255),
+                },
+                {
+                    "start_x": 0.60,
+                    "start_y": 0.30,
+                    "end_x": 0.70,
+                    "end_y": 0.20,
+                    "width": 0.15,
+                    "color": (255, 255, 255, 255),
+                },
+                {
+                    "start_x": 0.80,
+                    "start_y": 0.30,
+                    "end_x": 0.70,
+                    "end_y": 0.20,
+                    "width": 0.15,
+                    "color": (255, 255, 255, 255),
+                },
+            ],
+        },
+    ],
+    68: [
+        "Add Lifetime IV",
+        {"lifetime_modifier": 1.5, "info": "Add bullet lifetime"},
+        {
+            "circle": [
+                {
+                    "pos_x": 0.30,
+                    "pos_y": 0.50,
+                    "size": 0.30,
+                    "color": (180, 100, 255, 255),
+                },
+                {
+                    "pos_x": 0.30,
+                    "pos_y": 0.50,
+                    "size": 0.26,
+                    "color": (30, 30, 30, 255),
+                },
+                {
+                    "pos_x": 0.30,
+                    "pos_y": 0.50,
+                    "size": 0.05,
+                    "color": (255, 255, 255, 255),
+                },
+            ],
+            "line": [
+                {
+                    "start_x": 0.30,
+                    "start_y": 0.50,
+                    "end_x": 0.30,
+                    "end_y": 0.40,
+                    "width": 0.03,
+                    "color": (255, 255, 255, 255),
+                },
+                {
+                    "start_x": 0.30,
+                    "start_y": 0.50,
+                    "end_x": 0.38,
+                    "end_y": 0.50,
+                    "width": 0.02,
+                    "color": (255, 255, 255, 255),
+                },
+                {
+                    "start_x": 0.70,
+                    "start_y": 0.20,
+                    "end_x": 0.70,
+                    "end_y": 0.80,
+                    "width": 0.20,
+                    "color": (255, 255, 255, 255),
+                },
+                {
+                    "start_x": 0.60,
+                    "start_y": 0.30,
+                    "end_x": 0.70,
+                    "end_y": 0.20,
+                    "width": 0.20,
+                    "color": (255, 255, 255, 255),
+                },
+                {
+                    "start_x": 0.80,
+                    "start_y": 0.30,
+                    "end_x": 0.70,
+                    "end_y": 0.20,
+                    "width": 0.20,
+                    "color": (255, 255, 255, 255),
+                },
+            ],
+        },
+    ],
+    69: [
+        "Add Lifetime V",
+        {"lifetime_modifier": 2.0, "info": "Add bullet lifetime"},
+        {
+            "circle": [
+                {
+                    "pos_x": 0.30,
+                    "pos_y": 0.50,
+                    "size": 0.30,
+                    "color": (180, 100, 255, 255),
+                },
+                {
+                    "pos_x": 0.30,
+                    "pos_y": 0.50,
+                    "size": 0.26,
+                    "color": (30, 30, 30, 255),
+                },
+                {
+                    "pos_x": 0.30,
+                    "pos_y": 0.50,
+                    "size": 0.05,
+                    "color": (255, 255, 255, 255),
+                },
+            ],
+            "line": [
+                {
+                    "start_x": 0.30,
+                    "start_y": 0.50,
+                    "end_x": 0.30,
+                    "end_y": 0.40,
+                    "width": 0.03,
+                    "color": (255, 255, 255, 255),
+                },
+                {
+                    "start_x": 0.30,
+                    "start_y": 0.50,
+                    "end_x": 0.38,
+                    "end_y": 0.50,
+                    "width": 0.02,
+                    "color": (255, 255, 255, 255),
+                },
+                {
+                    "start_x": 0.70,
+                    "start_y": 0.20,
+                    "end_x": 0.70,
+                    "end_y": 0.80,
+                    "width": 0.25,
+                    "color": (255, 255, 255, 255),
+                },
+                {
+                    "start_x": 0.60,
+                    "start_y": 0.30,
+                    "end_x": 0.70,
+                    "end_y": 0.20,
+                    "width": 0.25,
+                    "color": (255, 255, 255, 255),
+                },
+                {
+                    "start_x": 0.80,
+                    "start_y": 0.30,
+                    "end_x": 0.70,
+                    "end_y": 0.20,
+                    "width": 0.25,
+                    "color": (255, 255, 255, 255),
+                },
+            ],
+        },
+    ],
     100: [
         "Speed damage bonus",
         {
@@ -3841,7 +4181,8 @@ TRAJECTORY_MODIFIER_CONFIG = {
     10: [
         "Tracking by accelerate",
         {
-            "info": "The bullet will track by add its accelerate.",
+            "info": "The bullet will track by increase its accelerate, and detect enemy in 40 radius range.",
+            "capacity_modifier": -5,
         },
         {
             "circle": [
@@ -3932,7 +4273,8 @@ TRAJECTORY_MODIFIER_CONFIG = {
     11: [
         "Tracking by steer",
         {
-            "info": "The bullet will track by steer algrithm.",
+            "info": "The bullet will track by steer algrithm, and detect enemy in 40 radius range.",
+            "capacity_modifier": -5,
         },
         {
             "circle": [
@@ -4023,7 +4365,8 @@ TRAJECTORY_MODIFIER_CONFIG = {
     12: [
         "Tracking by turn",
         {
-            "info": "The bullet will track by turn its velocity direction.",
+            "info": "The bullet will track by turn its velocity direction, and detect enemy in 40 radius range.",
+            "capacity_modifier": -5,
         },
         {
             "circle": [
@@ -4099,6 +4442,7 @@ TRAJECTORY_MODIFIER_CONFIG = {
         "Tracking the mouse",
         {
             "info": "The bullet will track the mouse position.",
+            "capacity_modifier": -5,
         },
         {
             "line": [
@@ -4199,7 +4543,7 @@ PROBABILITY_CONFIG = {
         ]
         + [
             {"type": 1, "id": i * 5 + 50, "unlocked": True}
-            for i in range(3)
+            for i in range(4)
             if i * 5 + 50 in ATTRIBUTE_MODIFIER_CONFIG.keys()
         ],
     },
@@ -4225,7 +4569,7 @@ PROBABILITY_CONFIG = {
         ]
         + [
             {"type": 1, "id": i * 5 + 1 + 50, "unlocked": True}
-            for i in range(3)
+            for i in range(4)
             if i * 5 + 1 + 50 in ATTRIBUTE_MODIFIER_CONFIG.keys()
         ],
     },
@@ -4252,7 +4596,7 @@ PROBABILITY_CONFIG = {
         ]
         + [
             {"type": 1, "id": i * 5 + 2 + 50, "unlocked": True}
-            for i in range(3)
+            for i in range(4)
             if i * 5 + 2 + 50 in ATTRIBUTE_MODIFIER_CONFIG.keys()
         ],
     },
@@ -4274,7 +4618,7 @@ PROBABILITY_CONFIG = {
         ]
         + [
             {"type": 1, "id": i * 5 + 3 + 50, "unlocked": True}
-            for i in range(3)
+            for i in range(4)
             if i * 5 + 3 + 50 in ATTRIBUTE_MODIFIER_CONFIG.keys()
         ],
     },
@@ -4288,12 +4632,11 @@ PROBABILITY_CONFIG = {
         ]
         + [
             {"type": 1, "id": i * 5 + 4 + 50, "unlocked": True}
-            for i in range(3)
+            for i in range(4)
             if i * 5 + 4 + 50 in ATTRIBUTE_MODIFIER_CONFIG.keys()
         ],
     },
 }
-print(PROBABILITY_CONFIG)
 
 UI_CONFIG = {
     "gun_box_w": 620,
@@ -4303,7 +4646,7 @@ UI_CONFIG = {
     "grid_cell_size": 60,
     "grid_cols": 20,
     "grid_rows": 2,
-    "inv_bottom_padding": 20,
+    "inv_bottom_padding": 80,
     "gun_box_padding_x": 50,
     "gun_box_padding_y": 120,
     "gun_box_spacing_y": 270,
@@ -4392,6 +4735,7 @@ GAME_CONFIG = {
     "max_enemies": 45,
     "enemy_hp_growth_per_boss": 0.5,
     "enemy_damage_growth_per_boss": 0.25,
+    "chaser_ring_interval": 150.0,
     "flow_field_cell_size": 80,
     "flow_field_radius_cells": 18,
     "flow_field_refresh_interval": 0.35,
