@@ -81,6 +81,38 @@ class Player:
         self.weapon_error_msg : str = ""
         self.weapon_error_timer : float = 0.0
 
+        # Combat / progression stats
+        self.max_hp : float = GAME_CONFIG["player_max_hp"]
+        self.hp : float = self.max_hp
+        self.invincible_timer : float = 0.0
+        self.regen_delay_timer : float = 0.0
+        self.alive : bool = True
+
+        self.xp : int = 0
+        self.level : int = 1
+        self.xp_to_next : int = GAME_CONFIG["xp_per_level_base"]
+
+        # Run-time stat modifiers (granted by altars)
+        self.damage_multiplier : float = 1.0
+        self.bonus_speed : float = 0.0
+
+        # Stat tracking (for end-of-run summary)
+        self.kills : int = 0
+        self.damage_dealt : float = 0.0
+        self.points : int = 0
+
+        # Dash mechanic
+        self.dash_cooldown : float = 5.0
+        self.dash_cooldown_timer : float = 0.0
+        self.dash_duration : float = 0.2
+        self.dash_timer : float = 0.0
+        self.dash_speed_boost : float = 600.0  # Added to max velocity
+        self.dash_acc_boost : float = 20000.0 # Added to max acceleration
+
+        # Weapon feedback
+        self.weapon_error_msg : str = ""
+        self.weapon_error_timer : float = 0.0
+
     def get_velocity(self):
         '''
         Returns the velocity of the player

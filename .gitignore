@@ -3,3 +3,7 @@ __pycache__
 *.pyo
 *.pyd
 plan.md
+report.tex
+diagrams/
+venv/
+.venv/

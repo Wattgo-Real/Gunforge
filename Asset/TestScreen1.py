@@ -493,6 +493,9 @@ def _handle_collisions(game: "Game"):
     for bullet in list(game.enemy_manager.all_enemy_bullets()):
         if bullet.pos2D.distance_to(player.pos2D) < player.radius + bullet.radius:
             if player.take_damage(bullet.damage):
+                owner = getattr(bullet, "owner_enemy", None)
+                if owner is not None and getattr(owner, "is_boss", False):
+                    owner.record_boss_bullet_hit()
                 bullet.alive = False
 
     # Enemy contact damage
@@ -501,8 +504,9 @@ def _handle_collisions(game: "Game"):
             if e.attack_timer <= 0 and e.ai in ("chase", "runner") and not e.is_boss:
                 if player.take_damage(e.damage):
                     e.attack_timer = e.attack_cooldown
-            elif e.is_boss:
-                player.take_damage(e.damage * 1.2)
+            elif e.is_boss and e.can_boss_contact_damage():
+                if player.take_damage(e.boss_contact_damage()):
+                    e.boss_contact_timer = 0.45
 
     # Enemy vs Enemy collision
     for e1 in game.enemy_manager.enemies:
