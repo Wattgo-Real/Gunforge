@@ -12,7 +12,7 @@ if TYPE_CHECKING:
     from Asset.Card import Card
     #from Asset.Enemies import Enemy
 from Asset.SpatialGrid import SpatialGrid
-    
+
 import uuid
 
 class Gun():
@@ -22,7 +22,9 @@ class Gun():
         '''
         self.basic_cooldown = basic_info["cooldown"]        # Time between shots
         self.basic_reload = basic_info["reload"]  # Time to reload
-        self.basic_scatter_angel = basic_info["scatter_angel"]  # Degree of bullet spread
+        self.basic_scatter_angel = basic_info.get(
+            "scatter_angle", basic_info.get("scatter_angel", 0)
+        )  # Degree of bullet spread
         self.basic_capacity = basic_info["capacity"]  # The maximum number of bullets the gun can hold
         self.card_max_slots = basic_info["max_slots"]     # How many cards can this weapon hold?
         self.card_list = [None] * self.card_max_slots # List of cards attached to the gun
@@ -46,7 +48,7 @@ class Gun():
         self.reload= self.basic_reload
         self.scatter_angel = self.basic_scatter_angel
         self.capacity = self.basic_capacity
-        
+
         self.multi_num = 1
         self.package = -1
         for card in self.card_list:
@@ -66,16 +68,17 @@ class Gun():
             if self.multi_num == 0 and self.package == -1:
                 break
 
-                
+
         if self.capacity_left > self.capacity:
             self.capacity_left = self.capacity
         if self.scatter_angel < 0:
             self.scatter_angel = 0
+        self.scatter_angle = self.scatter_angel
         if self.reload < 0:
             self.reload = 0
         if self.cooldown < 0:
             self.cooldown = 0
-        
+
     def edit_card(self, new_card, slot : int):
         if slot < len(self.card_list):
             self.card_list[slot] = new_card
@@ -83,21 +86,21 @@ class Gun():
             return True
         else:
             return False
-        
-    def fire(self, direction : pygame.Vector2, pos2D : pygame.Vector2): 
+
+    def fire(self, direction : pygame.Vector2, pos2D : pygame.Vector2):
         card_to_bullet_list, bullet_inter_type_list = self._card_select()
 
         if bullet_inter_type_list == []:
             return "No bullet card equipped!"
 
-        if self.cooldown_timer == 0 and self.reload_timer == 0: 
+        if self.cooldown_timer == 0 and self.reload_timer == 0:
             if self.capacity_left == 0:
                 self.capacity_left = self.capacity
             if self.capacity_left <= 0:
                 self.capacity_left = 0
                 return "No bullet in clip!"
 
-            
+
             for i, card_to_bullet in enumerate(card_to_bullet_list):
                 direction = direction.rotate(random.uniform(-self.scatter_angel, self.scatter_angel))
                 self.bullet_manager.add_bullet(card_to_bullet, bullet_inter_type_list[i], pos2D, direction)
@@ -138,7 +141,7 @@ class Gun():
                     card_to_bullet_list.append(card_to_bullet)
                     card_to_bullet = []
                     multi_num -= 1
-                
+
                 if multi_num == 0 and package == -1:
                     break
                 continue
@@ -190,7 +193,7 @@ class Bullet(pygame.sprite.Sprite):
             0, Normal Bullet
             1, Light Bullet
             2, Heavy Bullet
-            3, Grenades 
+            3, Grenades
             4, Laser
 
         params:
@@ -214,12 +217,12 @@ class Bullet(pygame.sprite.Sprite):
 
 
         self.card_list : list[Card] = card_list  # List of cards attached to the bullet
-        
+
         self.lifetime = 1.0   # How long the bullet will stay alive
         self.timer = 0        # Timer for bullet lifetime
         self.status = -1      # -1 nothing, 0 hit, 1 lifetime, 2 time
         self.trigger_type = 0 # 0: hit, 1: lifetime, 2: time
-        
+
 
         self.spatial_grid_dict = spatial_grid_dict
         self.player = player
@@ -251,7 +254,7 @@ class Bullet(pygame.sprite.Sprite):
         self.trajectory_modifier_list = []
         for get_card in self.card_list:
             get_card.run_on_bullet(self)
-            
+
         if self.vel2D.length() != 0:
             self.vel2D = self.vel2D.normalize() * self.speed * 30 + self.player_vel2D
 
@@ -285,7 +288,7 @@ class Bullet(pygame.sprite.Sprite):
             if self.timer > self.trigger_time:
                 self.status = self.trigger_type
 
-    
+
     def draw(self, surface : pygame.Surface, to_screen : bool):
         draw_info = BULLET_CONFIG[self.inter_type][1].get("draw_info", {})
         for key, value in draw_info.items():
@@ -368,7 +371,7 @@ class Bullet(pygame.sprite.Sprite):
             self.isKill = True
         else:
             self.isKill = True
-        
+
         self.status = 1
 
     def triger_time(self, effect_queue = None):
@@ -399,7 +402,7 @@ class BulletManager():
             if bullet.isKill == True:
                 self.spatial_grid_dict.remove_entity(bullet.grid_pos, bullet.uuid)
                 bullet.kill()
-    
+
     def check_card_status(self, bullet, effects_queue):
         remove_card = []
         for card in bullet.card_list:
@@ -414,7 +417,7 @@ class BulletManager():
                 pos2D = bullet.pos2D
                 hit_enemies = bullet.hit_enemies
 
-                new_bullet = Bullet(card_to_bullet, inter_type, self.player, self.spatial_grid_dict, pos2D, direction, 
+                new_bullet = Bullet(card_to_bullet, inter_type, self.player, self.spatial_grid_dict, pos2D, direction,
                                     player_vel2D = bullet.player_vel2D, hit_enemies = hit_enemies)
                 self.bullets.add(new_bullet)
                 break
@@ -437,12 +440,12 @@ class BulletManager():
                         vel2D_v1 = vel2D
                         vel2D_v2 = vel2D
 
-                    new_bullet = Bullet(new_cards, bullet.inter_type, self.player, self.spatial_grid_dict, pos2D, vel2D_v1, acc2D, 
+                    new_bullet = Bullet(new_cards, bullet.inter_type, self.player, self.spatial_grid_dict, pos2D, vel2D_v1, acc2D,
                                         player_vel2D = bullet.player_vel2D, hit_enemies = hit_enemies)
                     new_bullet.multiplier = bullet.multiplier * 0.5
                     self.bullets.add(new_bullet)
 
-                    new_bullet = Bullet(new_cards, bullet.inter_type, self.player, self.spatial_grid_dict, pos2D, vel2D_v2, acc2D, 
+                    new_bullet = Bullet(new_cards, bullet.inter_type, self.player, self.spatial_grid_dict, pos2D, vel2D_v2, acc2D,
                                         player_vel2D = bullet.player_vel2D, hit_enemies = hit_enemies)
                     new_bullet.multiplier = bullet.multiplier * 0.5
                     self.bullets.add(new_bullet)
@@ -458,6 +461,11 @@ class BulletManager():
                     break
 
                 elif card.inter_type == 3:  # Bounce
+                    bullet.isKill = False
+                    new_cards = bullet.card_list.copy()
+                    new_cards.remove(card)
+                    bullet.card_list = new_cards
+
                     target = getattr(bullet, "last_hit_target", None)
                     if target is not None:
                         if target.entity_type == ENTITY_TYPE["enemy"]:
@@ -475,7 +483,7 @@ class BulletManager():
 
                             overlap_x = half.x - abs(local_pos.x)
                             overlap_y = half.y - abs(local_pos.y)
-                            
+
                             normal = pygame.Vector2(0, 0)
                             if overlap_x < overlap_y:
                                 normal.x = 1 if local_pos.x > 0 else -1
@@ -496,9 +504,7 @@ class BulletManager():
                     bullet.explode_effect("explode", effects_queue)
                     break
 
-            elif card.type == 3:  # 
+            elif card.type == 3:  #
                 remove_card.append(card)
 
         bullet.card_list = [c for c in bullet.card_list if c not in remove_card]
-
-

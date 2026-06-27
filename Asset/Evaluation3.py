@@ -14,6 +14,8 @@ from Asset.SpatialGrid import SpatialGrid, NoneGrid, Quadtree
 from Asset.Enemies import Enemy
 from Asset.Weapons import Bullet, BulletManager
 
+SUMMARY_FRAME_TARGET = 900
+
 class MockPlayer:
     def __init__(self):
         self.damage_multiplier = 1.0
@@ -76,6 +78,8 @@ def reset_evaluation(game):
     game.camera_position = pygame.Vector2(0, 0)
     
     # Metrics accumulator
+    game.eval_frame = 0
+    game.eval_summary_printed = False
     game.eval_fps = 60.0
     game.eval_logic_ms = 0.0
     game.eval_update_ms = 0.0
@@ -83,6 +87,32 @@ def reset_evaluation(game):
     game.eval_checks = 0
     game.eval_checks_per_entity = 0
     game.eval_memory_kb = estimate_structure_memory(game.spatial_grid_dict) / 1024.0
+
+
+def print_summary_if_ready(game):
+    if getattr(game, "eval_summary_printed", False):
+        return
+    if getattr(game, "eval_frame", 0) < SUMMARY_FRAME_TARGET:
+        return
+
+    game.eval_summary_printed = True
+    method = game.eval_methods[game.eval_method_idx]
+    ne = game.eval_ne_list[game.eval_ne_idx]
+    nb = game.eval_nb_list[game.eval_nb_idx]
+    print(
+        "[EVAL3_RESULT] "
+        f"method={method} "
+        f"enemies={ne} "
+        f"bullets={nb} "
+        f"frames={game.eval_frame} "
+        f"fps={game.eval_fps:.2f} "
+        f"cpu_ms={game.eval_logic_ms:.3f} "
+        f"update_ms={game.eval_update_ms:.3f} "
+        f"collision_ms={game.eval_collision_ms:.3f} "
+        f"checks={game.eval_checks} "
+        f"checks_per_entity={game.eval_checks_per_entity:.3f} "
+        f"memory_kb={game.eval_memory_kb:.3f}"
+    )
 
 def spawn_bullet(game):
     side = random.randint(0, 3)
@@ -283,6 +313,7 @@ def test_screen3(game, events):
     logic_cost = (t_end - t_start) * 1000.0
 
     # Smooth the metrics for display stability
+    game.eval_frame += 1
     alpha = 0.05
     fps_measured = game.clock.get_fps()
     game.eval_fps = (1 - alpha) * game.eval_fps + alpha * fps_measured if game.eval_fps > 0 else fps_measured
@@ -296,6 +327,7 @@ def test_screen3(game, events):
 
     if game.total_frame_passed % 30 == 0:
         game.eval_memory_kb = estimate_structure_memory(game.spatial_grid_dict) / 1024.0
+    print_summary_if_ready(game)
 
     # Draw step
     game.screen.fill((20, 20, 30))

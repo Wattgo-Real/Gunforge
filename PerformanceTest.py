@@ -2,6 +2,9 @@ import pygame
 import random
 import math
 
+from Asset.FontCompat import install_pygame_font_compat
+install_pygame_font_compat(pygame)
+
 # --- Configuration ---
 WIDTH, HEIGHT = 1600, 900
 FPS = 60

@@ -1,7 +1,7 @@
 
 import pygame
 
-from Asset.GameSetting import BULLET_CONFIG, ATTRIBUTE_MODIFIER_CONFIG, PROJECTILE_MODIFIER_CONFIG, TRIGGER_MODIFIER_CONFIG
+from Asset.GameSetting import BULLET_CONFIG, ATTRIBUTE_MODIFIER_CONFIG, PROJECTILE_MODIFIER_CONFIG, TRIGGER_MODIFIER_CONFIG, ENTITY_TYPE
 from Asset.GameSetting import MULTIBULLET_MODIFIER_CONFIG, TRAJECTORY_MODIFIER_CONFIG
 from typing import TYPE_CHECKING
 import random
@@ -44,7 +44,7 @@ class Card(pygame.sprite.Sprite):
             info = TRAJECTORY_MODIFIER_CONFIG[self.inter_type][1]
         target.cooldown += info.get("cooldown_modifier", 0) 
         target.reload += info.get("reload_modifier", 0) 
-        target.scatter_angel += info.get("scatter_angel_modifier", 0) 
+        target.scatter_angel += info.get("scatter_angle_modifier", info.get("scatter_angel_modifier", 0))
         target.capacity += info.get("capacity_modifier", 0) 
 
 
@@ -62,6 +62,7 @@ class Card(pygame.sprite.Sprite):
                 target.exp_damage += info.get("explosion_damage_modifier", 0)
                 target.bur_damage += info.get("burn_damage_modifier", 0)
                 target.explosion_radius += info.get("explosion_radius_modifier", 0)
+                target.lifetime += info.get("lifetime_modifier", 0)
                 
         elif self.type == 3: # trigger_modifier
             target.trigger_type = self.inter_type
@@ -75,7 +76,13 @@ class Card(pygame.sprite.Sprite):
                 target.trigger_time = 1.0
 
         elif self.type == 5:    # trajectory_modifier
-            target.trajectory_modifier_list.append(TModifierIT(self.inter_type))
+            info = TRAJECTORY_MODIFIER_CONFIG[self.inter_type][1]
+            target.phy_damage += info.get("physical_damage_modifier", 0)
+            
+            modifier = TModifierIT(self.inter_type)
+            modifier.bullet = target
+            modifier.player = target.player
+            target.trajectory_modifier_list.append(modifier)
 
     def draw(self, surface : pygame.Surface, rect : pygame.Rect):
         if self.type == 0:
@@ -180,11 +187,17 @@ class Card(pygame.sprite.Sprite):
                 info += f"\nReload Modifier: {CONFIG.get('reload_modifier', 0)}"
             if "capacity_modifier" in CONFIG:
                 info += f"\nCapacity Modifier: {CONFIG.get('capacity_modifier', 0)}"
+            if "scatter_angle_modifier" in CONFIG:
+                info += f"\nScatter Modifier: {CONFIG.get('scatter_angle_modifier', 0)}"
             if "scatter_angel_modifier" in CONFIG:
                 info += f"\nScatter Modifier: {CONFIG.get('scatter_angel_modifier', 0)}"
 
             if "bullet_speed_modifier" in CONFIG:
                 info += f"\nSpeed Modifier: {CONFIG.get('bullet_speed_modifier', 0)}"
+            if "physical_damage_modifier" in CONFIG:
+                info += f"\nPhysical Damage: {CONFIG.get('physical_damage_modifier', 0)}"
+            if "lifetime_modifier" in CONFIG:
+                info += f"\nLifetime Modifier: {CONFIG.get('lifetime_modifier', 0)}"
 
             return name, info
 
@@ -203,6 +216,10 @@ class TModifierIT():
         elif inter_type == 7:
             self.player = None
             self.player_old_pos2D = None
+        elif inter_type in (10, 11, 12, 13):
+            self.player = None
+            self.bullet = None
+            
             
     def run(self, pos2D : pygame.math.Vector2, vel2D : pygame.math.Vector2, acc2D : pygame.math.Vector2, time):
         if self.inter_type == 0:
@@ -281,7 +298,80 @@ class TModifierIT():
             acc2D = vel2D.normalize() * 150
         elif self.inter_type == 9:
             acc2D = -vel2D.normalize() * min(150, vel2D.length())
+        elif self.inter_type == 10:
+            target = None
+            if getattr(self, 'bullet', None):
+                grid = self.bullet.spatial_grid_dict
+                if grid:
+                    enemies = grid.get_entities_in_radius(pos2D, 80, ENTITY_TYPE["enemy"])
+                    min_dist = float('inf')
+                    for enemy in enemies:
+                        if getattr(enemy, 'alive', True) and (enemy.uuid not in self.bullet.hit_enemies):
+                            dist = pos2D.distance_to(enemy.pos2D)
+                            if dist < min_dist:
+                                min_dist = dist
+                                target = enemy
+            if target:
+                acc2D = (target.pos2D - pos2D).normalize() * 1200
+            else:
+                acc2D = pygame.math.Vector2(0, 0)
+        elif self.inter_type == 11:
+            target = None
+            if getattr(self, 'bullet', None):
+                grid = self.bullet.spatial_grid_dict
+                if grid:
+                    enemies = grid.get_entities_in_radius(pos2D, 80, ENTITY_TYPE["enemy"])
+                    min_dist = float('inf')
+                    for enemy in enemies:
+                        if getattr(enemy, 'alive', True) and (enemy.uuid not in self.bullet.hit_enemies):
+                            dist = pos2D.distance_to(enemy.pos2D)
+                            if dist < min_dist:
+                                min_dist = dist
+                                target = enemy
+            if target:
+                desired_vel = (target.pos2D - pos2D).normalize() * vel2D.length()
+                steer = desired_vel - vel2D
+                acc2D = steer * 8.0
+            else:
+                acc2D = pygame.math.Vector2(0, 0)
+        elif self.inter_type == 12:
+            dt = time - self.time
+            self.time = time
+            target = None
+            if getattr(self, 'bullet', None):
+                grid = self.bullet.spatial_grid_dict
+                if grid:
+                    enemies = grid.get_entities_in_radius(pos2D, 400, ENTITY_TYPE["enemy"])
+                    min_dist = float('inf')
+                    for enemy in enemies:
+                        if getattr(enemy, 'alive', True) and (enemy.uuid not in self.bullet.hit_enemies):
+                            dist = pos2D.distance_to(enemy.pos2D)
+                            if dist < min_dist:
+                                min_dist = dist
+                                target = enemy
+            if target:
+                target_dir = target.pos2D - pos2D
+                if target_dir.length_squared() > 0 and vel2D.length_squared() > 0 and dt > 0:
+                    angle_to_target = vel2D.angle_to(target_dir)
+                    # Turn speed: 360 degrees per second
+                    max_turn = 360 * dt
+                    if abs(angle_to_target) <= max_turn:
+                        vel2D = vel2D.rotate(angle_to_target)
+                    else:
+                        vel2D = vel2D.rotate(max_turn if angle_to_target > 0 else -max_turn)
+            acc2D = pygame.math.Vector2(0, 0)
 
+        elif self.inter_type == 13:
+            if self.player:
+                mouse_pos = self.player.mouse_pos_world
+                target_dir = mouse_pos - pos2D
+                if target_dir.length_squared() > 0 and vel2D.length_squared() > 0:
+                    desired_vel = target_dir.normalize() * vel2D.length()
+                    steer = desired_vel - vel2D
+                    acc2D = steer * 8.0
+                else:
+                    acc2D = pygame.math.Vector2(0, 0)
+            else:
+                acc2D = pygame.math.Vector2(0, 0)
 
         return pos2D, vel2D, acc2D
-    
