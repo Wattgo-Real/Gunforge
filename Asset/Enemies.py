@@ -22,6 +22,23 @@ FLOW_NEIGHBORS_8 = (
     (-1, -1),
 )
 
+BOSS_ACTIONS = ("Ring", "Spread", "Spiral", "Dash", "Charge")
+BOSS_GOB_WEIGHTS = {
+    "Ring": 1.05,
+    "Spread": 1.00,
+    "Spiral": 0.90,
+    "Dash": 1.05,
+    "Charge": 1.20,
+}
+BOSS_REPEAT_PENALTY = 0.75
+BOSS_ATTACK_COLORS = {
+    "Ring": (255, 80, 105),
+    "Spread": (255, 155, 70),
+    "Spiral": (235, 80, 230),
+    "Dash": (95, 190, 255),
+    "Charge": (255, 235, 90),
+}
+
 
 def _get_enemy_image(path, sprite_height):
     if not path or sprite_height <= 0:
@@ -269,6 +286,25 @@ class Enemy:
         self.dash_state = "approach"
         self.dash_timer = random.uniform(1.0, 2.5)
         self.boss_phase_timer = 0.0
+        self.vel2D = pygame.Vector2(0, 0)
+
+        self.boss_action = None
+        self.boss_action_time = 0.0
+        self.boss_action_duration = 0.0
+        self.boss_action_fire_timer = 0.0
+        self.boss_action_end_fired = False
+        self.boss_attack_cooldown = random.uniform(0.2, self.attack_cooldown)
+        self.boss_last_choice = None
+        self.boss_score_snapshot = {name: 0.0 for name in BOSS_ACTIONS}
+        self.boss_orbit_sign = 1 if random.random() > 0.5 else -1
+        self.boss_spiral_angle = random.random() * math.tau
+        self.boss_charge_stage = "aim"
+        self.boss_charge_timer = 0.0
+        self.boss_charge_count = 0
+        self.boss_charge_direction = pygame.Vector2(1, 0)
+        self.boss_contact_timer = 0.0
+        self.boss_total_bullets = 0
+        self.boss_total_hits = 0
 
     def take_damage(self, damage):
         self.hp -= damage
@@ -306,6 +342,21 @@ class Enemy:
             return None
         vel = diff.normalize() * self.bullet_speed * speed_mul
         return EnemyBullet(self.pos2D, vel, self.damage * damage_mul, lifetime=3.5, radius=radius, color=color)
+
+    def _add_boss_bullet(self, vel, damage, radius, color, lifetime):
+        bullet = EnemyBullet(
+            self.pos2D,
+            pygame.Vector2(vel),
+            damage,
+            lifetime=lifetime,
+            radius=radius,
+            color=color,
+        )
+        bullet.owner_enemy = self
+        bullet.source_action = self.boss_action
+        self.enemy_bullets.append(bullet)
+        self.boss_total_bullets += 1
+        return bullet
 
     def update(self, delta_time, player_pos, flow_field=None):
         self.attack_timer = max(0, self.attack_timer - delta_time)
@@ -345,45 +396,229 @@ class Enemy:
                 self.damage_numbers.remove(dn)
 
     def _update_boss(self, delta_time, player_pos, flow_field=None):
-        self.boss_phase_timer += delta_time
-        phase_dur = 5.0
-        phase = int(self.boss_phase_timer / phase_dur) % 3
+        self.boss_contact_timer = max(0.0, self.boss_contact_timer - delta_time)
+        self.boss_attack_cooldown = max(0.0, self.boss_attack_cooldown - delta_time)
+        self.boss_action_time += delta_time
 
-        if phase == 0:
-            self._move_towards(player_pos, delta_time, self.speed, flow_field)
-            if self.attack_timer <= 0:
-                num = 18
-                for i in range(num):
-                    a = math.tau * i / num
-                    vel = pygame.Vector2(math.cos(a), math.sin(a)) * self.bullet_speed
-                    self.enemy_bullets.append(
-                        EnemyBullet(self.pos2D, vel, self.damage, lifetime=4, radius=8, color=(255, 60, 80))
-                    )
-                self.attack_timer = self.attack_cooldown * 1.4
-        elif phase == 1:
-            self._move_towards(player_pos, delta_time, self.speed * 0.4, flow_field)
-            if self.attack_timer <= 0:
-                diff = player_pos - self.pos2D
-                if diff.length_squared() > 0:
-                    base_dir = diff.normalize()
-                    for spread in (-15, -7, 0, 7, 15):
-                        d = base_dir.rotate(spread)
-                        vel = d * self.bullet_speed
-                        self.enemy_bullets.append(
-                            EnemyBullet(self.pos2D, vel, self.damage * 0.7, lifetime=3, radius=7, color=(255, 130, 60))
-                        )
-                self.attack_timer = self.attack_cooldown * 0.6
-        else:
-            self._move_towards(player_pos, delta_time, self.speed * 0.5, flow_field)
-            if self.attack_timer <= 0:
-                base = self.boss_phase_timer * 180
+        if self.boss_action is not None:
+            self._run_boss_action(delta_time, player_pos)
+
+        if (
+            self.boss_attack_cooldown > 0
+            or self.boss_action_time < self.boss_action_duration
+        ):
+            return
+
+        self._start_boss_action(self._choose_boss_action(player_pos), player_pos)
+
+    def _choose_boss_action(self, player_pos):
+        distance = self.pos2D.distance_to(player_pos)
+        hp_ratio = self.hp / max(1.0, self.max_hp)
+        recent_hit_rate = self.boss_total_hits / max(1, self.boss_total_bullets)
+        low_hp = 1.0 - hp_ratio
+        near_score = max(0.0, (230.0 - distance) / 120.0)
+        mid_score = max(0.0, 1.0 - abs(distance - 300.0) / 130.0)
+        far_score = max(0.0, (distance - 320.0) / 180.0)
+        too_close_score = max(0.0, (160.0 - distance) / 80.0)
+        miss_pressure = max(0.0, (0.18 - recent_hit_rate) / 0.18)
+
+        scores = {
+            "Ring": (0.28 + near_score * 1.10 + low_hp * 0.25)
+            * BOSS_GOB_WEIGHTS["Ring"],
+            "Spread": (0.42 + mid_score * 0.75 + random.uniform(0.0, 0.12))
+            * BOSS_GOB_WEIGHTS["Spread"],
+            "Spiral": (0.22 + low_hp * 1.00 + miss_pressure * 0.45)
+            * BOSS_GOB_WEIGHTS["Spiral"],
+            "Dash": (
+                0.28
+                + far_score * 0.75
+                + too_close_score * 0.60
+                + random.uniform(0.0, 0.25)
+            )
+            * BOSS_GOB_WEIGHTS["Dash"],
+            "Charge": (
+                0.30
+                + far_score * 1.10
+                + miss_pressure * 0.35
+                + low_hp * 0.25
+                + random.uniform(0.0, 0.22)
+            )
+            * BOSS_GOB_WEIGHTS["Charge"],
+        }
+        if self.boss_last_choice:
+            scores[self.boss_last_choice] -= BOSS_REPEAT_PENALTY
+        self.boss_score_snapshot = scores
+        choice = max(scores, key=scores.get)
+        self.boss_last_choice = choice
+        return choice
+
+    def _start_boss_action(self, action, player_pos):
+        self.boss_action = action
+        self.boss_action_time = 0.0
+        self.boss_action_fire_timer = 0.0
+        self.boss_action_end_fired = False
+
+        if action == "Ring":
+            self.boss_action_duration = 0.25
+            self.boss_attack_cooldown = 0.95
+            self._boss_fire_ring(18, 165, self.damage * 0.20, 7)
+        elif action == "Spread":
+            self.boss_action_duration = 0.20
+            self.boss_attack_cooldown = 0.62
+            self._boss_fire_spread(7, 13, 240, self.damage * 0.175, 6, player_pos)
+        elif action == "Spiral":
+            self.boss_action_duration = 1.75
+            self.boss_attack_cooldown = 0.35
+        elif action == "Dash":
+            self.boss_action_duration = 0.72
+            self.boss_attack_cooldown = 0.85
+            direction = player_pos - self.pos2D
+            if direction.length_squared() > 0:
+                self.vel2D = direction.normalize() * (self.speed * 3.25)
+            self._boss_fire_spread(5, 20, 260, self.damage * 0.2125, 7, player_pos)
+        elif action == "Charge":
+            self.boss_action_duration = 1.45
+            self.boss_attack_cooldown = 1.05
+            self.boss_charge_stage = "aim"
+            self.boss_charge_timer = 0.34
+            self.boss_charge_count = 0
+            direction = player_pos - self.pos2D
+            self.boss_charge_direction = (
+                direction.normalize()
+                if direction.length_squared() > 0
+                else pygame.Vector2(1, 0)
+            )
+
+    def _run_boss_action(self, delta_time, player_pos):
+        to_player = player_pos - self.pos2D
+        distance = to_player.length()
+        direction = to_player.normalize() if to_player.length_squared() > 0 else pygame.Vector2(0, 0)
+        tangent = pygame.Vector2(-direction.y, direction.x) * self.boss_orbit_sign
+
+        if self.boss_action == "Dash":
+            self.pos2D += self.vel2D * delta_time
+            self.vel2D *= max(0.0, 1.0 - 3.0 * delta_time)
+            if (
+                not self.boss_action_end_fired
+                and self.boss_action_time >= self.boss_action_duration - delta_time
+            ):
+                self._boss_fire_ring(12, 190, self.damage * 0.15, 6)
+                self.boss_action_end_fired = True
+            return
+
+        if self.boss_action == "Charge":
+            self._run_boss_charge(delta_time, direction)
+            return
+
+        if self.boss_action == "Ring":
+            desired = self._boss_chase_velocity(direction, distance)
+            if distance < 210:
+                desired = -direction * (self.speed * 1.45)
+            self._steer_boss(desired, delta_time)
+        elif self.boss_action == "Spread":
+            desired = tangent * (self.speed * 1.40) + self._boss_chase_velocity(direction, distance)
+            self._steer_boss(desired, delta_time)
+        elif self.boss_action == "Spiral":
+            desired = tangent * (self.speed * 1.70) + self._boss_chase_velocity(direction, distance)
+            self._steer_boss(desired, delta_time)
+            self.boss_action_fire_timer -= delta_time
+            self.boss_spiral_angle += 2.9 * delta_time
+            if self.boss_action_fire_timer <= 0:
                 for k in range(4):
-                    a = math.radians(base + k * 90)
-                    vel = pygame.Vector2(math.cos(a), math.sin(a)) * self.bullet_speed * 0.85
-                    self.enemy_bullets.append(
-                        EnemyBullet(self.pos2D, vel, self.damage * 0.6, lifetime=4, radius=7, color=(255, 50, 200))
+                    angle = self.boss_spiral_angle + k * math.tau / 4.0
+                    vel = pygame.Vector2(math.cos(angle), math.sin(angle)) * 175.0
+                    self._add_boss_bullet(
+                        vel,
+                        self.damage * 0.15,
+                        6,
+                        BOSS_ATTACK_COLORS["Spiral"],
+                        4.0,
                     )
-                self.attack_timer = 0.15
+                self.boss_action_fire_timer = 0.105
+
+    def _run_boss_charge(self, delta_time, direction):
+        target_direction = direction if direction.length_squared() > 0 else self.boss_charge_direction
+        if self.boss_charge_stage == "aim":
+            self.boss_charge_direction = target_direction
+            self.vel2D *= max(0.0, 1.0 - 6.0 * delta_time)
+            self._steer_boss(self.boss_charge_direction * (self.speed * 0.75), delta_time)
+            self.boss_charge_timer -= delta_time
+            if self.boss_charge_timer <= 0:
+                self.boss_charge_stage = "dash"
+                self.boss_charge_timer = 0.26
+                self.vel2D = self.boss_charge_direction * (self.speed * 4.25)
+        elif self.boss_charge_stage == "dash":
+            self.pos2D += self.vel2D * delta_time
+            self.vel2D *= max(0.0, 1.0 - 0.9 * delta_time)
+            self.boss_charge_timer -= delta_time
+            if self.boss_charge_timer <= 0:
+                self.boss_charge_count += 1
+                if self.boss_charge_count < 2:
+                    self.boss_charge_stage = "aim"
+                    self.boss_charge_timer = 0.25
+                else:
+                    self.boss_charge_stage = "recover"
+                    self.boss_charge_timer = 0.34
+        elif self.boss_charge_stage == "recover":
+            self._steer_boss(target_direction * (self.speed * 0.45), delta_time)
+            self.boss_charge_timer -= delta_time
+
+    def _boss_chase_velocity(self, direction, distance):
+        if distance <= 0:
+            return pygame.Vector2(0, 0)
+        if distance < 170:
+            return -direction * (self.speed * 1.45)
+        if distance > 260:
+            chase_scale = min(1.0, (distance - 260) / 240.0)
+            return direction * (self.speed * (1.5 + 1.05 * chase_scale))
+        return direction * (self.speed * 0.9)
+
+    def _steer_boss(self, desired_velocity, delta_time):
+        max_desired = self.speed * 2.35
+        if desired_velocity.length() > max_desired:
+            desired_velocity.scale_to_length(max_desired)
+        steering = desired_velocity - self.vel2D
+        max_steering = self.speed * 6.5
+        if steering.length() > max_steering:
+            steering.scale_to_length(max_steering)
+        self.vel2D += steering * delta_time
+        max_velocity = self.speed * 2.65
+        if self.vel2D.length() > max_velocity:
+            self.vel2D.scale_to_length(max_velocity)
+        self.pos2D += self.vel2D * delta_time
+        self.vel2D *= max(0.0, 1.0 - 0.55 * delta_time)
+
+    def _boss_fire_ring(self, count, speed, damage, radius):
+        offset = random.random() * math.tau
+        for idx in range(count):
+            angle = offset + math.tau * idx / count
+            vel = pygame.Vector2(math.cos(angle), math.sin(angle)) * speed
+            self._add_boss_bullet(vel, damage, radius, BOSS_ATTACK_COLORS["Ring"], 4.2)
+
+    def _boss_fire_spread(self, count, spread_deg, speed, damage, radius, player_pos):
+        direction = player_pos - self.pos2D
+        if direction.length_squared() == 0:
+            direction = pygame.Vector2(1, 0)
+        direction = direction.normalize()
+        mid = (count - 1) * 0.5
+        for idx in range(count):
+            angle = (idx - mid) * spread_deg
+            vel = direction.rotate(angle) * speed
+            self._add_boss_bullet(vel, damage, radius, BOSS_ATTACK_COLORS["Spread"], 3.2)
+
+    def can_boss_contact_damage(self):
+        return (
+            self.is_boss
+            and self.boss_action == "Charge"
+            and self.boss_charge_stage == "dash"
+            and self.boss_contact_timer <= 0
+        )
+
+    def boss_contact_damage(self):
+        return self.damage * 0.40
+
+    def record_boss_bullet_hit(self):
+        self.boss_total_hits += 1
 
     def draw(self, screen, game):
         screen_pos = game.to_screen(self.pos2D)

@@ -36,6 +36,14 @@ PLAYER_GUN_CAPACITY = 20
 PLAYER_GUN_SCATTER_ANGLE = 5.0
 PLAYER_BULLET_EFFECTIVE_RANGE = PLAYER_BULLET_SPEED * PLAYER_BULLET_LIFETIME
 PLAYER_MODES = ("Behavior", "Scripted")
+PLAYER_FSM_SEQUENCE = ("Approach", "Orbit", "Evade", "Retreat")
+PLAYER_FSM_DURATIONS = {
+    "Approach": 1.00,
+    "Orbit": 1.60,
+    "Evade": 0.70,
+    "Retreat": 0.90,
+}
+PLAYER_STRAFE_INTERVAL = 1.60
 EVAL2_RUN_TARGET = 30
 ATTACK_COLORS = {
     "Ring": (255, 80, 105),
@@ -135,6 +143,8 @@ class BossDecisionEvaluation:
         self.total_distance = 0.0
         self.total_distance_samples = 0
         self.survival_samples = []
+        self.player_defeat_samples = []
+        self.timeout_samples = []
         self.phase_time_total = {name: 0.0 for name in ATTACKS}
 
         self.reset_run()
@@ -152,6 +162,8 @@ class BossDecisionEvaluation:
         self.total_distance = 0.0
         self.total_distance_samples = 0
         self.survival_samples.clear()
+        self.player_defeat_samples.clear()
+        self.timeout_samples.clear()
         self.phase_time_total = {name: 0.0 for name in ATTACKS}
         self.reset_run()
 
@@ -173,9 +185,11 @@ class BossDecisionEvaluation:
         self.player_fire_timer = 0.0
         self.player_reload_timer = 0.0
         self.player_capacity_left = PLAYER_GUN_CAPACITY
-        self.player_strafe_sign = 1 if self.rng.random() > 0.5 else -1
-        self.player_strafe_timer = 0.0
-        self.player_state = "Approach"
+        self.player_strafe_sign = 1
+        self.player_strafe_timer = PLAYER_STRAFE_INTERVAL
+        self.player_state_index = 0
+        self.player_state = PLAYER_FSM_SEQUENCE[self.player_state_index]
+        self.player_state_timer = PLAYER_FSM_DURATIONS[self.player_state]
         self.boss_orbit_sign = 1 if self.rng.random() > 0.5 else -1
         self.camera_pos = self.player_pos.copy()
 
@@ -236,10 +250,16 @@ class BossDecisionEvaluation:
             self.ttk_samples.append(self.run_time)
             self.total_runs += 1
             self.reset_run()
-        elif self.player_hp <= 0 or self.run_time >= 55.0:
+        elif self.player_hp <= 0:
+            self.player_defeat_samples.append(self.run_time)
             self.survival_samples.append(self.run_time)
             self.total_runs += 1
             self.total_player_losses += 1
+            self.reset_run()
+        elif self.run_time >= 55.0:
+            self.timeout_samples.append(self.run_time)
+            self.survival_samples.append(self.run_time)
+            self.total_runs += 1
             self.reset_run()
 
     def _update_scripted_player(self, dt):
@@ -257,7 +277,7 @@ class BossDecisionEvaluation:
         self.camera_pos = self.camera_pos.lerp(target, follow)
 
     def _update_player_agent(self, dt):
-        # FSM player model used as the simulated opponent for Evaluation 2.
+        # Deterministic FSM player model used as the simulated opponent.
         to_player = self.player_pos - self.boss_pos
         if to_player.length_squared() == 0:
             to_player = pygame.Vector2(1, 0)
@@ -271,7 +291,7 @@ class BossDecisionEvaluation:
         self.player_strafe_timer -= dt
         if self.player_strafe_timer <= 0:
             self.player_strafe_sign *= -1
-            self.player_strafe_timer = self.rng.uniform(1.2, 2.4)
+            self.player_strafe_timer += PLAYER_STRAFE_INTERVAL
 
         evade = pygame.Vector2(0, 0)
         if distance <= hittable_distance:
@@ -284,19 +304,21 @@ class BossDecisionEvaluation:
                     if closing > 0.5:
                         evade += rel.normalize() * (1.1 + closing)
 
-        if distance < 85:
-            self.player_state = "Retreat"
-        elif evade.length_squared() > 0:
-            self.player_state = "Evade"
-        elif distance > hittable_distance * 0.92:
-            self.player_state = "Approach"
-        else:
-            self.player_state = "Orbit"
+        self.player_state_timer -= dt
+        while self.player_state_timer <= 0:
+            self.player_state_index = (self.player_state_index + 1) % len(
+                PLAYER_FSM_SEQUENCE
+            )
+            self.player_state = PLAYER_FSM_SEQUENCE[self.player_state_index]
+            self.player_state_timer += PLAYER_FSM_DURATIONS[self.player_state]
 
         if self.player_state == "Approach":
             desired = -away * 260.0
         elif self.player_state == "Evade":
-            desired = evade.normalize() * 260.0 + tangent * 80.0
+            if evade.length_squared() > 0:
+                desired = evade.normalize() * 260.0 + tangent * 80.0
+            else:
+                desired = away * 190.0 + tangent * 170.0
         elif self.player_state == "Retreat":
             desired = away * 260.0 + tangent * 60.0
         else:
@@ -368,23 +390,36 @@ class BossDecisionEvaluation:
         hp_ratio = self.boss_hp / self.boss_max_hp
 
         if self.controller == "BT":
-            if distance < 180:
-                return "Ring"
-            if distance > 420:
-                return "Charge"
-            if hp_ratio < 0.45 and self.action != "Spiral":
+            if hp_ratio < 0.35 and self.action != "Spiral":
                 return "Spiral"
-            if distance > 330:
-                if self.action != "Charge":
-                    return "Charge"
-                return "Dash"
-            if distance < 260:
+
+            if self.player_state == "Orbit":
                 if self.action != "Ring":
                     return "Ring"
+                return "Spread"
+
+            if self.player_state == "Approach":
+                if distance < 230 and self.action != "Ring":
+                    return "Ring"
+                if self.action != "Spread":
+                    return "Spread"
                 return "Dash"
-            if self.action == "Spread":
+
+            if self.player_state == "Evade":
+                if self.action != "Dash":
+                    return "Dash"
                 return "Spiral"
-            if self.action == "Spiral":
+
+            if self.player_state == "Retreat":
+                if self.action == "Dash" and 205 <= distance <= 245:
+                    return "Charge"
+                if self.action != "Spread":
+                    return "Spread"
+                return "Dash"
+
+            if distance < 160 and self.action != "Ring":
+                return "Ring"
+            if distance > 330 and self.action != "Dash":
                 return "Dash"
             return "Spread"
 
@@ -679,8 +714,8 @@ class BossDecisionEvaluation:
         dodge = 100.0 * (1.0 - self.total_boss_hits / max(1, self.total_boss_bullets))
         avg_distance = self.total_distance / max(1, self.total_distance_samples)
         return [
-            ("TTK mean / IQR", ttk),
-            ("Survival mean", survival),
+            ("Boss death / IQR", ttk),
+            ("Timeout mean", survival),
             ("Boss DPS", f"{dps:5.1f}"),
             ("Dodge success", f"{dodge:5.1f}%"),
             ("Avg distance", f"{avg_distance:5.0f}"),
@@ -695,9 +730,9 @@ class BossDecisionEvaluation:
         return f"{mean:4.1f}s / {q3 - q1:3.1f}s"
 
     def _survival_text(self):
-        if not self.survival_samples:
+        if not self.timeout_samples:
             return "none"
-        arr = numpy.array(self.survival_samples, dtype=float)
+        arr = numpy.array(self.timeout_samples, dtype=float)
         return f"{float(arr.mean()):4.1f}s"
 
     def phase_switch_rate(self):
@@ -741,8 +776,9 @@ def _print_eval2_summary_if_ready(game, player_mode):
 
     game.eval2_summary_printed = True
     for sim in game.eval2_sims:
-        kills = len(sim.ttk_samples)
-        no_kill = EVAL2_RUN_TARGET - kills
+        boss_defeated = len(sim.ttk_samples)
+        player_defeated = len(sim.player_defeat_samples)
+        timeout = len(sim.timeout_samples)
         if sim.ttk_samples:
             ttk_arr = numpy.array(sim.ttk_samples, dtype=float)
             ttk_mean = float(ttk_arr.mean())
@@ -751,9 +787,14 @@ def _print_eval2_summary_if_ready(game, player_mode):
         else:
             ttk_mean = float("nan")
             ttk_iqr = float("nan")
-        survival_mean = (
-            float(numpy.array(sim.survival_samples, dtype=float).mean())
-            if sim.survival_samples
+        player_defeat_mean = (
+            float(numpy.array(sim.player_defeat_samples, dtype=float).mean())
+            if sim.player_defeat_samples
+            else float("nan")
+        )
+        timeout_mean = (
+            float(numpy.array(sim.timeout_samples, dtype=float).mean())
+            if sim.timeout_samples
             else float("nan")
         )
         boss_dps = sim.total_boss_damage / max(1.0, sim.total_elapsed)
@@ -762,18 +803,24 @@ def _print_eval2_summary_if_ready(game, player_mode):
         phase_total = sum(sim.phase_time_total.values())
         phase_parts = []
         for phase in ATTACKS:
-            ratio = 100.0 * sim.phase_time_total[phase] / phase_total if phase_total else 0.0
+            ratio = (
+                100.0 * sim.phase_time_total[phase] / phase_total
+                if phase_total
+                else 0.0
+            )
             phase_parts.append(f"{phase}:{ratio:.1f}")
         print(
             "[EVAL2_RESULT] "
             f"policy={sim.controller} "
             f"player_mode={player_mode} "
             f"runs={EVAL2_RUN_TARGET} "
-            f"boss_kills={kills} "
-            f"no_kill={no_kill} "
-            f"ttk_mean={ttk_mean:.3f} "
-            f"ttk_iqr={ttk_iqr:.3f} "
-            f"survival_mean={survival_mean:.3f} "
+            f"boss_defeated={boss_defeated} "
+            f"player_defeated={player_defeated} "
+            f"timeout={timeout} "
+            f"boss_death_mean={ttk_mean:.3f} "
+            f"boss_death_iqr={ttk_iqr:.3f} "
+            f"player_death_mean={player_defeat_mean:.3f} "
+            f"timeout_mean={timeout_mean:.3f} "
             f"boss_dps={boss_dps:.3f} "
             f"dodge_success={dodge:.2f} "
             f"boss_bullets={sim.total_boss_bullets} "
